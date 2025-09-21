@@ -74,7 +74,7 @@ const LotMonitoring = () => {
       <div className="pt-20 px-6">
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Lot Monitoring</h1>
-          <p className="text-gray-600 dark:text-gray-300">Monitor and manage residential lots</p>
+          <p className="text-gray-600 dark:text-gray-300">Monitor and manage residential lots in Dulalia Homes</p>
         </div>
 
         {/* Statistics Cards */}
@@ -157,8 +157,10 @@ const LotMonitoring = () => {
           </div>
         </div>
 
-        {/* Lots Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Lots Grid View */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Lot Monitoring Map</h2>
+          
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
@@ -172,49 +174,67 @@ const LotMonitoring = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lot/House Number
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      House Model
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Owner
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {searchedAndFilteredLots.map((lot) => (
-                    <tr key={lot.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-100">
-                            <FaHome className="h-5 w-5 text-gray-500" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              Lot {lot.house_no || 'N/A'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {lot.houseModel || 'Standard'}
+            <>
+              {/* Legend */}
+              <div className="mb-6 flex flex-wrap gap-4">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded mr-2 bg-green-500"></div>
+                  <span className="text-sm">Occupied</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded mr-2 bg-gray-300"></div>
+                  <span className="text-sm">Vacant</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded mr-2 bg-yellow-500"></div>
+                  <span className="text-sm">For Sale</span>
+                </div>
+              </div>
+              
+              {/* Grid Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {searchedAndFilteredLots.map((lot) => {
+                  // Determine the block and lot numbers
+                  const houseNo = lot.house_no || 0;
+                  const blockNumber = Math.floor(houseNo / 100) + 1;
+                  const lotNumber = houseNo % 100;
+                  
+                  // Determine status color (this is a placeholder since actual status isn't in the data)
+                  const statusColor = lot.house_owner ? 'bg-green-500' : 'bg-gray-300';
+                  
+                  return (
+                    <div key={lot.id} className="relative p-4 border rounded-lg hover:shadow-md transition-shadow">
+                      {/* Status indicator */}
+                      <div className={`absolute top-0 right-0 w-3 h-3 rounded-full ${statusColor} m-2`}></div>
+                      
+                      {/* Block/Lot label */}
+                      <div className="mb-2">
+                        <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                          Block {blockNumber} • Lot {lotNumber}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{lot.house_owner || 'None'}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                      
+                      {/* House Number */}
+                      <div className="flex items-center mb-3">
+                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100">
+                          <FaHome className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm font-medium">House #{lot.house_no}</p>
+                          <p className="text-xs text-gray-500">{lot.houseModel || 'Standard Model'}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Owner Information */}
+                      <div className="border-t pt-2">
+                        <p className="text-xs text-gray-500">Owner</p>
+                        <p className="text-sm font-medium truncate">{lot.house_owner || 'None (Vacant)'}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -8,7 +8,8 @@ import {
   XIcon as XMarkIcon, 
   InformationCircleIcon,
   PlusIcon,
-  EyeIcon
+  EyeIcon,
+  ExclamationIcon
 } from '@heroicons/react/outline';
 import { 
   collection, 
@@ -43,6 +44,12 @@ function FacilityRequests() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionUserId, setRejectionUserId] = useState(null);
+  // Feedback state variables
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackRequestId, setFeedbackRequestId] = useState(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackRequest, setFeedbackRequest] = useState(null);
 
   useEffect(() => {
     document.title = "Facility Requests";
@@ -113,7 +120,17 @@ function FacilityRequests() {
         id: doc.id,
         ...doc.data()
       }));
-      setRequests(requestsData);
+      
+      // Check record status for each request's user
+      const updatedRequestsData = await Promise.all(requestsData.map(async (request) => {
+        if (request.user_id) {
+          const hasBadRecord = await checkUserRecordStatus(request.user_id);
+          return { ...request, hasBadRecord };
+        }
+        return request;
+      }));
+      
+      setRequests(updatedRequestsData);
     } catch (error) {
       toast.error('Error fetching facility requests: ' + error.message);
     } finally {
@@ -154,6 +171,22 @@ function FacilityRequests() {
     }
   };
 
+  // Utility function to check if a user has bad record status
+  const checkUserRecordStatus = async (userId) => {
+    try {
+      if (!userId) return false;
+      
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (!userDoc.exists()) return false;
+      
+      const userData = userDoc.data();
+      return userData.recordStatus === 'Bad';
+    } catch (error) {
+      console.error('Error checking user record status:', error);
+      return false;
+    }
+  };
+  
   const handleAddFacility = async () => {
     if (!newFacilityName.trim()) {
       toast.error('Facility name cannot be empty');
@@ -176,7 +209,7 @@ function FacilityRequests() {
 
   const handleUpdateStatus = async (id, newStatus, userId) => {
     // For rejection, open the modal to get the reason
-    if (newStatus === 'Rejected') {
+    if (newStatus === 'Rejected' || newStatus === '❌') {
       setRejectionRequestId(id);
       setRejectionUserId(userId);
       setRejectionReason('');
@@ -189,22 +222,78 @@ function FacilityRequests() {
       const requestDoc = await getDoc(doc(db, 'facility_requests', id));
       const requestData = requestDoc.data();
       const facilityName = requestData?.facility || 'N/A';
+      
+      // If approving the request, check if the user has a bad record
+      if ((newStatus === 'Approved' || newStatus === '✅') && userId) {
+        const hasBadRecord = await checkUserRecordStatus(userId);
+        if (hasBadRecord) {
+          toast.error('Cannot approve request. User has a bad record status.');
+          
+          // Automatically reject with a standard reason
+          setRejectionRequestId(id);
+          setRejectionUserId(userId);
+          setRejectionReason('Request automatically rejected due to bad record status.');
+          setIsRejectionModalOpen(true);
+          return;
+        }
+      }
 
       // Update the status of the request
       await updateDoc(doc(db, 'facility_requests', id), {
         status: newStatus,
-        ...(rejectionReason && { rejection_reason: rejectionReason })
+        ...(rejectionReason && { rejection_reason: rejectionReason }),
+        last_updated: serverTimestamp()
       });
+
+      // Prepare notification message based on status
+      let notificationMessage = '';
+      
+      switch(newStatus) {
+        case '✅':
+        case 'Approved':
+          notificationMessage = `Your ${facilityName} facility request has been approved.`;
+          break;
+        case 'In-Progress':
+          notificationMessage = `Your ${facilityName} facility request is now in progress.`;
+          break;
+        case 'Confirmation':
+          notificationMessage = `Please confirm your ${facilityName} facility request details.`;
+          break;
+        case 'Complete':
+          notificationMessage = `Your ${facilityName} facility request has been completed.`;
+          break;
+        default:
+          notificationMessage = `Your ${facilityName} facility request status has been updated to ${newStatus}.`;
+      }
 
       // Send notification to user's inbox
       await addDoc(collection(db, 'notifications'), {
         user_id: userId || requestData?.user_id,
-        message: `Your ${facilityName} facility request has been ${newStatus}. ${rejectionReason ? `Reason: ${rejectionReason}` : ''}`,
+        message: notificationMessage,
         timestamp: serverTimestamp(),
         status: 'unread',
       });
 
-      toast.success(`Request ${newStatus.toLowerCase()} successfully`);
+      // Convert status to user-friendly message
+      let successMessage = '';
+      switch(newStatus) {
+        case '✅':
+          successMessage = 'approved';
+          break;
+        case 'In-Progress':
+          successMessage = 'marked as in progress';
+          break;
+        case 'Confirmation':
+          successMessage = 'sent for confirmation';
+          break;
+        case 'Complete':
+          successMessage = 'marked as complete';
+          break;
+        default:
+          successMessage = newStatus.toLowerCase();
+      }
+
+      toast.success(`Request ${successMessage} successfully`);
       fetchRequests();
     } catch (error) {
       toast.error('Error updating request: ' + error.message);
@@ -271,6 +360,14 @@ function FacilityRequests() {
     } else {
       setCommentText('');
     }
+    
+    // Check if user has bad record
+    if (request.user_id) {
+      const hasBadRecord = await checkUserRecordStatus(request.user_id);
+      if (hasBadRecord && request.status === 'Pending') {
+        toast.warning('Warning: This homeowner has a bad record status. Consider carefully before approving.');
+      }
+    }
   };
 
   const closeDetailsModal = () => {
@@ -295,6 +392,59 @@ function FacilityRequests() {
       draggable: true,
     });
   };
+  
+  // Feedback handling functions
+  const showFeedbackModal = (request) => {
+    setFeedbackRequest(request);
+    setFeedbackRequestId(request.id);
+    setFeedbackText('');
+    setFeedbackRating(0);
+    setIsFeedbackModalOpen(true);
+  };
+  
+  const closeFeedbackModal = () => {
+    setIsFeedbackModalOpen(false);
+    setFeedbackRequest(null);
+    setFeedbackRequestId(null);
+    setFeedbackText('');
+    setFeedbackRating(0);
+  };
+  
+  const handleSubmitFeedback = async () => {
+    if (!feedbackRequestId) return;
+    
+    if (feedbackRating === 0) {
+      toast.error("Please provide a rating");
+      return;
+    }
+    
+    try {
+      // Add feedback to database
+      await addDoc(collection(db, 'facility_feedback'), {
+        request_id: feedbackRequestId,
+        facility: feedbackRequest?.facility || '',
+        user_id: feedbackRequest?.user_id || '',
+        homeowner_name: feedbackRequest?.homeowner_name || '',
+        rating: feedbackRating,
+        feedback_text: feedbackText,
+        admin_id: auth.currentUser?.uid || "Unknown",
+        timestamp: serverTimestamp()
+      });
+      
+      // Update the request with feedback info
+      await updateDoc(doc(db, 'facility_requests', feedbackRequestId), {
+        has_feedback: true,
+        feedback_rating: feedbackRating,
+        last_updated: serverTimestamp()
+      });
+      
+      toast.success("Feedback submitted successfully");
+      closeFeedbackModal();
+      fetchRequests(); // Refresh the requests list
+    } catch (error) {
+      toast.error(`Error submitting feedback: ${error.message}`);
+    }
+  };
 
   const getStatusColor = (status) => {
     if (!status) return 'bg-gray-100 text-gray-800';
@@ -308,6 +458,12 @@ function FacilityRequests() {
       case '❌':
       case 'Rejected':
         return 'bg-red-100 text-red-800';
+      case 'In-Progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'Confirmation':
+        return 'bg-purple-100 text-purple-800';
+      case 'Complete':
+        return 'bg-emerald-100 text-emerald-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -406,11 +562,14 @@ function FacilityRequests() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Status</option>
                 <option value="Pending">Pending</option>
+                <option value="In-Progress">In Progress</option>
+                <option value="Confirmation">Confirmation</option>
                 <option value="✅">Approved</option>
+                <option value="Complete">Complete</option>
                 <option value="❌">Rejected</option>
               </select>
             </div>
@@ -516,9 +675,19 @@ function FacilityRequests() {
                           </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                          <Badge 
+                            variant={
+                              request.status === 'Pending' ? 'warning' : 
+                              request.status === 'In-Progress' ? 'info' :
+                              request.status === 'Confirmation' ? 'secondary' :
+                              request.status === '✅' || request.status === 'Approved' ? 'success' :
+                              request.status === 'Complete' ? 'success' :
+                              request.status === '❌' || request.status === 'Rejected' ? 'danger' : 
+                              'default'
+                            }
+                          >
                             {request.status || 'Unknown'}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
@@ -532,6 +701,15 @@ function FacilityRequests() {
                                   <CheckIcon className="h-5 w-5" />
                                 </button>
                                 <button
+                                  onClick={() => handleUpdateStatus(request.id, 'In-Progress', request.user_id)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                  title="Mark In-Progress"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </button>
+                                <button
                                   onClick={() => handleUpdateStatus(request.id, '❌', request.user_id)}
                                   className="text-red-600 hover:text-red-900"
                                   title="Reject"
@@ -540,6 +718,39 @@ function FacilityRequests() {
                                 </button>
                               </>
                             )}
+                            {request.status === 'In-Progress' && (
+                              <>
+                                <button
+                                  onClick={() => handleUpdateStatus(request.id, 'Confirmation', request.user_id)}
+                                  className="text-purple-600 hover:text-purple-900"
+                                  title="Request Confirmation"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateStatus(request.id, 'Complete', request.user_id)}
+                                  className="text-emerald-600 hover:text-emerald-900"
+                                  title="Mark Complete"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                            {request.status === 'Confirmation' && (
+                              <button
+                                onClick={() => handleUpdateStatus(request.id, 'Complete', request.user_id)}
+                                className="text-emerald-600 hover:text-emerald-900"
+                                title="Mark Complete"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                            )}
                             <button
                               onClick={() => showDetailsModal(request)}
                               className="text-blue-600 hover:text-blue-900"
@@ -547,6 +758,17 @@ function FacilityRequests() {
                             >
                               <InformationCircleIcon className="h-5 w-5" />
                             </button>
+                            {request.status === 'Complete' && (
+                              <button
+                                onClick={() => showFeedbackModal(request)}
+                                className="text-yellow-600 hover:text-yellow-900"
+                                title="Add Feedback"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -579,7 +801,15 @@ function FacilityRequests() {
                 <div className="grid grid-cols-2 gap-4">
                 <div className="flex justify-between border-b pb-2">
                   <span className="font-semibold">🏠 Homeowner:</span>
-                  <span>{selectedRequest.homeowner_name || 'N/A'}</span>
+                  <div className="flex items-center">
+                    <span>{selectedRequest.homeowner_name || 'N/A'}</span>
+                    {selectedRequest.hasBadRecord && (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        <ExclamationIcon className="h-3 w-3 mr-1" />
+                        Bad Record
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="font-semibold">🏡 House No.:</span>
@@ -607,7 +837,19 @@ function FacilityRequests() {
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="font-semibold">📌 Status:</span>
-                  <span>{selectedRequest.status || 'N/A'}</span>
+                  <Badge 
+                    variant={
+                      selectedRequest.status === 'Pending' ? 'warning' : 
+                      selectedRequest.status === 'In-Progress' ? 'info' :
+                      selectedRequest.status === 'Confirmation' ? 'secondary' :
+                      selectedRequest.status === '✅' || selectedRequest.status === 'Approved' ? 'success' :
+                      selectedRequest.status === 'Complete' ? 'success' :
+                      selectedRequest.status === '❌' || selectedRequest.status === 'Rejected' ? 'danger' : 
+                      'default'
+                    }
+                  >
+                    {selectedRequest.status || 'Unknown'}
+                  </Badge>
                 </div>
 
                 {selectedRequest.rejection_reason && (
@@ -707,6 +949,81 @@ function FacilityRequests() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             This comment will be stored in the database and sent as a notification to the homeowner.
           </p>
+        </div>
+      </Modal>
+      
+      {/* Feedback Modal */}
+      <Modal
+        isOpen={isFeedbackModalOpen}
+        onClose={closeFeedbackModal}
+        title="Request Feedback"
+        size="md"
+        footer={
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={closeFeedbackModal}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmitFeedback}
+            >
+              Submit Feedback
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Facility
+            </label>
+            <p className="font-medium">{feedbackRequest?.facility || 'N/A'}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Homeowner
+            </label>
+            <p>{feedbackRequest?.homeowner_name || 'N/A'}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Rating (Required)
+            </label>
+            <div className="flex space-x-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => setFeedbackRating(rating)}
+                  className={`p-1 rounded-md ${
+                    feedbackRating >= rating ? 'text-yellow-500' : 'text-gray-300'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24" stroke="none">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Feedback Comments
+            </label>
+            <textarea
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary dark:focus:ring-secondary dark:bg-gray-700 dark:text-white"
+              rows={4}
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Enter feedback comments about the facility usage experience..."
+            ></textarea>
+          </div>
         </div>
       </Modal>
     </AdminLayout>

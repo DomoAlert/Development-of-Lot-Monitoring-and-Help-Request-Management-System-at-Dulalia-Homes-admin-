@@ -183,7 +183,28 @@ function UserAccounts() {
         recordStatus: recordStatus,
         last_updated: serverTimestamp()
       });
-      toast.success(`Homeowner marked as ${recordStatus}`);
+      
+      // Send notification to user based on record status
+      const userDoc = await getDoc(doc(db, 'users', id));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const username = userData.username || 'Homeowner';
+        
+        // Create notification message based on record status
+        let message = '';
+        if (recordStatus === 'Good') {
+          message = `${username}, your record status has been set to Good. You have full access to all community amenities and services.`;
+        } else if (recordStatus === 'Bad') {
+          message = `${username}, your record status has been set to Bad. This may restrict your access to some community amenities and services. Please contact the admin office.`;
+        } else {
+          message = `${username}, your record status has been updated to Neutral.`;
+        }
+        
+        
+        
+      }
+      
+      toast.success(`Homeowner record status marked as ${recordStatus}`);
       fetchUsers();
     } catch (error) {
       toast.error(`Error updating homeowner record: ${error.message}`);
@@ -518,6 +539,17 @@ function UserAccounts() {
                   </div>
                   
                   <div>
+                    <p className="text-sm text-gray-500">Record Status</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
+                      selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedUser.recordStatus || 'Neutral'}
+                    </span>
+                  </div>
+                  
+                  <div>
                     <p className="text-sm text-gray-500">Contact Number</p>
                     <p className="font-medium">{selectedUser.contactNumber || 'N/A'}</p>
                   </div>
@@ -614,6 +646,24 @@ function UserAccounts() {
                       <option value="Inactive">Inactive</option>
                     </select>
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Record Status
+                    </label>
+                    <select
+                      value={formData.recordStatus}
+                      onChange={(e) => setFormData({...formData, recordStatus: e.target.value})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="Neutral">Neutral</option>
+                      <option value="Good">Good</option>
+                      <option value="Bad">Bad</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Bad record status will restrict access to some facilities and services
+                    </p>
+                  </div>
                 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -682,7 +732,7 @@ function UserAccounts() {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Record
+                    Record Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -692,7 +742,7 @@ function UserAccounts() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>

@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import AdminLayout from '../../components/AdminLayout';
 import { FaHome, FaSearch } from 'react-icons/fa';
 
-const LotStatus = () => {
+const LotMonitoring = () => {
   // State
   const [lots, setLots] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,8 +20,9 @@ const LotStatus = () => {
     'For Sale',
   ];
 
-  // Fetch lots from Firebase
+  // Set page title and fetch lots from Firebase
   useEffect(() => {
+    document.title = "Lot Monitoring";
     const fetchUserLots = async () => {
       try {
         setIsLoading(true);
@@ -72,7 +73,7 @@ const LotStatus = () => {
     <AdminLayout>
       <div className="pt-20 px-6">
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Lot Status Overview</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Lot Monitoring</h1>
           <p className="text-gray-600 dark:text-gray-300">Monitor and manage residential lots</p>
         </div>
 
@@ -176,7 +177,7 @@ const LotStatus = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lot Number
+                      Lot/House Number
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       House Model
@@ -221,4 +222,4 @@ const LotStatus = () => {
   );
 };
 
-export default LotStatus;
+export default LotMonitoring;

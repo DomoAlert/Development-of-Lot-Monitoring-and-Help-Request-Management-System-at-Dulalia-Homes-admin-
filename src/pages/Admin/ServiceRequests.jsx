@@ -8,12 +8,19 @@ import {
   orderBy, 
   getDoc, 
   addDoc, 
+  deleteDoc,
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
 import { Dialog, Transition } from '@headlessui/react';
 import AdminLayout from '../../components/AdminLayout';
+import { 
+  Card, CardHeader, CardBody, Button, Table, TableHead, 
+  TableBody, TableRow, TableCell, TableHeaderCell, Badge, 
+  Modal, DataSearch 
+} from '../../components/AdminUI';
+import withAdminPage from '../../components/withAdminPage';
 
 function ServiceRequests() {
   const [requests, setRequests] = useState([]);
@@ -22,6 +29,19 @@ function ServiceRequests() {
   const [requestTypeFilter, setRequestTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [staffList, setStaffList] = useState([]);
+  
+  // Service management state
+  const [availableServices, setAvailableServices] = useState([]);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [serviceFormData, setServiceFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    status: 'active',
+    estimated_time: ''
+  });
+  const [isEditingService, setIsEditingService] = useState(false);
+  const [currentServiceId, setCurrentServiceId] = useState(null);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
@@ -43,6 +63,7 @@ function ServiceRequests() {
     document.title = "Service Requests";
     fetchRequests();
     fetchStaffList();
+    fetchAvailableServices();
   }, []);
 
   const fetchRequests = async () => {
@@ -82,8 +103,98 @@ function ServiceRequests() {
     }
   };
   
+  // Fetch available services
+  const fetchAvailableServices = async () => {
+    try {
+      const servicesSnapshot = await getDocs(collection(db, 'available_services'));
+      const servicesData = servicesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAvailableServices(servicesData);
+    } catch (error) {
+      console.error("Error fetching available services:", error);
+      toast.error('Error fetching available services: ' + error.message);
+    }
+  };
+  
   const getStaffDetails = (name) => {
     return staffList.find(staff => staff.name === name) || {};
+  };
+  
+  // Service management functions
+  const handleAddService = () => {
+    setServiceFormData({
+      name: '',
+      description: '',
+      price: '',
+      status: 'active',
+      estimated_time: ''
+    });
+    setIsEditingService(false);
+    setCurrentServiceId(null);
+    setIsServiceModalOpen(true);
+  };
+  
+  const handleEditService = (service) => {
+    setServiceFormData({
+      name: service.name || '',
+      description: service.description || '',
+      price: service.price || '',
+      status: service.status || 'active',
+      estimated_time: service.estimated_time || ''
+    });
+    setIsEditingService(true);
+    setCurrentServiceId(service.id);
+    setIsServiceModalOpen(true);
+  };
+  
+  const handleServiceFormChange = (e) => {
+    const { name, value } = e.target;
+    setServiceFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleSaveService = async () => {
+    try {
+      const serviceData = {
+        ...serviceFormData,
+        updatedAt: serverTimestamp()
+      };
+      
+      if (isEditingService && currentServiceId) {
+        // Update existing service
+        await updateDoc(doc(db, 'available_services', currentServiceId), serviceData);
+        toast.success('Service updated successfully!');
+      } else {
+        // Add new service
+        serviceData.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'available_services'), serviceData);
+        toast.success('Service added successfully!');
+      }
+      
+      // Close modal and refresh services
+      setIsServiceModalOpen(false);
+      fetchAvailableServices();
+    } catch (error) {
+      console.error('Error saving service:', error);
+      toast.error('Error saving service: ' + error.message);
+    }
+  };
+  
+  const handleDeleteService = async (serviceId) => {
+    if (window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
+      try {
+        await deleteDoc(doc(db, 'available_services', serviceId));
+        toast.success('Service deleted successfully!');
+        fetchAvailableServices();
+      } catch (error) {
+        console.error('Error deleting service:', error);
+        toast.error('Error deleting service: ' + error.message);
+      }
+    }
   };
   
   const handleShowIssueDetails = (issue) => {
@@ -198,20 +309,22 @@ function ServiceRequests() {
     }
   };
 
-  const getStatusColor = (status) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
+  const getStatusVariant = (status) => {
+    if (!status) return 'warning';
     
     switch (status?.toLowerCase()) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'warning';
+      case 'in-progress':
+        return 'info';
+      case 'confirmed':
+        return 'success';
       case 'completed':
-        return 'bg-blue-100 text-blue-800';
+        return 'primary';
+      case 'cancelled':
+        return 'danger';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'outline';
     }
   };
 
@@ -275,12 +388,11 @@ const formatTime = (timestamp) => {
         
         {/* Filters */}
         <div className="mb-6 flex flex-wrap gap-4">
-          <input
-            type="text"
+          <DataSearch
             placeholder="Search requests..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full md:w-1/3"
           />
           <select 
             value={requestTypeFilter}
@@ -300,6 +412,7 @@ const formatTime = (timestamp) => {
           >
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
+            <option value="In-Progress">In-Progress</option>
             <option value="Confirmed">Confirmed</option>
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
@@ -307,22 +420,18 @@ const formatTime = (timestamp) => {
         </div>
 
         {/* Help Requests Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {loading ? (
-            <div className="p-4 text-center">Loading...</div>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    House Info
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Request Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Issue
-                  </th>
+        <Card>
+          <CardHeader title="Service Requests" />
+          <CardBody>
+            {loading ? (
+              <div className="p-4 text-center">Loading...</div>
+            ) : (
+              <Table>
+                <TableHead>
+                  <tr>
+                    <TableHeaderCell>House Info</TableHeaderCell>
+                    <TableHeaderCell>Request Type</TableHeaderCell>
+                    <TableHeaderCell>Issue</TableHeaderCell>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Image
                   </th>
@@ -342,25 +451,25 @@ const formatTime = (timestamp) => {
                     Actions
                   </th>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              </TableHead>
+              <TableBody>
                 {filteredRequests.length === 0 ? (
-                  <tr>
-                    <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
+                  <TableRow>
+                    <TableCell colSpan="9" className="text-center text-gray-500">
                       No requests found
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredRequests.map((request) => (
-                    <tr key={request.id}>
-                      <td className="px-6 py-4">
+                    <TableRow key={request.id}>
+                      <TableCell>
                         <div className="text-sm text-gray-900">
                           House #{request.house_no !== undefined ? request.house_no : 'N/A'}
                         </div>
                         <div className="text-sm text-gray-600 font-medium">
                           {request.service_provider || request.request_type || 'N/A'}
                         </div>
-                      </td>
+                      </TableCell>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
                           {request.type_of_request || request.request_type || 'N/A'}
@@ -411,9 +520,9 @@ const formatTime = (timestamp) => {
                                 </td>
 
                       <td className="px-6 py-4">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                        <Badge variant={getStatusVariant(request.status)}>
                           {request.status || 'Pending'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <select
@@ -440,30 +549,122 @@ const formatTime = (timestamp) => {
                           </button>
                           
                           {(!request.status || request.status === 'Pending') && (
-                            <button 
+                            <>
+                              <Button 
+                                variant="info" 
+                                size="sm" 
+                                onClick={() => handleUpdateStatus(request.id, 'In-Progress')}
+                                className="mr-2"
+                              >
+                                Start Progress
+                              </Button>
+                              <Button 
+                                variant="success" 
+                                size="sm" 
+                                onClick={() => handleUpdateStatus(request.id, 'Confirmed')}
+                              >
+                                Confirm
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 'In-Progress' && (
+                            <Button 
+                              variant="success" 
+                              size="sm" 
                               onClick={() => handleUpdateStatus(request.id, 'Confirmed')}
-                              className="bg-green-500 text-white px-3 py-1 rounded-md"
                             >
                               Confirm
-                            </button>
+                            </Button>
                           )}
                           {request.status === 'Confirmed' && (
-                            <button 
+                            <Button 
+                              variant="primary" 
+                              size="sm" 
                               onClick={() => handleUpdateStatus(request.id, 'Completed')}
-                              className="bg-blue-500 text-white px-3 py-1 rounded-md"
                             >
                               Complete
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>
-                    </tr>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          )}
-        </div>
+              </TableBody>
+              </Table>
+            )}
+          </CardBody>
+        </Card>
+        
+        {/* Available Services Management */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Available Services</h3>
+              <Button 
+                variant="success" 
+                onClick={handleAddService}
+              >
+                Add New Service
+              </Button>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {availableServices.length === 0 ? (
+              <p className="text-center py-4 text-gray-500">No services available.</p>
+            ) : (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Service Name</TableHeaderCell>
+                    <TableHeaderCell>Description</TableHeaderCell>
+                    <TableHeaderCell>Est. Time</TableHeaderCell>
+                    <TableHeaderCell>Price</TableHeaderCell>
+                    <TableHeaderCell>Status</TableHeaderCell>
+                    <TableHeaderCell>Actions</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {availableServices.map((service) => (
+                    <TableRow key={service.id}>
+                      <TableCell>{service.name}</TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate">
+                          {service.description}
+                        </div>
+                      </TableCell>
+                      <TableCell>{service.estimated_time}</TableCell>
+                      <TableCell>{service.price}</TableCell>
+                      <TableCell>
+                        <Badge variant={service.status === 'active' ? 'success' : 'danger'}>
+                          {service.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="info"
+                            size="sm"
+                            onClick={() => handleEditService(service)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDeleteService(service.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardBody>
+        </Card>
         
         {/* Issue Details Modal */}
         <Transition appear show={isIssueModalOpen} as={Fragment}>
@@ -791,6 +992,104 @@ const formatTime = (timestamp) => {
             </div>
           </Dialog>
         </Transition>
+      
+        {/* Service Management Modal */}
+        <Modal
+          isOpen={isServiceModalOpen}
+          onClose={() => setIsServiceModalOpen(false)}
+          title={isEditingService ? "Edit Service" : "Add New Service"}
+        >
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Service Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={serviceFormData.name}
+                onChange={handleServiceFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                name="description"
+                id="description"
+                rows={3}
+                value={serviceFormData.description}
+                onChange={handleServiceFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                Price
+              </label>
+              <input
+                type="text"
+                name="price"
+                id="price"
+                value={serviceFormData.price}
+                onChange={handleServiceFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="estimated_time" className="block text-sm font-medium text-gray-700">
+                Estimated Time
+              </label>
+              <input
+                type="text"
+                name="estimated_time"
+                id="estimated_time"
+                value={serviceFormData.estimated_time}
+                onChange={handleServiceFormChange}
+                placeholder="e.g., 2-3 hours"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                name="status"
+                id="status"
+                value={serviceFormData.status}
+                onChange={handleServiceFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsServiceModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveService}
+              >
+                {isEditingService ? "Update Service" : "Add Service"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </AdminLayout>
   );

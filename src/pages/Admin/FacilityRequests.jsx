@@ -39,12 +39,51 @@ function FacilityRequests() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [commentDone, setCommentDone] = useState(false);
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionRequestId, setRejectionRequestId] = useState(null);
+  const [rejectionUserId, setRejectionUserId] = useState(null);
 
   useEffect(() => {
     document.title = "Facility Requests";
     fetchRequests();
     fetchFacilities();
   }, []);
+
+  const handleRejectionSubmit = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error('Please enter a reason for rejection');
+      return;
+    }
+
+    try {
+      // First, fetch the request to get facility name
+      const requestDoc = await getDoc(doc(db, 'facility_requests', rejectionRequestId));
+      const requestData = requestDoc.data();
+      const facilityName = requestData?.facility || 'N/A';
+
+      // Update the status of the request
+      await updateDoc(doc(db, 'facility_requests', rejectionRequestId), {
+        status: 'Rejected',
+        rejection_reason: rejectionReason,
+        admin_comment: rejectionReason
+      });
+
+      // Send notification to user's inbox
+      await addDoc(collection(db, 'notifications'), {
+        user_id: rejectionUserId || requestData?.user_id,
+        message: `Your ${facilityName} facility request has been Rejected. Reason: ${rejectionReason}`,
+        timestamp: serverTimestamp(),
+        status: 'unread',
+      });
+
+      toast.success('Request rejected successfully');
+      fetchRequests();
+      setIsRejectionModalOpen(false);
+    } catch (error) {
+      toast.error('Error rejecting request: ' + error.message);
+    }
+  };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
@@ -136,19 +175,13 @@ function FacilityRequests() {
   };
 
   const handleUpdateStatus = async (id, newStatus, userId) => {
-    let rejectionReason = null;
-
+    // For rejection, open the modal to get the reason
     if (newStatus === 'Rejected') {
-      // Create a Promise that resolves with the user's input
-      rejectionReason = await new Promise((resolve) => {
-        const reason = window.prompt('Enter rejection reason:');
-        resolve(reason);
-      });
-
-      // If the user clicked cancel on the prompt
-      if (rejectionReason === null) {
-        return;
-      }
+      setRejectionRequestId(id);
+      setRejectionUserId(userId);
+      setRejectionReason('');
+      setIsRejectionModalOpen(true);
+      return;
     }
 
     try {
@@ -211,6 +244,12 @@ function FacilityRequests() {
           admin_id: auth.currentUser?.uid || "Unknown",
           timestamp: serverTimestamp(),
           is_done: commentDone
+        });
+        
+        // Also update the main facility_requests document with this comment
+        await updateDoc(doc(db, 'facility_requests', selectedRequest.id), {
+          admin_comment: commentText,
+          last_updated: serverTimestamp()
         });
         
         toast.success("Comment added successfully");
@@ -533,6 +572,13 @@ function FacilityRequests() {
                     <span className="font-semibold">📌 Status:</span>
                     <span>{selectedRequest.status || 'N/A'}</span>
                   </div>
+
+                  {selectedRequest.rejection_reason && (
+                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                      <h4 className="font-medium text-red-800 dark:text-red-300">Rejection Reason:</h4>
+                      <p className="text-red-700 dark:text-red-200">{selectedRequest.rejection_reason}</p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Admin Comment Section */}
@@ -586,6 +632,46 @@ function FacilityRequests() {
           </div>
         )}
       </div>
+
+      {/* Rejection Comment Modal */}
+      <Modal
+        isOpen={isRejectionModalOpen}
+        onClose={() => setIsRejectionModalOpen(false)}
+        title="Reject Facility Request"
+        size="md"
+        footer={
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsRejectionModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleRejectionSubmit}
+            >
+              Submit Rejection
+            </Button>
+          </div>
+        }
+      >
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Rejection Reason (Required)
+          </label>
+          <textarea
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary dark:focus:ring-secondary dark:bg-gray-700 dark:text-white"
+            rows={4}
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Please provide a detailed reason for rejection. This will be visible to the homeowner."
+          ></textarea>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            This comment will be stored in the database and sent as a notification to the homeowner.
+          </p>
+        </div>
+      </Modal>
     </AdminLayout>
   );
 }

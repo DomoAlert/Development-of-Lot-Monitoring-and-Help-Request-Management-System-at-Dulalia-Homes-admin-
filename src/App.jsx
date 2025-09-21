@@ -16,7 +16,7 @@ import Announcements from './pages/Admin/Announcements';
 import Feedback from './pages/Admin/Feedback';
 import GuardAccounts from './pages/Admin/GuardAccounts';
 import VisitorLogs from './pages/Admin/VisitorLogs';
-import LotStatus from './pages/Admin/LotStatus';
+import LotMonitoring from './pages/Admin/LotStatus';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -143,7 +143,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PageTitleProvider>
-                    <LotStatus />
+                    <LotMonitoring />
                   </PageTitleProvider>
                 </ProtectedRoute>
               } 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { UserCircleIcon } from '@heroicons/react/outline';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
 
@@ -18,14 +18,16 @@ function Staff() {
     positions: [], // Changed to array for multiple roles
     email: '',
     phone: '',
-    status: 'Active'
+    status: 'Active',
+    isHeadStaff: false,
+    subordinates: [] // For head staff, manage subordinate staff members
   });
   
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState('');
 
   // Available positions
-  const availablePositions = ["Plumber", "Street Sweeper", "Electrician"];
+  const availablePositions = ["Head Staff", "Plumber", "Street Sweeper", "Electrician"];
 
   useEffect(() => {
     document.title = "Staff list";
@@ -65,7 +67,26 @@ function Staff() {
     }
     
     try {
-      await addDoc(collection(db, 'staff'), formData);
+      // Add staff member
+      const staffRef = await addDoc(collection(db, 'staff'), {
+        ...formData,
+        isHeadStaff: formData.positions.includes('Head Staff')
+      });
+      
+      // If this is a head staff, update the subordinates' records to reference this head
+      if (formData.positions.includes('Head Staff') && formData.subordinates.length > 0) {
+        const batch = writeBatch(db);
+        
+        // Update each subordinate to reference this head staff
+        for (const subId of formData.subordinates) {
+          batch.update(doc(db, 'staff', subId), {
+            headStaffId: staffRef.id
+          });
+        }
+        
+        await batch.commit();
+      }
+      
       toast.success('Staff member added successfully');
       setShowForm(false);
       setFormData({ 
@@ -73,7 +94,9 @@ function Staff() {
         positions: [], 
         email: '', 
         phone: '', 
-        status: 'Active' 
+        status: 'Active',
+        isHeadStaff: false,
+        subordinates: []
       });
       fetchStaff();
     } catch (error) {
@@ -97,7 +120,58 @@ function Staff() {
     }
     
     try {
-      await updateDoc(doc(db, 'staff', currentStaffId), formData);
+      // Get previous subordinate IDs to compare with new list
+      const staffDoc = await getDoc(doc(db, 'staff', currentStaffId));
+      const previousSubordinates = staffDoc.exists() ? staffDoc.data().subordinates || [] : [];
+      
+      // Update the staff document
+      await updateDoc(doc(db, 'staff', currentStaffId), {
+        ...formData,
+        isHeadStaff: formData.positions.includes('Head Staff')
+      });
+      
+      // If this is a head staff, update the subordinates
+      if (formData.positions.includes('Head Staff')) {
+        const batch = writeBatch(db);
+        
+        // Remove headStaffId from staff members that are no longer subordinates
+        const removedSubordinates = previousSubordinates.filter(
+          id => !formData.subordinates.includes(id)
+        );
+        
+        for (const subId of removedSubordinates) {
+          batch.update(doc(db, 'staff', subId), {
+            headStaffId: null
+          });
+        }
+        
+        // Add headStaffId to new subordinates
+        const newSubordinates = formData.subordinates.filter(
+          id => !previousSubordinates.includes(id)
+        );
+        
+        for (const subId of newSubordinates) {
+          batch.update(doc(db, 'staff', subId), {
+            headStaffId: currentStaffId
+          });
+        }
+        
+        await batch.commit();
+      } else {
+        // If no longer a head staff, remove references from all subordinates
+        if (previousSubordinates.length > 0) {
+          const batch = writeBatch(db);
+          
+          for (const subId of previousSubordinates) {
+            batch.update(doc(db, 'staff', subId), {
+              headStaffId: null
+            });
+          }
+          
+          await batch.commit();
+        }
+      }
+      
       toast.success('Staff member updated successfully');
       setShowForm(false);
       setIsEditing(false);
@@ -107,7 +181,9 @@ function Staff() {
         positions: [], 
         email: '', 
         phone: '', 
-        status: 'Active' 
+        status: 'Active',
+        isHeadStaff: false,
+        subordinates: []
       });
       fetchStaff();
     } catch (error) {
@@ -121,7 +197,9 @@ function Staff() {
       positions: staff.positions || [], // Use array of positions
       email: staff.email || '',
       phone: staff.phone || '',
-      status: staff.status || 'Active'
+      status: staff.status || 'Active',
+      isHeadStaff: staff.positions?.includes('Head Staff') || false,
+      subordinates: staff.subordinates || []
     });
     setCurrentStaffId(staff.id);
     setIsEditing(true);
@@ -327,6 +405,49 @@ function Staff() {
                   {formData.positions.length === 0 && (
                     <p className="text-red-500 text-xs mt-1">Please select at least one position</p>
                   )}
+                  
+                  {/* Head Staff Controls */}
+                  {formData.positions.includes('Head Staff') && (
+                    <div className="mt-4 p-3 border border-primary rounded-md">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Head Staff Role
+                      </label>
+                      <p className="text-sm text-gray-600 mb-2">
+                        A Head Staff can manage other staff members in their department.
+                      </p>
+                      
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Select staff to manage:
+                        </label>
+                        <div className="max-h-40 overflow-y-auto border rounded-md p-2">
+                          {staffMembers
+                            .filter(staff => 
+                              !staff.positions?.includes('Head Staff') && 
+                              staff.id !== currentStaffId
+                            )
+                            .map(staff => (
+                              <label key={staff.id} className="flex items-center py-1">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.subordinates?.includes(staff.id)}
+                                  onChange={() => {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      subordinates: prev.subordinates?.includes(staff.id)
+                                        ? prev.subordinates.filter(id => id !== staff.id)
+                                        : [...(prev.subordinates || []), staff.id]
+                                    }));
+                                  }}
+                                  className="rounded text-primary focus:ring-primary"
+                                />
+                                <span className="ml-2">{staff.name} ({staff.positions?.join(', ') || 'No position'})</span>
+                              </label>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -467,6 +588,26 @@ function Staff() {
                             </div>
                           ) : (
                             "No positions assigned"
+                          )}
+                          {/* Display Head Staff badge if applicable */}
+                          {staff.positions?.includes('Head Staff') && (
+                            <div className="mt-2">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary text-white">
+                                Head Staff
+                              </span>
+                              {staff.subordinates && staff.subordinates.length > 0 && (
+                                <span className="ml-2 text-xs text-gray-500">
+                                  (Managing {staff.subordinates.length} staff)
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Display who this staff reports to */}
+                          {staff.headStaffId && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              Reports to: {staffMembers.find(s => s.id === staff.headStaffId)?.name || 'Unknown'}
+                            </div>
                           )}
                         </div>
                       </td>

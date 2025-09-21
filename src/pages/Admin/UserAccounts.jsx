@@ -27,6 +27,7 @@ function UserAccounts() {
     role: 'Homeowner',
     status: 'Active',
     isActive: true,
+    recordStatus: 'Neutral', // Default record status
     password: '', // Default password
     fcmToken: '' // Empty token initially
   });
@@ -100,6 +101,7 @@ function UserAccounts() {
         role: 'Homeowner',
         status: 'Active',
         isActive: true,
+        recordStatus: 'Neutral', // Default record status
         password: userPassword, // Storing for reference (not recommended in production)
         fcmToken: '',
         uid: uid, // Still include uid in the document for reference
@@ -169,6 +171,22 @@ function UserAccounts() {
       fetchUsers();
     } catch (error) {
       toast.error('Error updating user status: ' + error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+  
+  const handleSetRecordStatus = async (id, recordStatus) => {
+    setActionLoading(id);
+    try {
+      await updateDoc(doc(db, 'users', id), { 
+        recordStatus: recordStatus,
+        last_updated: serverTimestamp()
+      });
+      toast.success(`Homeowner marked as ${recordStatus}`);
+      fetchUsers();
+    } catch (error) {
+      toast.error(`Error updating homeowner record: ${error.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -664,6 +682,9 @@ function UserAccounts() {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Record
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -711,26 +732,57 @@ function UserAccounts() {
                           {user.status || 'Active'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
+                          user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.recordStatus || 'Neutral'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {actionLoading === user.id ? (
                           <div className="flex items-center justify-center">
                             <FaSpinner className="animate-spin text-primary" />
                           </div>
                         ) : (
-                          <>
-                            <button 
-                              onClick={() => handleToggleStatus(user.id, user.status)}
-                              className="text-primary hover:text-blue-700 mr-3"
-                            >
-                              Toggle Status
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Delete
-                            </button>
-                          </>
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => handleToggleStatus(user.id, user.status)}
+                                className="text-primary hover:text-blue-700"
+                              >
+                                Toggle Status
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Good')}
+                                className="text-green-600 hover:text-green-700 text-xs"
+                              >
+                                Mark Good
+                              </button>
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Bad')}
+                                className="text-red-600 hover:text-red-700 text-xs"
+                              >
+                                Mark Bad
+                              </button>
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
+                                className="text-gray-600 hover:text-gray-700 text-xs"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </td>
                     </tr>

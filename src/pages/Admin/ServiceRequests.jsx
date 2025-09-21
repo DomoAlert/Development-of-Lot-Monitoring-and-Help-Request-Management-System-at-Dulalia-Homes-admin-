@@ -58,12 +58,29 @@ function ServiceRequests() {
     staffName: '',
     issue: ''
   });
+  
+  // New service request state
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestFormData, setRequestFormData] = useState({
+    house_no: '',
+    resident_name: '',
+    type_of_request: '',
+    issue: '',
+    additional_notes: '',
+    scheduled_date: '',
+    scheduled_time: '',
+    image_url: '',
+    status: 'Pending'
+  });
+  const [requestFormErrors, setRequestFormErrors] = useState({});
+  const [homeownerList, setHomeownerList] = useState([]);
 
   useEffect(() => {
     document.title = "Service Requests";
     fetchRequests();
     fetchStaffList();
     fetchAvailableServices();
+    fetchHomeownerList();
   }, []);
 
   const fetchRequests = async () => {
@@ -118,6 +135,22 @@ function ServiceRequests() {
     }
   };
   
+  // Fetch homeowner list
+  const fetchHomeownerList = async () => {
+    try {
+      const homeownerSnapshot = await getDocs(collection(db, 'users'));
+      const homeownerData = homeownerSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        fullName: doc.data().name || `${doc.data().first_name || ''} ${doc.data().last_name || ''}`.trim()
+      }));
+      setHomeownerList(homeownerData);
+    } catch (error) {
+      console.error("Error fetching homeowners:", error);
+      toast.error('Error fetching homeowner list: ' + error.message);
+    }
+  };
+  
   const getStaffDetails = (name) => {
     return staffList.find(staff => staff.name === name) || {};
   };
@@ -155,6 +188,123 @@ function ServiceRequests() {
       ...prev,
       [name]: value
     }));
+  };
+  
+  // Service request form handlers
+  const handleRequestFormChange = (e) => {
+    const { name, value } = e.target;
+    setRequestFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear any existing error for this field
+    if (requestFormErrors[name]) {
+      setRequestFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    
+    // If homeowner is selected, auto-populate house number
+    if (name === 'resident_name') {
+      const selectedHomeowner = homeownerList.find(h => h.id === value);
+      if (selectedHomeowner) {
+        setRequestFormData(prev => ({
+          ...prev,
+          house_no: selectedHomeowner.house_no || ''
+        }));
+      }
+    }
+  };
+  
+  const validateRequestForm = () => {
+    const errors = {};
+    
+    if (!requestFormData.resident_name) {
+      errors.resident_name = 'Please select a homeowner';
+    } else {
+      // Check if resident has a bad record
+      const selectedHomeowner = homeownerList.find(h => h.id === requestFormData.resident_name);
+      if (selectedHomeowner && selectedHomeowner.record_status === 'Bad') {
+        errors.resident_name = 'This homeowner has a bad record status';
+      }
+    }
+    
+    if (!requestFormData.house_no.trim()) {
+      errors.house_no = 'House number is required';
+    }
+    
+    if (!requestFormData.type_of_request) {
+      errors.type_of_request = 'Please select a request type';
+    }
+    
+    if (!requestFormData.issue.trim()) {
+      errors.issue = 'Issue description is required';
+    }
+    
+    // If scheduled time is provided but not date
+    if (requestFormData.scheduled_time && !requestFormData.scheduled_date) {
+      errors.scheduled_time = 'Please select a date along with the time';
+    }
+    
+    return Object.keys(errors).length === 0;
+  };
+  
+  const handleSubmitRequest = async (e) => {
+    e.preventDefault();
+    
+    if (!validateRequestForm()) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Get selected homeowner name
+      const selectedHomeowner = homeownerList.find(h => h.id === requestFormData.resident_name);
+      
+      // Create request document
+      const requestData = {
+        house_no: requestFormData.house_no,
+        resident_name: selectedHomeowner ? selectedHomeowner.fullName : 'Unknown',
+        resident_id: requestFormData.resident_name,
+        type_of_request: requestFormData.type_of_request,
+        issue: requestFormData.issue,
+        additional_notes: requestFormData.additional_notes || null,
+        scheduled_date: requestFormData.scheduled_date || null,
+        scheduled_time: requestFormData.scheduled_time || null,
+        status: 'Pending',
+        created_at: serverTimestamp(),
+        last_updated: serverTimestamp()
+      };
+      
+      // Add to Firestore
+      await addDoc(collection(db, 'services'), requestData);
+      
+      // Reset form and close modal
+      setRequestFormData({
+        house_no: '',
+        resident_name: '',
+        type_of_request: '',
+        issue: '',
+        additional_notes: '',
+        scheduled_date: '',
+        scheduled_time: '',
+        status: 'Pending'
+      });
+      setIsRequestModalOpen(false);
+      
+      // Refresh requests list
+      fetchRequests();
+      
+      toast.success('Service request submitted successfully');
+    } catch (error) {
+      console.error('Error submitting service request:', error);
+      toast.error('Failed to submit service request');
+    } finally {
+      setLoading(false);
+    }
   };
   
   const handleSaveService = async () => {
@@ -421,7 +571,18 @@ const formatTime = (timestamp) => {
 
         {/* Help Requests Table */}
         <Card>
-          <CardHeader title="Service Requests" />
+          <CardHeader 
+            title="Service Requests" 
+            action={
+              <Button 
+                variant="primary" 
+                onClick={() => setIsRequestModalOpen(true)}
+                size="sm"
+              >
+                + New Request
+              </Button>
+            }
+          />
           <CardBody>
             {loading ? (
               <div className="p-4 text-center">Loading...</div>
@@ -1089,6 +1250,172 @@ const formatTime = (timestamp) => {
               </Button>
             </div>
           </div>
+        </Modal>
+        {/* New Service Request Modal */}
+        <Modal
+          isOpen={isRequestModalOpen}
+          onClose={() => setIsRequestModalOpen(false)}
+          title="New Service Request"
+        >
+          <form onSubmit={handleSubmitRequest} className="space-y-4">
+            <div>
+              <label htmlFor="resident_name" className="block text-sm font-medium text-gray-700">
+                Homeowner <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="resident_name"
+                name="resident_name"
+                value={requestFormData.resident_name}
+                onChange={handleRequestFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              >
+                <option value="">Select a homeowner</option>
+                {homeownerList.map((homeowner) => (
+                  <option key={homeowner.id} value={homeowner.id}>
+                    {homeowner.fullName} {homeowner.record_status === 'Bad' ? '(Bad Record)' : ''}
+                  </option>
+                ))}
+              </select>
+              {requestFormErrors.resident_name && (
+                <p className="mt-1 text-sm text-red-500">{requestFormErrors.resident_name}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="house_no" className="block text-sm font-medium text-gray-700">
+                House Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="house_no"
+                name="house_no"
+                value={requestFormData.house_no}
+                onChange={handleRequestFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                placeholder="e.g., 123"
+                required
+              />
+              {requestFormErrors.house_no && (
+                <p className="mt-1 text-sm text-red-500">{requestFormErrors.house_no}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="type_of_request" className="block text-sm font-medium text-gray-700">
+                Request Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="type_of_request"
+                name="type_of_request"
+                value={requestFormData.type_of_request}
+                onChange={handleRequestFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              >
+                <option value="">Select request type</option>
+                <option value="Repair Request">Repair Request</option>
+                <option value="Plumbing Repair">Plumbing Repair</option>
+                <option value="Electrical Repair">Electrical Repair</option>
+                <option value="Cleaning Request">Cleaning Request</option>
+                <option value="Regular Service">Regular Service</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+              {requestFormErrors.type_of_request && (
+                <p className="mt-1 text-sm text-red-500">{requestFormErrors.type_of_request}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="issue" className="block text-sm font-medium text-gray-700">
+                Issue Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="issue"
+                name="issue"
+                rows={3}
+                value={requestFormData.issue}
+                onChange={handleRequestFormChange}
+                placeholder="Please describe the issue in detail"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              />
+              {requestFormErrors.issue && (
+                <p className="mt-1 text-sm text-red-500">{requestFormErrors.issue}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="additional_notes" className="block text-sm font-medium text-gray-700">
+                Additional Notes
+              </label>
+              <textarea
+                id="additional_notes"
+                name="additional_notes"
+                rows={2}
+                value={requestFormData.additional_notes}
+                onChange={handleRequestFormChange}
+                placeholder="Any additional information that might help with the service request"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Optional: Include any special instructions or context that might be helpful
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="scheduled_date" className="block text-sm font-medium text-gray-700">
+                  Preferred Date
+                </label>
+                <input
+                  type="date"
+                  id="scheduled_date"
+                  name="scheduled_date"
+                  value={requestFormData.scheduled_date}
+                  onChange={handleRequestFormChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  When would you prefer the service to be performed?
+                </p>
+              </div>
+              
+              <div>
+                <label htmlFor="scheduled_time" className="block text-sm font-medium text-gray-700">
+                  Preferred Time
+                </label>
+                <input
+                  type="time"
+                  id="scheduled_time"
+                  name="scheduled_time"
+                  value={requestFormData.scheduled_time}
+                  onChange={handleRequestFormChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+                {requestFormErrors.scheduled_time && (
+                  <p className="mt-1 text-sm text-red-500">{requestFormErrors.scheduled_time}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="pt-4 flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsRequestModalOpen(false)}
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+              >
+                Submit Request
+              </Button>
+            </div>
+          </form>
         </Modal>
       </div>
     </AdminLayout>

@@ -325,90 +325,119 @@ function FacilityRequests() {
     return matchesSearch && matchesFacility && matchesStatus;
   });
 
-  // Group requests by facility type
+  // Create a mapping of facilities with their requests
   const requestsByFacility = {};
-  filteredRequests.forEach(request => {
-    const facility = request.facility || 'Unspecified';
-    if (!requestsByFacility[facility]) {
-      requestsByFacility[facility] = [];
-    }
-    requestsByFacility[facility].push(request);
-  });
+  
+  // If a specific facility filter is applied, only include that facility
+  if (facilityFilter) {
+    requestsByFacility[facilityFilter] = [];
+    
+    // Add matching requests to the selected facility
+    filteredRequests.forEach(request => {
+      if (request.facility === facilityFilter) {
+        requestsByFacility[facilityFilter].push(request);
+      }
+    });
+  } else {
+    // If no filter is applied, initialize all facilities (even those with no requests)
+    facilities.forEach(facility => {
+      requestsByFacility[facility.name] = [];
+    });
+    
+    // Then add all matching requests to their respective facilities
+    filteredRequests.forEach(request => {
+      const facility = request.facility || 'Unspecified';
+      if (!requestsByFacility[facility]) {
+        requestsByFacility[facility] = [];
+      }
+      requestsByFacility[facility].push(request);
+    });
+  }
 
   return (
     <AdminLayout>
       <div className="pt-20 px-6">
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Facility Requests Management</h1>
-        </div>
+            </div>
 
         {/* Add New Facility */}
         <div className="mb-6 bg-white p-4 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-3">Add New Facility</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Facility Name"
-              value={newFacilityName}
-              onChange={(e) => setNewFacilityName(e.target.value)}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Facility Name"
+                  value={newFacilityName}
+                  onChange={(e) => setNewFacilityName(e.target.value)}
               className="flex-grow px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+                />
             <button 
-              onClick={handleAddFacility}
+                  onClick={handleAddFacility}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
-            >
-              <PlusIcon className="h-5 w-5 mr-1" />
+                >
+                  <PlusIcon className="h-5 w-5 mr-1" />
               Add
             </button>
-          </div>
-        </div>
-
+              </div>
+            </div>
+            
         {/* Filters */}
         <div className="mb-6 flex flex-wrap gap-4">
-          <input
-            type="text"
-            placeholder="Search requests..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+              <input
+                type="text"
+                placeholder="Search requests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <select 
-            value={facilityFilter}
-            onChange={(e) => setFacilityFilter(e.target.value)}
+              />
+              <select 
+                value={facilityFilter}
+                onChange={(e) => setFacilityFilter(e.target.value)}
             className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Facilities</option>
-            {facilities.map((facility) => (
-              <option key={facility.id} value={facility.name}>
-                {facility.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Facilities</option>
+                {facilities.map((facility) => (
+                  <option key={facility.id} value={facility.name}>
+                    {facility.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="✅">Approved</option>
-            <option value="❌">Rejected</option>
-          </select>
-        </div>
+              >
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="✅">Approved</option>
+                <option value="❌">Rejected</option>
+              </select>
+            </div>
 
         {/* Loading Indicator */}
         {loading && (
-          <div className="text-center p-4">
+              <div className="text-center p-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading requests...</p>
-          </div>
+                <p className="mt-2 text-gray-600">Loading requests...</p>
+              </div>
         )}
 
         {/* Grouped Request Tables */}
-        {!loading && Object.keys(requestsByFacility).length === 0 && (
-          <div className="text-center p-6 bg-white rounded-lg shadow">
-            <p className="text-gray-500">No facility requests found.</p>
-          </div>
+        {!loading && (
+          <>
+            {facilities.length === 0 && (
+              <div className="text-center p-6 bg-white rounded-lg shadow">
+                <p className="text-gray-500">No facilities found. Add a facility above to get started.</p>
+              </div>
+            )}
+            
+            {facilities.length > 0 && Object.keys(requestsByFacility).length === 0 && (
+              <div className="text-center p-6 bg-white rounded-lg shadow">
+                <p className="text-gray-500">No facilities match the current filters.</p>
+              </div>
+            )}
+          </>
         )}
 
         {Object.entries(requestsByFacility).map(([facility, facilityRequests]) => (
@@ -422,7 +451,7 @@ function FacilityRequests() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      #
+                        #
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Homeowner
@@ -454,76 +483,84 @@ function FacilityRequests() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {facilityRequests.map((request, index) => (
-                    <tr key={request.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {request.homeowner_name || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {request.house_no || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(request.created_at)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {request.usage_date || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {request.time_in || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {request.time_out || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <button
-                          onClick={() => showPurposeModal(request.purpose || 'No purpose specified')}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <InformationCircleIcon className="h-5 w-5" />
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                          {request.status || 'Unknown'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          {request.status === 'Pending' && (
-                            <>
-                              <button
-                                onClick={() => handleUpdateStatus(request.id, '✅', request.user_id)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Approve"
-                              >
-                                <CheckIcon className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={() => handleUpdateStatus(request.id, '❌', request.user_id)}
-                                className="text-red-600 hover:text-red-900"
-                                title="Reject"
-                              >
-                                <XMarkIcon className="h-5 w-5" />
-                              </button>
-                            </>
-                          )}
+                  {facilityRequests.length > 0 ? (
+                    facilityRequests.map((request, index) => (
+                      <tr key={request.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {request.homeowner_name || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.house_no || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(request.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.usage_date || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.time_in || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.time_out || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <button
-                            onClick={() => showDetailsModal(request)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="Details"
+                            onClick={() => showPurposeModal(request.purpose || 'No purpose specified')}
+                            className="text-blue-600 hover:text-blue-800"
                           >
                             <InformationCircleIcon className="h-5 w-5" />
                           </button>
-                        </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                            {request.status || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            {request.status === 'Pending' && (
+                              <>
+                                <button
+                                  onClick={() => handleUpdateStatus(request.id, '✅', request.user_id)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Approve"
+                                >
+                                  <CheckIcon className="h-5 w-5" />
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateStatus(request.id, '❌', request.user_id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  title="Reject"
+                                >
+                                  <XMarkIcon className="h-5 w-5" />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => showDetailsModal(request)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Details"
+                            >
+                              <InformationCircleIcon className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={10} className="px-6 py-10 text-center text-gray-500">
+                        No requests for this facility yet. Homeowners can submit requests using the mobile app.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
-            </div>
+              </div>
           </div>
         ))}
 
@@ -538,81 +575,81 @@ function FacilityRequests() {
                 </button>
               </div>
               
-              <div className="space-y-4">
+            <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">🏠 Homeowner:</span>
-                    <span>{selectedRequest.homeowner_name || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">🏡 House No.:</span>
-                    <span>{selectedRequest.house_no || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">🏀 Facility:</span>
-                    <span>{selectedRequest.facility || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">📅 Requested On:</span>
-                    <span>{formatDate(selectedRequest.created_at)}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">📆 Usage Date:</span>
-                    <span>{selectedRequest.usage_date || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">⏰ Time In:</span>
-                    <span>{selectedRequest.time_in || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">⏳ Time Out:</span>
-                    <span>{selectedRequest.time_out || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="font-semibold">📌 Status:</span>
-                    <span>{selectedRequest.status || 'N/A'}</span>
-                  </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">🏠 Homeowner:</span>
+                  <span>{selectedRequest.homeowner_name || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">🏡 House No.:</span>
+                  <span>{selectedRequest.house_no || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">🏀 Facility:</span>
+                  <span>{selectedRequest.facility || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">📅 Requested On:</span>
+                  <span>{formatDate(selectedRequest.created_at)}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">📆 Usage Date:</span>
+                  <span>{selectedRequest.usage_date || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">⏰ Time In:</span>
+                  <span>{selectedRequest.time_in || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">⏳ Time Out:</span>
+                  <span>{selectedRequest.time_out || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-semibold">📌 Status:</span>
+                  <span>{selectedRequest.status || 'N/A'}</span>
+                </div>
 
-                  {selectedRequest.rejection_reason && (
+                {selectedRequest.rejection_reason && (
                     <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                      <h4 className="font-medium text-red-800 dark:text-red-300">Rejection Reason:</h4>
-                      <p className="text-red-700 dark:text-red-200">{selectedRequest.rejection_reason}</p>
-                    </div>
-                  )}
+                    <h4 className="font-medium text-red-800 dark:text-red-300">Rejection Reason:</h4>
+                    <p className="text-red-700 dark:text-red-200">{selectedRequest.rejection_reason}</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Admin Comment Section */}
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold">Admin Comment:</span>
+                    <button 
+                    onClick={() => showCommentModal(selectedRequest.id)}
+                      className="text-blue-600 hover:text-blue-800 flex items-center"
+                  >
+                    <EyeIcon className="h-5 w-5 mr-1" /> View
+                    </button>
                 </div>
                 
-                {/* Admin Comment Section */}
-                <div className="mt-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">Admin Comment:</span>
-                    <button 
-                      onClick={() => showCommentModal(selectedRequest.id)}
-                      className="text-blue-600 hover:text-blue-800 flex items-center"
-                    >
-                      <EyeIcon className="h-5 w-5 mr-1" /> View
-                    </button>
-                  </div>
-                  
-                  <textarea
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
                     className="w-full p-2 border rounded-md"
-                    rows={4}
-                    placeholder="Enter your comment here..."
-                  ></textarea>
-                  
-                  <div className="flex items-center mt-2">
-                    <input
-                      type="checkbox"
-                      id="commentDone"
-                      checked={commentDone}
-                      onChange={(e) => setCommentDone(e.target.checked)}
-                      className="mr-2"
-                    />
-                    <label htmlFor="commentDone">Mark as done</label>
-                  </div>
+                  rows={4}
+                  placeholder="Enter your comment here..."
+                ></textarea>
+                
+                <div className="flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    id="commentDone"
+                    checked={commentDone}
+                    onChange={(e) => setCommentDone(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="commentDone">Mark as done</label>
                 </div>
               </div>
+            </div>
               
               <div className="flex justify-end mt-6 space-x-2">
                 <button

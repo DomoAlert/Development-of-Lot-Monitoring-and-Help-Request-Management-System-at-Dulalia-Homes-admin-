@@ -40,8 +40,11 @@ function ServiceRequests() {
     status: 'active',
     estimated_time: ''
   });
+  const [serviceFormErrors, setServiceFormErrors] = useState({});
   const [isEditingService, setIsEditingService] = useState(false);
   const [currentServiceId, setCurrentServiceId] = useState(null);
+  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState(null);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
@@ -123,15 +126,30 @@ function ServiceRequests() {
   // Fetch available services
   const fetchAvailableServices = async () => {
     try {
+      setLoading(true);
       const servicesSnapshot = await getDocs(collection(db, 'available_services'));
-      const servicesData = servicesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      
+      // Sort services by status (active first) and then by name
+      const servicesData = servicesSnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .sort((a, b) => {
+          // First sort by status (active first)
+          if (a.status === 'active' && b.status !== 'active') return -1;
+          if (a.status !== 'active' && b.status === 'active') return 1;
+          
+          // Then sort by name
+          return a.name.localeCompare(b.name);
+        });
+      
       setAvailableServices(servicesData);
     } catch (error) {
       console.error("Error fetching available services:", error);
       toast.error('Error fetching available services: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -166,6 +184,7 @@ function ServiceRequests() {
     });
     setIsEditingService(false);
     setCurrentServiceId(null);
+    setServiceFormErrors({});
     setIsServiceModalOpen(true);
   };
   
@@ -179,6 +198,7 @@ function ServiceRequests() {
     });
     setIsEditingService(true);
     setCurrentServiceId(service.id);
+    setServiceFormErrors({});
     setIsServiceModalOpen(true);
   };
   
@@ -188,6 +208,41 @@ function ServiceRequests() {
       ...prev,
       [name]: value
     }));
+    
+    // Clear error when field is edited
+    if (serviceFormErrors[name]) {
+      setServiceFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+  
+  // Validate service form
+  const validateServiceForm = () => {
+    const errors = {};
+    
+    // Required fields
+    if (!serviceFormData.name.trim()) {
+      errors.name = 'Service name is required';
+    }
+    
+    if (!serviceFormData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    
+    if (!serviceFormData.price.trim()) {
+      errors.price = 'Price is required';
+    } else if (isNaN(parseFloat(serviceFormData.price.replace(/[^\d.-]/g, '')))) {
+      errors.price = 'Price must be a valid number';
+    }
+    
+    if (!serviceFormData.estimated_time.trim()) {
+      errors.estimated_time = 'Estimated time is required';
+    }
+    
+    setServiceFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
   
   // Service request form handlers
@@ -308,9 +363,21 @@ function ServiceRequests() {
   };
   
   const handleSaveService = async () => {
+    // Validate form before saving
+    if (!validateServiceForm()) {
+      toast.error('Please correct the errors in the form');
+      return;
+    }
+    
     try {
+      // Format price value
+      const formattedPrice = serviceFormData.price.startsWith('₱') 
+        ? serviceFormData.price 
+        : `₱${parseFloat(serviceFormData.price.replace(/[^\d.-]/g, '')).toFixed(2)}`;
+      
       const serviceData = {
         ...serviceFormData,
+        price: formattedPrice,
         updatedAt: serverTimestamp()
       };
       
@@ -327,6 +394,7 @@ function ServiceRequests() {
       
       // Close modal and refresh services
       setIsServiceModalOpen(false);
+      setServiceFormErrors({});
       fetchAvailableServices();
     } catch (error) {
       console.error('Error saving service:', error);
@@ -334,16 +402,31 @@ function ServiceRequests() {
     }
   };
   
-  const handleDeleteService = async (serviceId) => {
-    if (window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
-      try {
-        await deleteDoc(doc(db, 'available_services', serviceId));
-        toast.success('Service deleted successfully!');
-        fetchAvailableServices();
-      } catch (error) {
-        console.error('Error deleting service:', error);
-        toast.error('Error deleting service: ' + error.message);
-      }
+  const handleShowDeleteConfirmation = (service) => {
+    setServiceToDelete(service);
+    setIsConfirmDeleteModalOpen(true);
+  };
+  
+  const handleCancelDelete = () => {
+    setServiceToDelete(null);
+    setIsConfirmDeleteModalOpen(false);
+  };
+  
+  const handleDeleteService = async () => {
+    if (!serviceToDelete || !serviceToDelete.id) {
+      setIsConfirmDeleteModalOpen(false);
+      return;
+    }
+    
+    try {
+      await deleteDoc(doc(db, 'available_services', serviceToDelete.id));
+      toast.success('Service deleted successfully!');
+      fetchAvailableServices();
+      setIsConfirmDeleteModalOpen(false);
+      setServiceToDelete(null);
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast.error('Error deleting service: ' + error.message);
     }
   };
   
@@ -585,107 +668,137 @@ const formatTime = (timestamp) => {
           />
           <CardBody>
             {loading ? (
-              <div className="p-4 text-center">Loading...</div>
+              <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <span className="ml-3 text-lg text-gray-600">Loading requests...</span>
+              </div>
             ) : (
-              <Table>
-                <TableHead>
-                  <tr>
-                    <TableHeaderCell>House Info</TableHeaderCell>
-                    <TableHeaderCell>Request Type</TableHeaderCell>
-                    <TableHeaderCell>Issue</TableHeaderCell>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Image
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Comments
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submitted On
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assign Staff
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </TableHead>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Resident Info
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Request Details
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Content
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Submitted
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Assignment
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
               <TableBody>
                 {filteredRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan="9" className="text-center text-gray-500">
-                      No requests found
+                    <TableCell colSpan="7" className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-lg font-medium text-gray-500">No service requests found</p>
+                        <p className="text-sm text-gray-400 mt-1">Try adjusting your filters</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell>
-                        <div className="text-sm text-gray-900">
-                          House #{request.house_no !== undefined ? request.house_no : 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-600 font-medium">
-                          {request.service_provider || request.request_type || 'N/A'}
+                    <TableRow key={request.id} className="hover:bg-gray-50">
+                      {/* Resident Info Column */}
+                      <TableCell className="px-6 py-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">House #{request.house_no !== undefined ? request.house_no : 'N/A'}</div>
+                            <div className="text-sm text-gray-500">{request.resident_name || 'Unnamed resident'}</div>
+                          </div>
                         </div>
                       </TableCell>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {request.type_of_request || request.request_type || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => handleShowIssueDetails(request.issue)}
-                          className="p-2 rounded-full hover:bg-gray-100"
-                          title="View Issue"
-                        >
-                          <span role="img" aria-label="View Issue" className="text-lg">📝</span>
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {request.image_url && request.image_url !== "null" && request.image_url !== "undefined" ? (
-                          <button
-                            onClick={() => handleShowImage(request.image_url)}
-                            className="p-2 rounded-full hover:bg-gray-100"
-                            title="View Image"
-                          >
-                            <span role="img" aria-label="View Image" className="text-lg">🖼️</span>
-                          </button>
-                        ) : (
-                          <div className="text-sm text-gray-500">None</div>
+                      
+                      {/* Request Details Column */}
+                      <TableCell className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{request.type_of_request || request.request_type || 'N/A'}</div>
+                        {request.scheduled_date && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Scheduled: {request.scheduled_date} {request.scheduled_time && `at ${request.scheduled_time}`}
+                          </div>
                         )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => handleShowComment(request.id)}
-                          className="p-2 rounded-full hover:bg-gray-100"
-                          title="View Comments"
-                        >
-                          <span role="img" aria-label="View Comments" className="text-lg">💬</span>
-                        </button>
-                      </td>
-                      <td className="px-6 py-4">
-                          <div className="flex flex-col text-sm text-gray-900">
-                                <div className="flex items-center">
-                                        <span className="mr-1">📅</span>
-                                              {formatDate(request.timestamp || request.created_at)}
-                            </div>
+                      </TableCell>
+                      
+                      {/* Content Column (Issue, Image, Comments) */}
+                      <TableCell className="px-6 py-4">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleShowIssueDetails(request.issue)}
+                            className="p-1.5 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors"
+                            title="View Issue Details"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          
+                          {request.image_url && request.image_url !== "null" && request.image_url !== "undefined" ? (
+                            <button
+                              onClick={() => handleShowImage(request.image_url)}
+                              className="p-1.5 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors"
+                              title="View Image"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <div className="text-sm text-gray-500">None</div>
+                          )}
+                          
+                          <button
+                            onClick={() => handleShowComment(request.id)}
+                            className="p-1.5 rounded-md bg-green-50 hover:bg-green-100 transition-colors"
+                            title="View Comments"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="px-6 py-4">
+                        <div className="flex flex-col text-sm text-gray-900">
+                          <div className="flex items-center">
+                            <span className="mr-1">📅</span>
+                            {formatDate(request.timestamp || request.created_at)}
+                          </div>
                           <div className="flex items-center mt-1">
                             <span className="mr-1">⏰</span>
-                              {formatTime(request.timestamp || request.created_at)}
-                              </div>
-                            </div>
-                                </td>
+                            {formatTime(request.timestamp || request.created_at)}
+                          </div>
+                        </div>
+                      </TableCell>
 
-                      <td className="px-6 py-4">
+                      <TableCell className="px-6 py-4">
                         <Badge variant={getStatusVariant(request.status)}>
                           {request.status || 'Pending'}
                         </Badge>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <select
                           value={request.staff || ''}
                           onChange={(e) => handleAssignStaff(request.id, e.target.value)}
@@ -698,8 +811,8 @@ const formatTime = (timestamp) => {
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <div className="flex space-x-2">
                           <button
                             disabled={!request.staff}
@@ -747,12 +860,13 @@ const formatTime = (timestamp) => {
                             </Button>
                           )}
                         </div>
-                      </td>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardBody>
         </Card>
@@ -760,69 +874,103 @@ const formatTime = (timestamp) => {
         {/* Available Services Management */}
         <Card className="mt-6">
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
               <h3 className="text-xl font-semibold">Available Services</h3>
               <Button 
                 variant="success" 
                 onClick={handleAddService}
+                className="flex items-center"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
                 Add New Service
               </Button>
             </div>
           </CardHeader>
           <CardBody>
-            {availableServices.length === 0 ? (
-              <p className="text-center py-4 text-gray-500">No services available.</p>
-            ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Service Name</TableHeaderCell>
-                    <TableHeaderCell>Description</TableHeaderCell>
-                    <TableHeaderCell>Est. Time</TableHeaderCell>
-                    <TableHeaderCell>Price</TableHeaderCell>
-                    <TableHeaderCell>Status</TableHeaderCell>
-                    <TableHeaderCell>Actions</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {availableServices.map((service) => (
-                    <TableRow key={service.id}>
-                      <TableCell>{service.name}</TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate">
-                          {service.description}
-                        </div>
-                      </TableCell>
-                      <TableCell>{service.estimated_time}</TableCell>
-                      <TableCell>{service.price}</TableCell>
-                      <TableCell>
-                        <Badge variant={service.status === 'active' ? 'success' : 'danger'}>
-                          {service.status === 'active' ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="info"
-                            size="sm"
-                            onClick={() => handleEditService(service)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDeleteService(service.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
+            <div className="overflow-x-auto">
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                  <span className="ml-2 text-gray-500">Loading services...</span>
+                </div>
+              ) : availableServices.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
+                  <p className="mt-2 text-gray-500 text-lg">No services available</p>
+                  <p className="mt-1 text-gray-400 text-sm">Click on "Add New Service" to create one</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Service Name</TableHeaderCell>
+                      <TableHeaderCell>Description</TableHeaderCell>
+                      <TableHeaderCell>Est. Time</TableHeaderCell>
+                      <TableHeaderCell>Price</TableHeaderCell>
+                      <TableHeaderCell>Status</TableHeaderCell>
+                      <TableHeaderCell>Actions</TableHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {availableServices.map((service) => (
+                      <TableRow key={service.id}>
+                        <TableCell className="font-medium">{service.name}</TableCell>
+                        <TableCell>
+                          <div className="max-w-xs truncate" title={service.description}>
+                            {service.description}
+                          </div>
+                        </TableCell>
+                        <TableCell>{service.estimated_time}</TableCell>
+                        <TableCell className="font-medium">{service.price}</TableCell>
+                        <TableCell>
+                          <Badge variant={service.status === 'active' ? 'success' : 'danger'}>
+                            {service.status === 'active' ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="info"
+                              size="sm"
+                              onClick={() => handleEditService(service)}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                              </svg>
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleShowDeleteConfirmation(service)}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+            
+            {availableServices.length > 0 && (
+              <div className="mt-4 text-sm text-gray-500 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span>Total services: {availableServices.length} ({availableServices.filter(s => s.status === 'active').length} active, {availableServices.filter(s => s.status === 'inactive').length} inactive)</span>
+              </div>
             )}
           </CardBody>
         </Card>
@@ -929,6 +1077,57 @@ const formatTime = (timestamp) => {
           </Dialog>
         </Transition>
 
+        {/* Delete Service Confirmation Modal */}
+        <Modal
+          isOpen={isConfirmDeleteModalOpen}
+          onClose={handleCancelDelete}
+          title="Delete Service"
+        >
+          <div className="p-4">
+            {serviceToDelete && (
+              <>
+                <div className="bg-red-50 p-4 rounded-md mb-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">Warning</h3>
+                      <div className="mt-2 text-sm text-red-700">
+                        <p>
+                          Are you sure you want to delete the service <strong>{serviceToDelete.name}</strong>? This action cannot be undone.
+                        </p>
+                        {serviceToDelete.status === 'active' && (
+                          <p className="mt-2">
+                            This service is currently active and may be in use by existing service requests.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelDelete}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteService}
+                  >
+                    Delete Service
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </Modal>
+        
         {/* Image Modal */}
         <Transition appear show={isImageModalOpen} as={Fragment}>
           <Dialog
@@ -1163,7 +1362,7 @@ const formatTime = (timestamp) => {
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Service Name
+                Service Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -1171,14 +1370,18 @@ const formatTime = (timestamp) => {
                 id="name"
                 value={serviceFormData.name}
                 onChange={handleServiceFormChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
+                  ${serviceFormErrors.name ? 'border-red-300' : 'border-gray-300'}`}
                 required
               />
+              {serviceFormErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{serviceFormErrors.name}</p>
+              )}
             </div>
             
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 name="description"
@@ -1186,27 +1389,41 @@ const formatTime = (timestamp) => {
                 rows={3}
                 value={serviceFormData.description}
                 onChange={handleServiceFormChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
+                  ${serviceFormErrors.description ? 'border-red-300' : 'border-gray-300'}`}
               />
+              {serviceFormErrors.description && (
+                <p className="mt-1 text-sm text-red-600">{serviceFormErrors.description}</p>
+              )}
             </div>
             
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                Price
+                Price <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="price"
-                id="price"
-                value={serviceFormData.price}
-                onChange={handleServiceFormChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">₱</span>
+                </div>
+                <input
+                  type="text"
+                  name="price"
+                  id="price"
+                  value={serviceFormData.price.replace('₱', '')}
+                  onChange={handleServiceFormChange}
+                  placeholder="0.00"
+                  className={`pl-7 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
+                    ${serviceFormErrors.price ? 'border-red-300' : 'border-gray-300'}`}
+                />
+              </div>
+              {serviceFormErrors.price && (
+                <p className="mt-1 text-sm text-red-600">{serviceFormErrors.price}</p>
+              )}
             </div>
             
             <div>
               <label htmlFor="estimated_time" className="block text-sm font-medium text-gray-700">
-                Estimated Time
+                Estimated Time <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -1215,8 +1432,12 @@ const formatTime = (timestamp) => {
                 value={serviceFormData.estimated_time}
                 onChange={handleServiceFormChange}
                 placeholder="e.g., 2-3 hours"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
+                  ${serviceFormErrors.estimated_time ? 'border-red-300' : 'border-gray-300'}`}
               />
+              {serviceFormErrors.estimated_time && (
+                <p className="mt-1 text-sm text-red-600">{serviceFormErrors.estimated_time}</p>
+              )}
             </div>
             
             <div>
@@ -1238,7 +1459,10 @@ const formatTime = (timestamp) => {
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 variant="outline"
-                onClick={() => setIsServiceModalOpen(false)}
+                onClick={() => {
+                  setIsServiceModalOpen(false);
+                  setServiceFormErrors({});
+                }}
               >
                 Cancel
               </Button>

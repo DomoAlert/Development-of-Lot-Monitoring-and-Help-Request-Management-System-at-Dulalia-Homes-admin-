@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
-import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, getDoc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, getDoc, where } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt } from 'react-icons/fa';
 
 function UserAccounts() {
   const [users, setUsers] = useState([]);
+  const [availableLots, setAvailableLots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingLots, setLoadingLots] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [nextHouseNumber, setNextHouseNumber] = useState(1);
+  const [selectedLot, setSelectedLot] = useState(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   
@@ -22,42 +24,146 @@ function UserAccounts() {
     lastName: '',
     username: '',
     email: '',
-    contactNumber: '', // Added contact number
-    house_no: 1,
+    contactNumber: '',
+    house_no: null,
+    block: '',
+    lot: '',
     role: 'Homeowner',
     status: 'Active',
     isActive: true,
-    recordStatus: 'Neutral', // Default record status
-    password: '', // Default password
-    fcmToken: '' // Empty token initially
+    recordStatus: 'Neutral',
+    password: '',
+    fcmToken: '',
+    houseModel: 'Standard'
   });
   
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch users and determine next house number
+  // Fetch users and available lots
   useEffect(() => {
     document.title = "Homeowner Accounts";
     fetchUsers();
-    determineNextHouseNumber();
+    fetchAvailableLots();
   }, []);
 
-  const determineNextHouseNumber = async () => {
+  // Blocks configuration - how many lots are in each block (same as in LotStatus.jsx)
+  const blockConfig = {
+    1: 20, // Block 1 has 20 lots
+    2: 25, // Block 2 has 25 lots
+    3: 15, // Block 3 has 15 lots
+    4: 22, // Block 4 has 22 lots
+    5: 18  // Block 5 has 18 lots
+  };
+  
+  // Fetch all available lots (vacant lots)
+  const fetchAvailableLots = async () => {
     try {
-      // Get the user with the highest house number
-      const q = query(collection(db, 'users'), orderBy('house_no', 'desc'), limit(1));
-      const querySnapshot = await getDocs(q);
+      setLoadingLots(true);
       
-      if (!querySnapshot.empty) {
-        const highestHouseNo = querySnapshot.docs[0].data().house_no || 0;
-        setNextHouseNumber(highestHouseNo + 1);
-        setFormData(prev => ({ ...prev, house_no: highestHouseNo + 1 }));
-      } else {
-        setNextHouseNumber(1);
-        setFormData(prev => ({ ...prev, house_no: 1 }));
+      // Create a structured array of all possible lots based on block configuration
+      const allLots = [];
+      
+      // Populate with empty lot data for all blocks and lots
+      Object.keys(blockConfig).forEach(blockNum => {
+        for (let i = 1; i <= blockConfig[blockNum]; i++) {
+          // Create a unique lot identifier (Block-LotNumber)
+          const blockLotId = `B${blockNum}-L${i.toString().padStart(2, '0')}`;
+          
+          // Calculate house number as BlockNumber * 100 + LotNumber
+          const houseNo = (parseInt(blockNum) * 100) + i;
+          
+          allLots.push({
+            id: blockLotId,
+            block: parseInt(blockNum),
+            lot: i,
+            house_no: houseNo,
+            status: 'Vacant',
+            house_owner: null,
+            owner_id: null,
+            houseModel: 'Standard',
+            created_at: null,
+            displayName: `Block ${blockNum}, Lot ${i} (House #${houseNo})`
+          });
+        }
+      });
+      
+      // First check the dedicated lots collection in Firebase
+      try {
+        const lotsQuery = query(collection(db, 'lots'));
+        const lotsSnapshot = await getDocs(lotsQuery);
+        
+        // Update lots with information from lots collection
+        lotsSnapshot.docs.forEach(doc => {
+          const lotData = doc.data();
+          const houseNo = lotData.house_no;
+          
+          if (houseNo) {
+            const lotIndex = allLots.findIndex(l => l.house_no === houseNo);
+            if (lotIndex !== -1) {
+              allLots[lotIndex] = {
+                ...allLots[lotIndex],
+                status: lotData.status || 'Vacant',
+                house_owner: lotData.house_owner || null,
+                owner_id: lotData.owner_id || null,
+                houseModel: lotData.houseModel || 'Standard',
+                description: lotData.description,
+                price: lotData.price,
+                size: lotData.size,
+                created_at: lotData.created_at
+              };
+            }
+          }
+        });
+      } catch (error) {
+        console.log('Checking lots collection:', error);
       }
+      
+      // Also fetch users with house numbers to ensure data consistency
+      const usersQuery = query(collection(db, 'users'));
+      const querySnapshot = await getDocs(usersQuery);
+      
+      // Create a map of house numbers to user data for quick lookup
+      const userMap = {};
+      querySnapshot.docs.forEach(doc => {
+        const userData = doc.data();
+        if (userData.house_no) {
+          userMap[userData.house_no] = {
+            owner_id: doc.id,
+            house_owner: userData.username || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Unknown',
+            houseModel: userData.houseModel || 'Standard'
+          };
+        }
+      });
+      
+      // Update lots with user data if needed (this ensures data consistency)
+      for (let lot of allLots) {
+        if (userMap[lot.house_no]) {
+          // If a user has this house number but the lot isn't already marked as occupied
+          if (lot.status !== 'Occupied') {
+            lot.house_owner = userMap[lot.house_no].house_owner;
+            lot.owner_id = userMap[lot.house_no].owner_id;
+            lot.status = 'Occupied';
+            lot.houseModel = userMap[lot.house_no].houseModel;
+          }
+        }
+      }
+      
+      // Filter out lots that are already occupied, reserved or for sale
+      const vacantLots = allLots.filter(lot => 
+        lot.status === 'Vacant' || !lot.status
+      );
+      
+      // Add displayName property to each lot for the dropdown
+      vacantLots.forEach(lot => {
+        lot.displayName = `Block ${lot.block}, Lot ${lot.lot} (House #${lot.house_no})`;
+      });
+      
+      setAvailableLots(vacantLots);
     } catch (error) {
-      console.error("Error determining next house number:", error);
-      toast.error('Error determining next house number');
+      console.error("Error fetching available lots:", error);
+      toast.error('Error fetching available lots');
+    } finally {
+      setLoadingLots(false);
     }
   };
 
@@ -81,6 +187,21 @@ function UserAccounts() {
     e.preventDefault();
     setFormSubmitting(true);
     
+    if (!formData.house_no && selectedLot) {
+      setFormData({
+        ...formData, 
+        house_no: selectedLot.house_no,
+        block: selectedLot.block,
+        lot: selectedLot.lot
+      });
+    }
+    
+    if (!formData.house_no && !selectedLot) {
+      toast.error('Please select a lot for this homeowner');
+      setFormSubmitting(false);
+      return;
+    }
+    
     // Generate email from username if not provided
     const userEmail = formData.email || `${formData.username}@example.com`;
     const userPassword = formData.password || formData.username; // Default password is username
@@ -97,23 +218,45 @@ function UserAccounts() {
         username: formData.username,
         email: userEmail,
         contactNumber: formData.contactNumber,
-        house_no: formData.house_no,
+        house_no: selectedLot.house_no,
+        block: selectedLot.block,
+        lot: selectedLot.lot,
         role: 'Homeowner',
         status: 'Active',
         isActive: true,
-        recordStatus: 'Neutral', // Default record status
-        password: userPassword, // Storing for reference (not recommended in production)
+        recordStatus: 'Neutral',
+        password: userPassword,
         fcmToken: '',
-        uid: uid, // Still include uid in the document for reference
+        houseModel: formData.houseModel || 'Standard',
+        uid: uid,
         created_at: serverTimestamp(),
         last_updated: serverTimestamp()
       });
       
-      toast.success('User added successfully');
+      // Also update the lot in the 'lots' collection to mark it as occupied
+      try {
+        const lotDocRef = doc(db, 'lots', selectedLot.id);
+        await setDoc(lotDocRef, {
+          house_no: selectedLot.house_no,
+          block: selectedLot.block,
+          lot: selectedLot.lot,
+          status: 'Occupied',
+          owner_id: uid,
+          house_owner: formData.username || `${formData.firstName} ${formData.lastName}`.trim(),
+          houseModel: formData.houseModel || 'Standard',
+          last_updated: serverTimestamp(),
+          created_at: serverTimestamp()
+        }, { merge: true });
+      } catch (error) {
+        console.error('Error updating lot status:', error);
+        // Continue even if this fails, as we've updated the user
+      }
+      
+      toast.success('User added successfully and lot assigned');
       setShowForm(false);
       resetForm();
       fetchUsers();
-      determineNextHouseNumber(); // Update next house number
+      fetchAvailableLots(); // Refresh available lots
     } catch (error) {
       // Handle different Firebase Auth errors
       if (error.code === 'auth/email-already-in-use') {
@@ -140,18 +283,70 @@ function UserAccounts() {
       // Generate email from username if not provided
       const userEmail = formData.email || `${formData.username}@example.com`;
       
+      // Check if the lot assignment has changed
+      const lotChanged = 
+        selectedUser.house_no !== formData.house_no ||
+        selectedUser.block !== formData.block ||
+        selectedUser.lot !== formData.lot;
+      
+      // Update the user document
       await updateDoc(doc(db, 'users', selectedUser.id), {
         ...formData,
         email: userEmail,
         last_updated: serverTimestamp()
       });
       
-      toast.success('User updated successfully');
+      // If lot assignment changed, update the lots collection
+      if (lotChanged) {
+        try {
+          // Handle the old lot - mark it as vacant
+          if (selectedUser.house_no) {
+            const oldBlockNum = Math.floor(selectedUser.house_no / 100);
+            const oldLotNum = selectedUser.house_no % 100;
+            const oldLotId = `B${oldBlockNum}-L${oldLotNum.toString().padStart(2, '0')}`;
+            
+            await setDoc(doc(db, 'lots', oldLotId), {
+              house_no: selectedUser.house_no,
+              block: oldBlockNum,
+              lot: oldLotNum,
+              status: 'Vacant',
+              owner_id: null,
+              house_owner: null,
+              last_updated: serverTimestamp()
+            }, { merge: true });
+          }
+          
+          // Handle the new lot - mark it as occupied
+          if (formData.house_no) {
+            const newLotId = `B${formData.block}-L${formData.lot.toString().padStart(2, '0')}`;
+            
+            await setDoc(doc(db, 'lots', newLotId), {
+              house_no: formData.house_no,
+              block: formData.block,
+              lot: formData.lot,
+              status: 'Occupied',
+              owner_id: selectedUser.id,
+              house_owner: formData.username || `${formData.firstName} ${formData.lastName}`.trim(),
+              houseModel: formData.houseModel || 'Standard',
+              last_updated: serverTimestamp()
+            }, { merge: true });
+          }
+          
+          toast.success('User and lot assignment updated successfully');
+        } catch (error) {
+          console.error('Error updating lot status:', error);
+          toast.warning('User updated but there was an issue updating lot status');
+        }
+      } else {
+        toast.success('User updated successfully');
+      }
+      
       setShowUserDetails(false);
       setIsEditing(false);
       setSelectedUser(null);
       resetForm();
       fetchUsers();
+      fetchAvailableLots(); // Refresh available lots
     } catch (error) {
       toast.error('Error updating user: ' + error.message);
     } finally {
@@ -237,18 +432,24 @@ function UserAccounts() {
   const handleEditUser = () => {
     if (!selectedUser) return;
     
+    // Make sure we have the latest lots data
+    fetchAvailableLots();
+    
     setFormData({
       firstName: selectedUser.firstName || '',
       lastName: selectedUser.lastName || '',
       username: selectedUser.username || '',
       email: selectedUser.email || '',
-      contactNumber: selectedUser.contactNumber || '', // Added contact number
-      house_no: selectedUser.house_no || 1,
+      contactNumber: selectedUser.contactNumber || '',
+      house_no: selectedUser.house_no || null,
+      block: selectedUser.block || '',
+      lot: selectedUser.lot || '',
       role: selectedUser.role || 'Homeowner',
       status: selectedUser.status || 'Active',
       isActive: selectedUser.isActive !== undefined ? selectedUser.isActive : true,
       password: selectedUser.password || '',
-      fcmToken: selectedUser.fcmToken || ''
+      fcmToken: selectedUser.fcmToken || '',
+      houseModel: selectedUser.houseModel || 'Standard'
     });
     
     setIsEditing(true);
@@ -269,14 +470,19 @@ function UserAccounts() {
       lastName: '',
       username: '',
       email: '',
-      contactNumber: '', // Added contact number
-      house_no: nextHouseNumber,
+      contactNumber: '',
+      house_no: null,
+      block: '',
+      lot: '',
       role: 'Homeowner',
       status: 'Active',
       isActive: true,
+      recordStatus: 'Neutral',
       password: '',
-      fcmToken: ''
+      fcmToken: '',
+      houseModel: 'Standard'
     });
+    setSelectedLot(null);
   };
 
   const closeUserDetails = () => {
@@ -332,142 +538,280 @@ function UserAccounts() {
 
         {/* Add User Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Add New User</h2>
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h2 className="text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
                 <button 
                   onClick={() => setShowForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 focus:outline-none"
                 >
-                  <FaTimes />
+                  <FaTimes className="h-5 w-5" />
                 </button>
               </div>
-              <div className="flex justify-between items-start">
-                <div className="user-details flex-1">
-                  <form onSubmit={handleAddUser} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          First Name
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.firstName}
-                          onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                          className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
+              
+              <div className="flex flex-col md:flex-row p-6">
+                {/* Form Section */}
+                <div className="user-details flex-1 md:pr-6">
+                  <form onSubmit={handleAddUser} className="space-y-5">
+                    <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
+                      <h3 className="font-medium text-blue-800 mb-2 flex items-center">
+                        <FaUser className="mr-2" /> Personal Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            First Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            placeholder="John"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Last Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            placeholder="Doe"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.lastName}
-                          onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                          className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
+                    </div>
+                    
+                    <div className="bg-indigo-50 rounded-lg p-4 mb-6 border border-indigo-100">
+                      <h3 className="font-medium text-indigo-800 mb-2 flex items-center">
+                        <i className="fas fa-user-lock mr-2"></i> Account Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Username *
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500 sm:text-sm">@</span>
+                            </div>
+                            <input
+                              type="text"
+                              required
+                              value={formData.username}
+                              onChange={handleUsernameChange}
+                              className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                              placeholder="johndoe"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Email
+                            </label>
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({...formData, email: e.target.value})}
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                              placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Auto-generated if left empty
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Password
+                            </label>
+                            <input
+                              type="password"
+                              value={formData.password}
+                              onChange={(e) => setFormData({...formData, password: e.target.value})}
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                              placeholder="Leave blank to use username"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Default: same as username
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Contact Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.contactNumber}
+                            onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            placeholder="e.g. 09123456789"
+                          />
+                        </div>
                       </div>
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.username}
-                        onChange={handleUsernameChange}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
+                    <div className="bg-amber-50 rounded-lg p-4 mb-6 border border-amber-100">
+                      <h3 className="font-medium text-amber-800 mb-2 flex items-center">
+                        <FaMapMarkerAlt className="mr-2" /> Property Assignment
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Select Available Lot *
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <FaMapMarkerAlt className="text-amber-600" />
+                            </div>
+                            {loadingLots ? (
+                              <div className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
+                                <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
+                                Loading available lots...
+                              </div>
+                            ) : (
+                              <select
+                                value={selectedLot ? selectedLot.id : ""}
+                                onChange={(e) => {
+                                  const selected = availableLots.find(lot => lot.id === e.target.value);
+                                  setSelectedLot(selected);
+                                  if (selected) {
+                                    setFormData({
+                                      ...formData,
+                                      house_no: selected.house_no,
+                                      block: selected.block,
+                                      lot: selected.lot
+                                    });
+                                  }
+                                }}
+                                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
+                                required
+                              >
+                                <option value="">-- Select a lot --</option>
+                                {availableLots.map(lot => (
+                                  <option key={lot.id} value={lot.id}>
+                                    {lot.displayName}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Only showing vacant lots that are available for assignment
+                          </p>
+                          
+                          {selectedLot && (
+                            <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-amber-700">Selected Lot Details:</span>
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                                  #{selectedLot.house_no}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-sm">
+                                <div className="flex items-center text-gray-700">
+                                  <FaHome className="mr-1 text-amber-500" />
+                                  Block {selectedLot.block}, Lot {selectedLot.lot}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            House Model
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <i className="fas fa-home text-amber-600"></i>
+                            </div>
+                            <select
+                              value={formData.houseModel}
+                              onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
+                              className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
+                            >
+                              <option value="Standard">Standard Model</option>
+                              <option value="Premium">Premium Model</option>
+                              <option value="Deluxe">Deluxe Model</option>
+                              <option value="Executive">Executive Model</option>
+                              <option value="Custom">Custom Build</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        If left empty, email will be automatically generated from username
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        House Number
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        value={formData.house_no}
-                        readOnly
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-50 focus:outline-none"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        House number is automatically assigned
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.contactNumber}
-                        onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="e.g. 09123456789"
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        type="button"
-                        disabled={formSubmitting}
-                        onClick={() => setShowForm(false)}
-                        className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={formSubmitting}
-                        className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
-                      >
-                        {formSubmitting ? (
-                          <>
-                            <FaSpinner className="animate-spin mr-2" />
-                            Processing...
-                          </>
-                        ) : (
-                          'Add User'
-                        )}
-                      </button>
+                    <div className="bg-gray-50 rounded-lg p-4 mt-4 border border-gray-200">
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          type="button"
+                          disabled={formSubmitting}
+                          onClick={() => setShowForm(false)}
+                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm"
+                        >
+                          <i className="fas fa-times mr-2"></i>
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={formSubmitting}
+                          className="px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors duration-150 ease-in-out shadow-sm"
+                        >
+                          {formSubmitting ? (
+                            <>
+                              <FaSpinner className="animate-spin mr-2" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-user-plus mr-2"></i>
+                              Create Homeowner Account
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>
-                <div className="user-preview bg-white p-4 rounded-lg shadow-md w-64 ml-4">
+                <div className="user-preview hidden md:block bg-white p-6 rounded-lg shadow-md md:w-72 lg:w-80 ml-4 border border-gray-100">
                   <div className="text-center">
-                    <div className="w-20 h-20 mx-auto bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-2xl font-bold mb-2">
+                    <h4 className="text-sm uppercase tracking-wide text-gray-500 mb-4">Account Preview</h4>
+                    <div className="w-24 h-24 mx-auto bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-3 shadow-md">
                       {formData.firstName && formData.lastName ? formData.firstName[0] + formData.lastName[0] : 'U'}
                     </div>
-                    <h3 className="font-semibold text-lg">{formData.firstName} {formData.lastName}</h3>
-                    <p className="text-sm text-gray-500">House #{formData.house_no}</p>
-                    <div className="mt-3 flex justify-center">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${formData.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {formData.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                    <h3 className="font-semibold text-xl">{formData.firstName} {formData.lastName}</h3>
+                    <p className="text-sm text-gray-500 mb-3">@{formData.username || 'username'}</p>
+                    
+                    <div className="border-t border-gray-100 pt-4 mt-3">
+                      <div className="flex items-center justify-center space-x-2 mb-3">
+                        <FaHome className="text-amber-500" />
+                        <p className="text-sm font-medium">
+                          {selectedLot ? `Block ${selectedLot.block}, Lot ${selectedLot.lot}` : 'No lot selected'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-amber-50 rounded-lg px-3 py-2 mb-4">
+                        <p className="text-sm text-center font-medium text-amber-800">
+                          House #{formData.house_no || '---'}
+                        </p>
+                      </div>
+                      
+                      <div className="mt-2 flex justify-center">
+                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 shadow-sm">
+                          Active Homeowner
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -521,9 +865,19 @@ function UserAccounts() {
                     <p className="font-medium">{selectedUser.email || 'N/A'}</p>
                   </div>
                   
-                  <div>
-                    <p className="text-sm text-gray-500">House Number</p>
-                    <p className="font-medium">{selectedUser.house_no || 'N/A'}</p>
+                  <div className="p-2 bg-amber-50 rounded-md">
+                    <p className="text-sm text-gray-700">Property Details</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <div>
+                        <p className="font-medium">House #{selectedUser.house_no || 'N/A'}</p>
+                        {selectedUser.block && selectedUser.lot && (
+                          <p className="text-sm text-gray-600">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
+                        )}
+                      </div>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                        {selectedUser.houseModel || 'Standard'}
+                      </span>
+                    </div>
                   </div>
                   
                   <div>
@@ -620,17 +974,56 @@ function UserAccounts() {
                   
                   <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
-    House Number
+    Property Assignment
   </label>
-  <input
-    type="number"
-    value={formData.house_no}
-    readOnly
-    className="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-50 focus:outline-none"
-  />
-  <p className="text-xs text-gray-500 mt-1">
-    House number cannot be changed
-  </p>
+  <div className="p-3 bg-amber-50 rounded-md border border-amber-100">
+    <div className="flex items-center justify-between mb-1">
+      <span className="text-sm font-medium text-amber-700">
+        Current House Number:
+      </span>
+      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+        #{formData.house_no}
+      </span>
+    </div>
+    <div className="text-sm text-gray-600 mb-2">
+      Block {formData.block}, Lot {formData.lot}
+    </div>
+    
+    <div className="mt-3">
+      <label className="block text-xs font-medium text-gray-700 mb-1">
+        Change Lot Assignment
+      </label>
+      <select
+        value=""
+        onChange={(e) => {
+          const selected = availableLots.find(lot => lot.id === e.target.value);
+          if (selected) {
+            setFormData({
+              ...formData,
+              house_no: selected.house_no,
+              block: selected.block,
+              lot: selected.lot
+            });
+          }
+        }}
+        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
+      >
+        <option value="">-- Keep current assignment --</option>
+        {loadingLots ? (
+          <option disabled>Loading available lots...</option>
+        ) : (
+          availableLots.map(lot => (
+            <option key={lot.id} value={lot.id}>
+              {lot.displayName}
+            </option>
+          ))
+        )}
+      </select>
+      <p className="text-xs text-gray-500 mt-1">
+        Only vacant lots are available for reassignment
+      </p>
+    </div>
+  </div>
 </div>
                   
                   <div>
@@ -709,85 +1102,167 @@ function UserAccounts() {
         )}
 
         {/* Users table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+              <i className="fas fa-users text-blue-500 mr-2"></i>
+              Homeowner Accounts
+              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
+                {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
+              </span>
+            </h2>
+          </div>
+        
           {loading ? (
             <div className="p-12 text-center">
-              <FaSpinner className="animate-spin text-primary mx-auto h-8 w-8 mb-4" />
-              <p className="text-gray-600">Loading users...</p>
+              <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-gray-600">Loading homeowner accounts...</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 border-collapse">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <FaUser className="text-blue-500" />
+                      <span>User</span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    House No.
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <FaHome className="text-amber-500" />
+                      <span>Property Details</span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-envelope text-blue-500"></i>
+                      <span>Email</span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-circle text-green-500"></i>
+                      <span>Status</span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Record Status
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-shield-alt text-purple-500"></i>
+                      <span>Record</span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-sliders-h text-gray-500"></i>
+                      <span>Actions</span>
+                    </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                      No users found
+                    <td colSpan="6" className="px-6 py-8 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <FaUser className="h-10 w-10 text-gray-200 mb-2" />
+                        <p className="text-gray-500 font-medium">No users found</p>
+                        <p className="text-gray-400 text-sm">Try adjusting your search criteria</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((user) => (
-                    <tr key={user.id} className={actionLoading === user.id ? "bg-gray-50" : ""}>
+                    <tr 
+                      key={user.id} 
+                      className={`${actionLoading === user.id ? "bg-gray-50" : ""} 
+                        hover:bg-blue-50/30 transition-colors duration-150
+                        ${user.status === 'Inactive' ? 'bg-red-50/20' : ''}`}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button 
                           onClick={() => handleViewUser(user)}
-                          className="flex items-center hover:text-primary"
+                          className="flex items-center hover:text-primary group"
                         >
-                          <div className="h-8 w-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-3">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200">
                             {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div className="ml-0">
-                            <div className="text-sm font-medium text-gray-900">
-                              {user.username || 'N/A'}
+                            <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                              @{user.username || 'N/A'}
                             </div>
                             <div className="text-xs text-gray-500">
                               {getFullName(user)}
                             </div>
+                            {user.contactNumber && (
+                              <div className="text-xs text-gray-400 flex items-center mt-1">
+                                <i className="fas fa-phone-alt mr-1 text-gray-300"></i>
+                                {user.contactNumber}
+                              </div>
+                            )}
                           </div>
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {user.house_no || 'N/A'}
+                        {user.house_no ? (
+                          <div className="flex flex-col">
+                            <div className="flex items-center mb-1">
+                              <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-sm">
+                                #{user.house_no}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                Block {user.block || Math.floor(user.house_no / 100)}
+                              </div>
+                              <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">
+                                Lot {user.lot || user.house_no % 100}
+                              </div>
+                            </div>
+                            {user.houseModel && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {user.houseModel} Model
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500 italic">No property assigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="bg-blue-50 rounded-full p-1 mr-2">
+                            <i className="fas fa-envelope text-blue-400 text-xs"></i>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-700">{user.email || 'N/A'}</div>
+                            <div className="text-xs text-gray-400">Account ID: {user.id?.substring(0, 8)}...</div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.email || 'N/A'}</div>
+                        <div className="flex items-center">
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            <span className={`mr-1 h-2 w-2 rounded-full ${
+                              user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
+                            }`}></span>
+                            {user.status || 'Active'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        <span className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
+                          user.recordStatus === 'Good' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                          user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                          'bg-gray-100 text-gray-800 border border-gray-200'
                         }`}>
-                          {user.status || 'Active'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
-                          user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                          <i className={`fas ${
+                            user.recordStatus === 'Good' ? 'fa-thumbs-up mr-1 text-green-600' : 
+                            user.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1 text-red-600' : 
+                            'fa-minus mr-1 text-gray-500'
+                          }`}></i>
                           {user.recordStatus || 'Neutral'}
                         </span>
                       </td>
@@ -797,41 +1272,60 @@ function UserAccounts() {
                             <FaSpinner className="animate-spin text-primary" />
                           </div>
                         ) : (
-                          <div className="flex flex-col space-y-2">
-                            <div className="flex space-x-2">
-                              <button 
-                                onClick={() => handleToggleStatus(user.id, user.status)}
-                                className="text-primary hover:text-blue-700"
-                              >
-                                Toggle Status
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                            <div className="flex space-x-2">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleViewUser(user)}
+                              className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors flex items-center"
+                            >
+                              <i className="fas fa-eye mr-1"></i>
+                              View
+                            </button>
+                            
+                            <button 
+                              onClick={() => handleToggleStatus(user.id, user.status)}
+                              className={`px-2 py-1 text-xs rounded border flex items-center ${
+                                user.status === 'Active' 
+                                ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                                : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                              }`}
+                            >
+                              <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
+                              {user.status === 'Active' ? 'Deactivate' : 'Activate'}
+                            </button>
+                            
+                            <div className="flex gap-1">
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Good')}
-                                className="text-green-600 hover:text-green-700 text-xs"
+                                className="p-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100"
+                                title="Mark Good Record"
                               >
-                                Mark Good
+                                <i className="fas fa-thumbs-up"></i>
                               </button>
-                              <button 
-                                onClick={() => handleSetRecordStatus(user.id, 'Bad')}
-                                className="text-red-600 hover:text-red-700 text-xs"
-                              >
-                                Mark Bad
-                              </button>
+                              
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
-                                className="text-gray-600 hover:text-gray-700 text-xs"
+                                className="p-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100"
+                                title="Reset Record Status"
                               >
-                                Reset
+                                <i className="fas fa-minus"></i>
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Bad')}
+                                className="p-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100"
+                                title="Mark Bad Record"
+                              >
+                                <i className="fas fa-thumbs-down"></i>
                               </button>
                             </div>
+                            
+                            <button 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                            >
+                              <i className="fas fa-trash-alt mr-1"></i>
+                              Delete
+                            </button>
                           </div>
                         )}
                       </td>
@@ -840,6 +1334,17 @@ function UserAccounts() {
                 )}
               </tbody>
             </table>
+          )}
+          
+          {!loading && filteredUsers.length > 0 && (
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                Showing {filteredUsers.length} homeowner account{filteredUsers.length !== 1 ? 's' : ''}
+              </div>
+              <div className="text-sm text-gray-500">
+                <span className="font-medium text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
+              </div>
+            </div>
           )}
         </div>
       </div>

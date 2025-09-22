@@ -32,18 +32,26 @@ function ServiceRequests() {
   
   // Service management state
   const [availableServices, setAvailableServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [isServiceManagementModalOpen, setIsServiceManagementModalOpen] = useState(false);
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
+  const [serviceStatusFilter, setServiceStatusFilter] = useState('all');
   const [serviceFormData, setServiceFormData] = useState({
     name: '',
     description: '',
     price: '',
     status: 'active',
-    estimated_time: ''
+    estimated_time: '',
+    category: 'general',
+    duration_unit: 'hours'
   });
   const [serviceFormErrors, setServiceFormErrors] = useState({});
   const [isEditingService, setIsEditingService] = useState(false);
   const [currentServiceId, setCurrentServiceId] = useState(null);
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
+  const [isConfirmStatusModalOpen, setIsConfirmStatusModalOpen] = useState(false);
+  const [isServiceTypeModalOpen, setIsServiceTypeModalOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState(null);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
@@ -61,6 +69,16 @@ function ServiceRequests() {
     staffName: '',
     issue: ''
   });
+  
+  // Service types management state
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [serviceTypeFormData, setServiceTypeFormData] = useState({
+    name: '',
+    description: ''
+  });
+  const [serviceTypeFormErrors, setServiceTypeFormErrors] = useState({});
+  const [isEditingServiceType, setIsEditingServiceType] = useState(false);
+  const [currentServiceTypeId, setCurrentServiceTypeId] = useState(null);
   
   // New service request state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -84,6 +102,7 @@ function ServiceRequests() {
     fetchStaffList();
     fetchAvailableServices();
     fetchHomeownerList();
+    fetchServiceTypes();
   }, []);
 
   const fetchRequests = async () => {
@@ -123,6 +142,31 @@ function ServiceRequests() {
     }
   };
   
+  // Fetch service types
+  const fetchServiceTypes = async () => {
+    try {
+      const serviceTypesSnapshot = await getDocs(collection(db, 'service_types'));
+      
+      // Sort service types by name
+      const serviceTypesData = serviceTypesSnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      
+      setServiceTypes(serviceTypesData);
+      
+      // Display a message if no service types found, suggesting to run the migration script
+      if (serviceTypesData.length === 0) {
+        console.log('No service types found in database. Consider running the migration script: npm run seed-service-types');
+      }
+    } catch (error) {
+      console.error('Error fetching service types:', error);
+      toast.error('Failed to load service types');
+    }
+  };
+
   // Fetch available services
   const fetchAvailableServices = async () => {
     try {
@@ -133,7 +177,10 @@ function ServiceRequests() {
       const servicesData = servicesSnapshot.docs
         .map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          // Ensure we have default values for any potentially missing fields
+          category: doc.data().category || 'general',
+          duration_unit: doc.data().duration_unit || 'hours'
         }))
         .sort((a, b) => {
           // First sort by status (active first)
@@ -145,12 +192,35 @@ function ServiceRequests() {
         });
       
       setAvailableServices(servicesData);
+      filterServices(servicesData, serviceSearchQuery, serviceStatusFilter);
     } catch (error) {
       console.error("Error fetching available services:", error);
       toast.error('Error fetching available services: ' + error.message);
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Filter services based on search query and status filter
+  const filterServices = (services = availableServices, query = serviceSearchQuery, statusFilter = serviceStatusFilter) => {
+    let filtered = [...services];
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(service => service.status === statusFilter);
+    }
+    
+    // Apply search query filter
+    if (query) {
+      const lowercaseQuery = query.toLowerCase();
+      filtered = filtered.filter(service => 
+        service.name.toLowerCase().includes(lowercaseQuery) ||
+        service.description.toLowerCase().includes(lowercaseQuery) ||
+        service.category?.toLowerCase().includes(lowercaseQuery)
+      );
+    }
+    
+    setFilteredServices(filtered);
   };
   
   // Fetch homeowner list
@@ -180,7 +250,9 @@ function ServiceRequests() {
       description: '',
       price: '',
       status: 'active',
-      estimated_time: ''
+      estimated_time: '',
+      category: 'general',
+      duration_unit: 'hours'
     });
     setIsEditingService(false);
     setCurrentServiceId(null);
@@ -194,12 +266,20 @@ function ServiceRequests() {
       description: service.description || '',
       price: service.price || '',
       status: service.status || 'active',
-      estimated_time: service.estimated_time || ''
+      estimated_time: service.estimated_time || '',
+      category: service.category || 'general',
+      duration_unit: service.duration_unit || 'hours'
     });
-    setIsEditingService(true);
+    // Set to view-only mode
+    setIsEditingService(false);
     setCurrentServiceId(service.id);
     setServiceFormErrors({});
     setIsServiceModalOpen(true);
+  };
+  
+  const handleToggleServiceStatus = (service) => {
+    const newStatus = service.status === 'active' ? 'inactive' : 'active';
+    handleConfirmStatusChange(service.id, newStatus);
   };
   
   const handleServiceFormChange = (e) => {
@@ -215,6 +295,126 @@ function ServiceRequests() {
         ...prev,
         [name]: ''
       }));
+    }
+  };
+  
+  // Service Type Management Functions
+  const handleAddServiceType = () => {
+    setServiceTypeFormData({
+      name: '',
+      description: ''
+    });
+    setServiceTypeFormErrors({});
+    setIsEditingServiceType(false);
+    setCurrentServiceTypeId(null);
+    setIsServiceTypeModalOpen(true);
+  };
+  
+  const handleEditServiceType = (serviceType) => {
+    setServiceTypeFormData({
+      name: serviceType.name,
+      description: serviceType.description || ''
+    });
+    setServiceTypeFormErrors({});
+    setIsEditingServiceType(true);
+    setCurrentServiceTypeId(serviceType.id);
+    setIsServiceTypeModalOpen(true);
+  };
+  
+  const validateServiceTypeForm = () => {
+    const errors = {};
+    
+    if (!serviceTypeFormData.name.trim()) {
+      errors.name = 'Service type name is required';
+    }
+    
+    setServiceTypeFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
+  const handleServiceTypeFormChange = (e) => {
+    const { name, value } = e.target;
+    setServiceTypeFormData({
+      ...serviceTypeFormData,
+      [name]: value
+    });
+  };
+  
+  const handleServiceTypeFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateServiceTypeForm()) {
+      return;
+    }
+    
+    try {
+      if (isEditingServiceType) {
+        // Update existing service type
+        await updateDoc(doc(db, 'service_types', currentServiceTypeId), {
+          name: serviceTypeFormData.name.trim(),
+          description: serviceTypeFormData.description.trim(),
+          updatedAt: serverTimestamp()
+        });
+        
+        toast.success('Service type updated successfully');
+      } else {
+        // Add new service type
+        await addDoc(collection(db, 'service_types'), {
+          name: serviceTypeFormData.name.trim(),
+          description: serviceTypeFormData.description.trim(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        
+        toast.success('Service type added successfully');
+      }
+      
+      fetchServiceTypes();
+      setIsServiceTypeModalOpen(false);
+    } catch (error) {
+      console.error('Error saving service type:', error);
+      toast.error('Failed to save service type');
+    }
+  };
+  
+  const handleDeleteServiceType = async (serviceTypeId) => {
+    try {
+      await deleteDoc(doc(db, 'service_types', serviceTypeId));
+      toast.success('Service type deleted successfully');
+      fetchServiceTypes();
+    } catch (error) {
+      console.error('Error deleting service type:', error);
+      toast.error('Failed to delete service type');
+    }
+  };
+  
+  // Handle search and filter changes for services
+  const handleServiceSearchChange = (e) => {
+    const query = e.target.value;
+    setServiceSearchQuery(query);
+    filterServices(availableServices, query, serviceStatusFilter);
+  };
+  
+  const handleServiceStatusFilterChange = (e) => {
+    const filter = e.target.value;
+    setServiceStatusFilter(filter);
+    filterServices(availableServices, serviceSearchQuery, filter);
+  };
+  
+  // Handle service status change confirmation
+  const handleConfirmStatusChange = async (serviceId, newStatus) => {
+    try {
+      await updateDoc(doc(db, 'available_services', serviceId), {
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      });
+      
+      toast.success(`Service status updated to ${newStatus}`);
+      fetchAvailableServices();
+      setIsConfirmStatusModalOpen(false);
+    } catch (error) {
+      console.error('Error updating service status:', error);
+      toast.error('Error updating service status: ' + error.message);
     }
   };
   
@@ -239,6 +439,10 @@ function ServiceRequests() {
     
     if (!serviceFormData.estimated_time.trim()) {
       errors.estimated_time = 'Estimated time is required';
+    }
+    
+    if (!serviceFormData.category.trim()) {
+      errors.category = 'Category is required';
     }
     
     setServiceFormErrors(errors);
@@ -375,9 +579,16 @@ function ServiceRequests() {
         ? serviceFormData.price 
         : `₱${parseFloat(serviceFormData.price.replace(/[^\d.-]/g, '')).toFixed(2)}`;
       
+      // Format estimated time with duration unit if not already included
+      let formattedTime = serviceFormData.estimated_time;
+      if (!formattedTime.includes(serviceFormData.duration_unit)) {
+        formattedTime = `${formattedTime} ${serviceFormData.duration_unit}`;
+      }
+      
       const serviceData = {
         ...serviceFormData,
         price: formattedPrice,
+        estimated_time: formattedTime,
         updatedAt: serverTimestamp()
       };
       
@@ -633,10 +844,15 @@ const formatTime = (timestamp) => {
             className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">All Request Types</option>
-            <option value="Repair Request">Repair Request</option>
-            <option value="Plumbing Repair">Plumbing Repair</option>
-            <option value="Street Sweeper">Cleaning Request</option>
-            <option value="Electrician">Electrical Repair</option>
+            {serviceTypes.map((type) => (
+              <option key={type.id} value={type.name}>
+                {type.name}
+              </option>
+            ))}
+            {!serviceTypes.some(t => t.name === 'Repair Request') && <option value="Repair Request">Repair Request</option>}
+            {!serviceTypes.some(t => t.name === 'Plumbing Repair') && <option value="Plumbing Repair">Plumbing Repair</option>}
+            {!serviceTypes.some(t => t.name === 'Cleaning Request') && <option value="Street Sweeper">Cleaning Request</option>}
+            {!serviceTypes.some(t => t.name === 'Electrical Repair') && <option value="Electrician">Electrical Repair</option>}
           </select>
           <select
             value={statusFilter}
@@ -873,21 +1089,55 @@ const formatTime = (timestamp) => {
         
         {/* Available Services Management */}
         <Card className="mt-6">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
-              <h3 className="text-xl font-semibold">Available Services</h3>
-              <Button 
-                variant="success" 
-                onClick={handleAddService}
-                className="flex items-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                Add New Service
-              </Button>
+          <CardHeader 
+            title="Available Services"
+            actions={
+              <div className="flex space-x-2">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setIsServiceTypeModalOpen(true)}
+                  className="flex items-center"
+                  size="sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Manage Service Types
+                </Button>
+              </div>
+            }
+          />
+          
+          {/* Services Search and Filter */}
+          <div className="px-6 py-2 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={serviceSearchQuery}
+                  onChange={handleServiceSearchChange}
+                  placeholder="Search services..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <select
+                  value={serviceStatusFilter}
+                  onChange={handleServiceStatusFilterChange}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="all">All Services</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+              </div>
             </div>
-          </CardHeader>
+          </div>
           <CardBody>
             <div className="overflow-x-auto">
               {loading ? (
@@ -901,13 +1151,22 @@ const formatTime = (timestamp) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                   </svg>
                   <p className="mt-2 text-gray-500 text-lg">No services available</p>
-                  <p className="mt-1 text-gray-400 text-sm">Click on "Add New Service" to create one</p>
+                  <p className="mt-1 text-gray-400 text-sm">Contact the system administrator to add services</p>
+                </div>
+              ) : filteredServices.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p className="mt-2 text-gray-500 text-lg">No matching services found</p>
+                  <p className="mt-1 text-gray-400 text-sm">Try adjusting your search or filter criteria</p>
                 </div>
               ) : (
                 <Table>
                   <TableHead>
                     <TableRow>
                       <TableHeaderCell>Service Name</TableHeaderCell>
+                      <TableHeaderCell>Category</TableHeaderCell>
                       <TableHeaderCell>Description</TableHeaderCell>
                       <TableHeaderCell>Est. Time</TableHeaderCell>
                       <TableHeaderCell>Price</TableHeaderCell>
@@ -916,9 +1175,14 @@ const formatTime = (timestamp) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {availableServices.map((service) => (
+                    {filteredServices.map((service) => (
                       <TableRow key={service.id}>
                         <TableCell className="font-medium">{service.name}</TableCell>
+                        <TableCell>
+                          <span className="px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-800 capitalize">
+                            {service.category || 'general'}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <div className="max-w-xs truncate" title={service.description}>
                             {service.description}
@@ -927,7 +1191,11 @@ const formatTime = (timestamp) => {
                         <TableCell>{service.estimated_time}</TableCell>
                         <TableCell className="font-medium">{service.price}</TableCell>
                         <TableCell>
-                          <Badge variant={service.status === 'active' ? 'success' : 'danger'}>
+                          <Badge 
+                            variant={service.status === 'active' ? 'success' : 'danger'}
+                            className="cursor-pointer"
+                            onClick={() => handleToggleServiceStatus(service)}
+                          >
                             {service.status === 'active' ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
@@ -942,18 +1210,7 @@ const formatTime = (timestamp) => {
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                               </svg>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => handleShowDeleteConfirmation(service)}
-                              className="flex items-center"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              Delete
+                              View
                             </Button>
                           </div>
                         </TableCell>
@@ -965,11 +1222,36 @@ const formatTime = (timestamp) => {
             </div>
             
             {availableServices.length > 0 && (
-              <div className="mt-4 text-sm text-gray-500 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                <span>Total services: {availableServices.length} ({availableServices.filter(s => s.status === 'active').length} active, {availableServices.filter(s => s.status === 'inactive').length} inactive)</span>
+              <div className="mt-4 text-sm text-gray-500 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center mb-2 sm:mb-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span>
+                    Total services: {availableServices.length} ({availableServices.filter(s => s.status === 'active').length} active, {availableServices.filter(s => s.status === 'inactive').length} inactive)
+                  </span>
+                </div>
+                
+                {serviceSearchQuery || serviceStatusFilter !== 'all' ? (
+                  <div className="flex items-center text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+                    </svg>
+                    <span>Showing {filteredServices.length} of {availableServices.length} services</span>
+                    {(serviceSearchQuery || serviceStatusFilter !== 'all') && (
+                      <button 
+                        className="ml-2 text-xs underline hover:text-blue-800"
+                        onClick={() => {
+                          setServiceSearchQuery('');
+                          setServiceStatusFilter('all');
+                          filterServices(availableServices, '', 'all');
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                ) : null}
               </div>
             )}
           </CardBody>
@@ -1357,7 +1639,7 @@ const formatTime = (timestamp) => {
         <Modal
           isOpen={isServiceModalOpen}
           onClose={() => setIsServiceModalOpen(false)}
-          title={isEditingService ? "Edit Service" : "Add New Service"}
+          title="View Service"
         >
           <div className="space-y-4">
             <div>
@@ -1369,10 +1651,9 @@ const formatTime = (timestamp) => {
                 name="name"
                 id="name"
                 value={serviceFormData.name}
-                onChange={handleServiceFormChange}
-                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
-                  ${serviceFormErrors.name ? 'border-red-300' : 'border-gray-300'}`}
-                required
+                disabled
+                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                readOnly
               />
               {serviceFormErrors.name && (
                 <p className="mt-1 text-sm text-red-600">{serviceFormErrors.name}</p>
@@ -1388,9 +1669,9 @@ const formatTime = (timestamp) => {
                 id="description"
                 rows={3}
                 value={serviceFormData.description}
-                onChange={handleServiceFormChange}
-                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
-                  ${serviceFormErrors.description ? 'border-red-300' : 'border-gray-300'}`}
+                disabled
+                readOnly
+                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
               {serviceFormErrors.description && (
                 <p className="mt-1 text-sm text-red-600">{serviceFormErrors.description}</p>
@@ -1410,10 +1691,9 @@ const formatTime = (timestamp) => {
                   name="price"
                   id="price"
                   value={serviceFormData.price.replace('₱', '')}
-                  onChange={handleServiceFormChange}
-                  placeholder="0.00"
-                  className={`pl-7 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
-                    ${serviceFormErrors.price ? 'border-red-300' : 'border-gray-300'}`}
+                  disabled
+                  readOnly
+                  className="pl-7 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
               {serviceFormErrors.price && (
@@ -1422,22 +1702,66 @@ const formatTime = (timestamp) => {
             </div>
             
             <div>
-              <label htmlFor="estimated_time" className="block text-sm font-medium text-gray-700">
-                Estimated Time <span className="text-red-500">*</span>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                Category <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="estimated_time"
-                id="estimated_time"
-                value={serviceFormData.estimated_time}
-                onChange={handleServiceFormChange}
-                placeholder="e.g., 2-3 hours"
-                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm 
-                  ${serviceFormErrors.estimated_time ? 'border-red-300' : 'border-gray-300'}`}
-              />
-              {serviceFormErrors.estimated_time && (
-                <p className="mt-1 text-sm text-red-600">{serviceFormErrors.estimated_time}</p>
+              <select
+                name="category"
+                id="category"
+                value={serviceFormData.category}
+                disabled
+                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="general">General</option>
+                {serviceTypes.map((type) => (
+                  <option key={type.id} value={type.name.toLowerCase()}>
+                    {type.name}
+                  </option>
+                ))}
+                <option value="other">Other</option>
+              </select>
+              {serviceFormErrors.category && (
+                <p className="mt-1 text-sm text-red-600">{serviceFormErrors.category}</p>
               )}
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="estimated_time" className="block text-sm font-medium text-gray-700">
+                  Estimated Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="estimated_time"
+                  id="estimated_time"
+                  value={serviceFormData.estimated_time}
+                  disabled
+                  readOnly
+                  placeholder="e.g., 2-3"
+                  className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+                {serviceFormErrors.estimated_time && (
+                  <p className="mt-1 text-sm text-red-600">{serviceFormErrors.estimated_time}</p>
+                )}
+              </div>
+              
+              <div>
+                <label htmlFor="duration_unit" className="block text-sm font-medium text-gray-700">
+                  Duration Unit
+                </label>
+                <select
+                  name="duration_unit"
+                  id="duration_unit"
+                  value={serviceFormData.duration_unit}
+                  disabled
+                  className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                >
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                </select>
+              </div>
             </div>
             
             <div>
@@ -1448,29 +1772,26 @@ const formatTime = (timestamp) => {
                 name="status"
                 id="status"
                 value={serviceFormData.status}
-                onChange={handleServiceFormChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                disabled
+                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Active services can be requested by homeowners, inactive services will not appear in their service request options.
+              </p>
             </div>
             
             <div className="flex justify-end space-x-3 pt-4">
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={() => {
                   setIsServiceModalOpen(false);
                   setServiceFormErrors({});
                 }}
               >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSaveService}
-              >
-                {isEditingService ? "Update Service" : "Add Service"}
+                Close
               </Button>
             </div>
           </div>
@@ -1538,12 +1859,11 @@ const formatTime = (timestamp) => {
                 required
               >
                 <option value="">Select request type</option>
-                <option value="Repair Request">Repair Request</option>
-                <option value="Plumbing Repair">Plumbing Repair</option>
-                <option value="Electrical Repair">Electrical Repair</option>
-                <option value="Cleaning Request">Cleaning Request</option>
-                <option value="Regular Service">Regular Service</option>
-                <option value="Emergency">Emergency</option>
+                {serviceTypes.map((type) => (
+                  <option key={type.id} value={type.name}>
+                    {type.name}
+                  </option>
+                ))}
               </select>
               {requestFormErrors.type_of_request && (
                 <p className="mt-1 text-sm text-red-500">{requestFormErrors.type_of_request}</p>
@@ -1640,6 +1960,174 @@ const formatTime = (timestamp) => {
               </Button>
             </div>
           </form>
+        </Modal>
+        
+        {/* Status Change Confirmation Modal */}
+        <Modal
+          isOpen={isConfirmStatusModalOpen}
+          onClose={() => setIsConfirmStatusModalOpen(false)}
+          title="Confirm Status Change"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              Are you sure you want to change this service's status?
+            </p>
+            {serviceToDelete && serviceToDelete.status === 'active' ? (
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-3">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">Important Note</h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p>Making this service inactive will hide it from homeowners requesting services. Any existing requests for this service will not be affected.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-3">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Information</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>Making this service active will allow homeowners to request it.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsConfirmStatusModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={serviceToDelete && serviceToDelete.status === 'active' ? 'danger' : 'success'}
+                onClick={() => handleConfirmStatusChange(
+                  serviceToDelete.id, 
+                  serviceToDelete.status === 'active' ? 'inactive' : 'active'
+                )}
+              >
+                {serviceToDelete && serviceToDelete.status === 'active' ? 'Make Inactive' : 'Make Active'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Service Type Management Modal */}
+        <Modal
+          isOpen={isServiceTypeModalOpen}
+          onClose={() => setIsServiceTypeModalOpen(false)}
+          title={isEditingServiceType ? "Edit Service Type" : "Add New Service Type"}
+        >
+          <form onSubmit={handleServiceTypeFormSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Service Type Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={serviceTypeFormData.name}
+                onChange={handleServiceTypeFormChange}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+                  serviceTypeFormErrors.name ? 'border-red-300' : ''
+                }`}
+                placeholder="Plumbing, Electrical, etc."
+              />
+              {serviceTypeFormErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{serviceTypeFormErrors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                name="description"
+                id="description"
+                rows={3}
+                value={serviceTypeFormData.description}
+                onChange={handleServiceTypeFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Optional description of this service type"
+              />
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setIsServiceTypeModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                {isEditingServiceType ? "Update" : "Add"} Service Type
+              </Button>
+            </div>
+          </form>
+          
+          {/* List of existing service types */}
+          {serviceTypes.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Existing Service Types</h3>
+              <div className="overflow-auto max-h-64 border rounded-md">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {serviceTypes.map((serviceType) => (
+                      <tr key={serviceType.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {serviceType.name}
+                          {serviceType.description && (
+                            <p className="text-xs text-gray-500 mt-1">{serviceType.description}</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEditServiceType(serviceType)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteServiceType(serviceType.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </AdminLayout>

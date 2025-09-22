@@ -16,6 +16,13 @@ const LotMonitoring = () => {
   const [selectedLot, setSelectedLot] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Add Lot Modal State
+  const [showAddLotModal, setShowAddLotModal] = useState(false);
+  const [newLotBlock, setNewLotBlock] = useState('1');
+  const [newLotNumber, setNewLotNumber] = useState('');
+  const [autoLotNumber, setAutoLotNumber] = useState(true);
+  const [isAddingLot, setIsAddingLot] = useState(false);
 
   // Valid statuses for lots
   const validStatuses = [
@@ -285,6 +292,97 @@ const LotMonitoring = () => {
     lotsByBlock[lot.block].push(lot);
   });
 
+  // Find the next available lot number for a given block
+  const findNextAvailableLotNumber = (blockNum) => {
+    // Get all lots from the selected block
+    const blockLots = lots.filter(lot => lot.block === parseInt(blockNum));
+    
+    // If no lots exist for this block, start with lot 1
+    if (blockLots.length === 0) {
+      return 1;
+    }
+    
+    // Get all lot numbers in use for this block
+    const usedLotNumbers = blockLots.map(lot => lot.lot);
+    
+    // Find the maximum lot number used in this block
+    const maxLotNumber = Math.max(...usedLotNumbers);
+    
+    // Check if there are any gaps in the sequence
+    for (let i = 1; i <= maxLotNumber; i++) {
+      if (!usedLotNumbers.includes(i)) {
+        return i; // Found a gap, return this lot number
+      }
+    }
+    
+    // No gaps found, return the next number after the maximum
+    return maxLotNumber + 1;
+  };
+  
+  // Function to add a new lot to Firebase
+  const handleAddNewLot = async () => {
+    setIsAddingLot(true);
+    
+    try {
+      // Determine the lot number to use
+      const lotNumber = autoLotNumber 
+        ? findNextAvailableLotNumber(newLotBlock) 
+        : parseInt(newLotNumber);
+      
+      // Ensure the lot number is valid
+      if (lotNumber <= 0 || lotNumber > blockConfig[newLotBlock]) {
+        toast.error(`Lot number must be between 1 and ${blockConfig[newLotBlock]}`);
+        setIsAddingLot(false);
+        return;
+      }
+      
+      // Check if this lot already exists
+      const blockNum = parseInt(newLotBlock);
+      const existingLot = lots.find(lot => lot.block === blockNum && lot.lot === lotNumber);
+      
+      if (existingLot) {
+        toast.error(`Block ${blockNum}, Lot ${lotNumber} already exists.`);
+        setIsAddingLot(false);
+        return;
+      }
+      
+      // Calculate the house number based on our formula
+      const houseNo = (blockNum * 100) + lotNumber;
+      
+      // Generate the lot document ID
+      const lotId = `B${blockNum}-L${lotNumber.toString().padStart(2, '0')}`;
+      
+      // Create the new lot in Firebase
+      const lotDocRef = doc(db, 'lots', lotId);
+      await setDoc(lotDocRef, {
+        house_no: houseNo,
+        block: blockNum,
+        lot: lotNumber,
+        status: 'Vacant',
+        owner_id: null,
+        house_owner: null,
+        houseModel: 'Standard',
+        created_at: serverTimestamp(),
+        last_updated: serverTimestamp()
+      });
+      
+      toast.success(`Successfully created new lot: Block ${blockNum}, Lot ${lotNumber} (House #${houseNo})`);
+      
+      // Close the modal and refresh the lots
+      setShowAddLotModal(false);
+      fetchLots();
+      
+      // Reset the form
+      setNewLotNumber('');
+      
+    } catch (error) {
+      console.error('Error adding new lot:', error);
+      toast.error('Failed to add new lot: ' + error.message);
+    } finally {
+      setIsAddingLot(false);
+    }
+  };
+  
   // Calculate statistics
   const stats = {
     total: lots.length,
@@ -367,8 +465,8 @@ const LotMonitoring = () => {
 
         {/* Search and Filter Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="relative w-full md:w-1/3">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FaSearch className="h-5 w-5 text-gray-400" />
               </div>
@@ -380,11 +478,12 @@ const LotMonitoring = () => {
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
-            <div className="flex flex-row gap-2">
+            
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={selectedFilter}
                 onChange={(e) => setSelectedFilter(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm w-32"
               >
                 {validStatuses.map((status) => (
                   <option key={status} value={status}>{status}</option>
@@ -393,9 +492,19 @@ const LotMonitoring = () => {
               
               <button
                 onClick={() => fetchLots()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
               >
+                <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
                 Refresh
+              </button>
+              
+              <button
+                onClick={() => setShowAddLotModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center"
+              >
+                <FaUserPlus className="mr-2" /> Add New Lot
               </button>
             </div>
           </div>
@@ -713,6 +822,113 @@ const LotMonitoring = () => {
                       'Assign Lot'
                     ) : (
                       'Save Changes'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Add New Lot Modal */}
+        {showAddLotModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Add New Lot
+                </h3>
+                <button
+                  onClick={() => setShowAddLotModal(false)}
+                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+              
+              {/* Modal Content */}
+              <div className="px-6 py-4">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Block
+                  </label>
+                  <select
+                    value={newLotBlock}
+                    onChange={(e) => setNewLotBlock(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    {Object.keys(blockConfig).map(blockNum => (
+                      <option key={blockNum} value={blockNum}>Block {blockNum}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Each block has a different layout and maximum number of lots.
+                  </p>
+                </div>
+                
+                <div className="mb-4">
+                  <div className="flex items-center">
+                    <input
+                      id="autoLotNumber"
+                      name="autoLotNumber"
+                      type="checkbox"
+                      checked={autoLotNumber}
+                      onChange={(e) => setAutoLotNumber(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="autoLotNumber" className="ml-2 block text-sm font-medium text-gray-700">
+                      Automatically assign lot number (recommended)
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    This will find the next available lot number in the selected block.
+                  </p>
+                </div>
+                
+                {!autoLotNumber && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Lot Number
+                    </label>
+                    <input
+                      type="number"
+                      value={newLotNumber}
+                      onChange={(e) => setNewLotNumber(e.target.value)}
+                      min="1"
+                      max={blockConfig[newLotBlock]}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder={`Enter lot number (1-${blockConfig[newLotBlock]})`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Manual lot number assignment may cause conflicts if not careful.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowAddLotModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddNewLot}
+                    disabled={isAddingLot || (!autoLotNumber && !newLotNumber)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+                      isAddingLot || (!autoLotNumber && !newLotNumber)
+                        ? 'bg-green-300 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                  >
+                    {isAddingLot ? (
+                      <>
+                        <span className="inline-block animate-spin mr-2">⟳</span>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create New Lot'
                     )}
                   </button>
                 </div>

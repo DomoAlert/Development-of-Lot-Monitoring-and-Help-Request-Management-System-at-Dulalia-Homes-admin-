@@ -96,6 +96,13 @@ function ServiceRequests() {
   });
   const [requestFormErrors, setRequestFormErrors] = useState({});
   const [homeownerList, setHomeownerList] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Function to manually refresh data
+  const refreshData = () => {
+    setLoading(true);
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     document.title = "Service Requests";
@@ -104,7 +111,7 @@ function ServiceRequests() {
     fetchAvailableServices();
     fetchHomeownerList();
     fetchServiceTypes();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchRequests = async () => {
     try {
@@ -870,6 +877,20 @@ const formatTime = (timestamp) => {
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-2">Manage maintenance and repair requests from residents</p>
             </div>
+            <button
+              onClick={refreshData}
+              disabled={loading}
+              className={`flex items-center px-4 py-2 rounded-lg text-sm ${
+                loading 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+              } transition-colors mt-4 md:mt-0`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {loading ? 'Refreshing...' : 'Refresh Data'}
+            </button>
             
             <Button 
               variant="secondary" 

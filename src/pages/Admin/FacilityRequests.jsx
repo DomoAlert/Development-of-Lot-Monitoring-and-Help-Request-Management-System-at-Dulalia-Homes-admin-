@@ -60,13 +60,20 @@ function FacilityRequests() {
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionUserId, setRejectionUserId] = useState(null);
   const [isFacilityListModalOpen, setIsFacilityListModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Feedback functionality removed
+
+  // Function to manually refresh data
+  const refreshData = () => {
+    setLoading(true);
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     document.title = "Facility Requests";
     fetchRequests();
     fetchFacilities();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleRejectionSubmit = async () => {
     if (!rejectionReason.trim()) {
@@ -683,13 +690,31 @@ function FacilityRequests() {
     <AdminLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            Facility Requests Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage community facilities and facility usage requests</p>
+          <div className="flex flex-wrap justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Facility Requests Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-2">Manage community facilities and facility usage requests</p>
+            </div>
+            <button
+              onClick={refreshData}
+              disabled={loading}
+              className={`flex items-center px-4 py-2 rounded-lg text-sm ${
+                loading 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+              } transition-colors mt-2 sm:mt-0`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {loading ? 'Refreshing...' : 'Refresh Data'}
+            </button>
+          </div>
         </div>
 
         {/* Facility Management */}

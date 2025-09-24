@@ -120,12 +120,17 @@ function ServiceRequests() {
       const requestsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         console.log('Request data:', data); // Debug log to see what's coming from Firebase
-        return {
+        
+        // Ensure we have a consistent field for resident name
+        // Prefer fullName if it exists, otherwise fall back to resident_name
+        const formattedData = {
           id: doc.id,
           ...data,
           // Convert Firestore timestamp to JS Date if needed
           timestamp: data.timestamp ? data.timestamp : null
         };
+        
+        return formattedData;
       });
       setRequests(requestsData);
     } catch (error) {
@@ -565,7 +570,8 @@ function ServiceRequests() {
       // Create request document
       const requestData = {
         house_no: requestFormData.house_no,
-        resident_name: selectedHomeowner ? selectedHomeowner.fullName : 'Unknown',
+        fullName: selectedHomeowner ? selectedHomeowner.fullName : 'Unknown',
+        resident_name: selectedHomeowner ? selectedHomeowner.fullName : 'Unknown', // Keep for backward compatibility
         resident_id: requestFormData.resident_name,
         type_of_request: requestFormData.type_of_request,
         issue: requestFormData.issue,
@@ -769,7 +775,7 @@ function ServiceRequests() {
     }
     
     setCurrentNotifyDetails({
-      residentName: request.resident_name || `${request.first_name || ''} ${request.last_name || ''}`.trim(),
+      residentName: request.fullName || request.resident_name || `${request.first_name || ''} ${request.last_name || ''}`.trim(),
       residentUid: request.uid || request.user_id || '',
       staffName: request.staff,
       issue: request.issue || ''
@@ -925,10 +931,6 @@ const formatTime = (timestamp) => {
                 {type.name}
               </option>
             ))}
-            {!serviceTypes.some(t => t.name === 'Repair Request') && <option value="Repair Request">Repair Request</option>}
-            {!serviceTypes.some(t => t.name === 'Plumbing Repair') && <option value="Plumbing Repair">Plumbing Repair</option>}
-            {!serviceTypes.some(t => t.name === 'Cleaning Request') && <option value="Street Sweeper">Cleaning Request</option>}
-            {!serviceTypes.some(t => t.name === 'Electrical Repair') && <option value="Electrician">Electrical Repair</option>}
           </select>
           <select
             value={statusFilter}
@@ -1018,7 +1020,7 @@ const formatTime = (timestamp) => {
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">House #{request.house_no !== undefined ? request.house_no : 'N/A'}</div>
-                            <div className="text-sm text-gray-500">{request.resident_name || 'Unnamed resident'}</div>
+                            <div className="text-sm text-gray-500">{request.fullName || request.resident_name || 'Unnamed resident'}</div>
                           </div>
                         </div>
                       </TableCell>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { format } from 'date-fns';
 import { FaStar, FaRegStar, FaCommentAlt, FaSpinner, FaFilter, FaExclamationTriangle } from 'react-icons/fa';
@@ -36,10 +36,15 @@ const Feedback = () => {
                 setIsLoading(true);
                 setLoadingError(null);
                 
-                // Fetch all feedback data from Firestore
-                const feedbackSnapshot = await getDocs(collection(db, 'service_feedback'));
+                // Fetch service requests with feedback from the services collection
+                // Only get services that have feedback (has_feedback = true)
+                const servicesQuery = query(
+                    collection(db, 'services'), 
+                    where('has_feedback', '==', true)
+                );
+                const servicesSnapshot = await getDocs(servicesQuery);
                 
-                if (feedbackSnapshot.empty) {
+                if (servicesSnapshot.empty) {
                     setFeedbacks([]);
                     setUniqueServices([]);
                     return;
@@ -47,75 +52,41 @@ const Feedback = () => {
                 
                 const feedbackList = [];
                 const servicesSet = new Set();
-                const userIds = new Set();
                 
-                // First collect all user IDs and extract feedback data
-                const feedbackData = feedbackSnapshot.docs.map(doc => {
+                // Extract feedback data from services collection
+                servicesSnapshot.docs.forEach(doc => {
                     const data = doc.data();
-                    const userId = data.user_id || '';
-                    const serviceName = data.service_name || 'Unknown Service';
                     
-                    // Add to collections for later use
-                    if (userId) userIds.add(userId);
-                    servicesSet.add(serviceName);
-                    
-                    // Format the date safely
-                    let formattedDate = 'Unknown date';
-                    try {
-                        if (data.timestamp) {
-                            formattedDate = format(data.timestamp.toDate(), 'MMM d, yyyy - h:mm a');
-                        }
-                    } catch (dateError) {
-                        console.error("Error formatting date:", dateError);
-                    }
-                    
-                    return {
-                        id: doc.id,
-                        userId,
-                        feedback: data.feedback || 'No feedback provided',
-                        rating: data.rating || 0,
-                        serviceName,
-                        timestamp: data.timestamp,
-                        date: formattedDate
-                    };
-                });
-                
-                // Batch fetch all users at once for efficiency
-                const userMap = new Map();
-                if (userIds.size > 0) {
-                    try {
-                        const userPromises = Array.from(userIds).map(userId => 
-                            getDoc(doc(db, 'users', userId))
-                        );
+                    // Only include services with feedback
+                    if (data.has_feedback && data.feedback_text) {
+                        const serviceName = data.service_provider || data.type_of_request || 'Unknown Service';
+                        servicesSet.add(serviceName);
                         
-                        const userResults = await Promise.all(userPromises);
-                        
-                        // Create a map of userId -> userName for quick lookup
-                        userResults.forEach(userDoc => {
-                            if (userDoc.exists()) {
-                                // Look for different possible name fields in user documents
-                                const userData = userDoc.data();
-                                const name = userData.house_owner || 
-                                            userData.name || 
-                                            userData.fullName ||
-                                            userData.displayName ||
-                                            'Unknown';
-                                
-                                userMap.set(userDoc.id, name);
+                        // Format the date safely - use feedback_date if available, otherwise fall back to updatedAt
+                        let formattedDate = 'Unknown date';
+                        try {
+                            const timestamp = data.feedback_date || data.updatedAt || data.created_at;
+                            if (timestamp) {
+                                formattedDate = format(timestamp.toDate(), 'MMM d, yyyy - h:mm a');
                             }
+                        } catch (dateError) {
+                            console.error("Error formatting date:", dateError);
+                        }
+                        
+                        feedbackList.push({
+                            id: doc.id,
+                            userId: data.uid || '',
+                            feedback: data.feedback_text || data.comment || data.additional_notes || 'No feedback provided',
+                            rating: data.rating || 0,
+                            serviceName,
+                            timestamp: data.feedback_date || data.updatedAt || data.created_at,
+                            date: formattedDate,
+                            userName: data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Anonymous',
+                            houseNo: data.house_no || '',
+                            issue: data.issue || '',
+                            type_of_request: data.type_of_request || ''
                         });
-                    } catch (userError) {
-                        console.error("Error fetching user data:", userError);
-                        toast.warning("Some user information could not be loaded");
                     }
-                }
-                
-                // Now combine feedback data with user names
-                feedbackData.forEach(item => {
-                    feedbackList.push({
-                        ...item,
-                        userName: item.userId ? (userMap.get(item.userId) || 'Unknown') : 'Anonymous'
-                    });
                 });
                 
                 // Sort feedbacks by timestamp
@@ -181,7 +152,9 @@ const Feedback = () => {
     const filteredFeedbacks = getSortedFeedbacks(
         feedbacks.filter(feedback => {
             const matchesRating = ratingFilter === '' || feedback.rating === parseInt(ratingFilter);
-            const matchesService = serviceFilter === '' || feedback.serviceName === serviceFilter;
+            const matchesService = serviceFilter === '' || 
+                feedback.serviceName === serviceFilter || 
+                feedback.type_of_request === serviceFilter;
             return matchesRating && matchesService;
         })
     );
@@ -391,6 +364,9 @@ const Feedback = () => {
                                                     </div>
                                                     <div className="ml-3">
                                                         <div className="text-sm font-medium text-gray-900">{feedback.userName}</div>
+                                                        {feedback.houseNo && (
+                                                            <div className="text-xs text-gray-500">House #{feedback.houseNo}</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -411,6 +387,9 @@ const Feedback = () => {
                                                 <span className="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full bg-blue-50 text-blue-700">
                                                     {feedback.serviceName}
                                                 </span>
+                                                {feedback.type_of_request && feedback.type_of_request !== feedback.serviceName && (
+                                                    <div className="mt-1 text-xs text-gray-500">{feedback.type_of_request}</div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 <div className="flex items-center">
@@ -473,28 +452,45 @@ const Feedback = () => {
                                         <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300 font-semibold uppercase">
                                             {selectedFeedback.userName.charAt(0)}
                                         </div>
-                                        <p className="ml-3 font-medium text-gray-800 dark:text-gray-200">{selectedFeedback.userName}</p>
+                                        <div className="ml-3">
+                                            <p className="font-medium text-gray-800 dark:text-gray-200">{selectedFeedback.userName}</p>
+                                            {selectedFeedback.houseNo && (
+                                                <p className="text-xs text-gray-500">House #{selectedFeedback.houseNo}</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                                     <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Service</h3>
-                                    <div className="flex items-center">
+                                    <div>
                                         <span className="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                             {selectedFeedback.serviceName}
                                         </span>
+                                        {selectedFeedback.type_of_request && selectedFeedback.type_of_request !== selectedFeedback.serviceName && (
+                                            <p className="text-xs text-gray-500 mt-2">{selectedFeedback.type_of_request}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div className="mb-6">
-                                <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Date</h3>
-                                <div className="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <p className="ml-2 font-medium text-gray-800 dark:text-gray-200">{selectedFeedback.date}</p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                    <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Date</h3>
+                                    <div className="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <p className="ml-2 font-medium text-gray-800 dark:text-gray-200">{selectedFeedback.date}</p>
+                                    </div>
                                 </div>
+
+                                {selectedFeedback.issue && (
+                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                        <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Service Issue</h3>
+                                        <p className="text-gray-800 dark:text-gray-200 text-sm">{selectedFeedback.issue}</p>
+                                    </div>
+                                )}
                             </div>
                             
                             <div>

@@ -45,7 +45,8 @@ function FacilityRequests() {
     opening_time: '08:00',
     closing_time: '20:00',
     status: 'active',
-    location: ''
+    location: '',
+    purposes: ['', '', ''] // Array for 3 possible purposes
   });
   const [facilityFormErrors, setFacilityFormErrors] = useState({});
   const [currentFacility, setCurrentFacility] = useState(null);
@@ -177,7 +178,8 @@ function FacilityRequests() {
         opening_time: doc.data().opening_time || '08:00',
         closing_time: doc.data().closing_time || '20:00',
         status: doc.data().status || 'active',
-        location: doc.data().location || ''
+        location: doc.data().location || '',
+        purposes: doc.data().purposes || []
       }));
       setFacilities(facilitiesData);
     } catch (error) {
@@ -230,7 +232,8 @@ function FacilityRequests() {
         opening_time: '08:00',
         closing_time: '20:00',
         status: 'active',
-        location: ''
+        location: '',
+        purposes: ['', '', ''] // Reset to 3 empty purpose strings
       });
       setCurrentFacility(null);
       setFacilityFormErrors({});
@@ -241,10 +244,27 @@ function FacilityRequests() {
   
   const handleFacilityFormChange = (e) => {
     const { name, value } = e.target;
-    setFacilityFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Check if this is a purpose field (purpose-0, purpose-1, purpose-2)
+    if (name.startsWith('purpose-')) {
+      const index = parseInt(name.split('-')[1], 10);
+      setFacilityFormData(prev => {
+        // Make sure prev.purposes exists, and if not, create an empty array
+        const prevPurposes = prev.purposes || ['', '', ''];
+        const updatedPurposes = [...prevPurposes];
+        updatedPurposes[index] = value;
+        return {
+          ...prev,
+          purposes: updatedPurposes
+        };
+      });
+    } else {
+      // Regular field update
+      setFacilityFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     
     // Clear the error for this field if it exists
     if (facilityFormErrors[name]) {
@@ -289,6 +309,8 @@ function FacilityRequests() {
           closing_time: facilityFormData.closing_time,
           status: facilityFormData.status,
           location: facilityFormData.location.trim(),
+          // Filter out empty purpose strings before saving
+          purposes: (facilityFormData.purposes || []).filter(purpose => purpose && purpose.trim() !== ''),
           updated_at: serverTimestamp()
         });
         
@@ -302,6 +324,8 @@ function FacilityRequests() {
           closing_time: facilityFormData.closing_time,
           status: facilityFormData.status,
           location: facilityFormData.location.trim(),
+          // Filter out empty purpose strings before saving
+          purposes: (facilityFormData.purposes || []).filter(purpose => purpose && purpose.trim() !== ''),
           created_at: serverTimestamp(),
           updated_at: serverTimestamp()
         });
@@ -350,13 +374,22 @@ function FacilityRequests() {
   
   // Handle editing facility
   const handleEditFacility = (facility) => {
+    // Get existing purposes or create an array of 3 empty strings if none exist
+    const existingPurposes = facility.purposes || [];
+    const formattedPurposes = [
+      existingPurposes[0] || '',
+      existingPurposes[1] || '',
+      existingPurposes[2] || ''
+    ];
+    
     setFacilityFormData({
       name: facility.name || '',
       description: facility.description || '',
       opening_time: facility.opening_time || '08:00',
       closing_time: facility.closing_time || '20:00',
       status: facility.status || 'active',
-      location: facility.location || ''
+      location: facility.location || '',
+      purposes: formattedPurposes
     });
     setCurrentFacility(facility);
     setFacilityFormErrors({});
@@ -1155,6 +1188,7 @@ function FacilityRequests() {
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purposes</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -1172,6 +1206,23 @@ function FacilityRequests() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{formatTime(facility.opening_time)} - {formatTime(facility.closing_time)}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {facility.purposes && facility.purposes.length > 0 ? (
+                              <div>
+                                {facility.purposes.map((purpose, index) => (
+                                  <div key={index} className="mb-1">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                      {purpose}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-xs">No purposes defined</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
@@ -1311,6 +1362,32 @@ function FacilityRequests() {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 placeholder="e.g., Building B, Ground Floor, etc."
               />
+            </div>
+            
+            {/* Purposes Section */}
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Purposes (Up to 3)
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                List up to 3 specific purposes for which this facility can be used.
+              </p>
+              
+              {[0, 1, 2].map((index) => (
+                <div key={index} className="mb-2">
+                  <div className="flex items-center">
+                    <span className="mr-2 text-sm text-gray-500">{index + 1}.</span>
+                    <input
+                      type="text"
+                      name={`purpose-${index}`}
+                      value={(facilityFormData.purposes && facilityFormData.purposes[index]) || ''}
+                      onChange={handleFacilityFormChange}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      placeholder={`e.g., ${index === 0 ? 'Celebration' : index === 1 ? 'Meeting' : 'Exercise'}`}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
             
             <div>

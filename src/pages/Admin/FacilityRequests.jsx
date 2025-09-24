@@ -21,7 +21,8 @@ import {
   addDoc, 
   serverTimestamp, 
   where, 
-  getDoc, 
+  getDoc,
+  deleteDoc, 
   limit
 } from 'firebase/firestore';
 import { Card, CardHeader, CardBody, CardFooter, Button, Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell, Badge, Modal, DataSearch } from '../../components/AdminUI';
@@ -36,7 +37,20 @@ function FacilityRequests() {
   const [searchQuery, setSearchQuery] = useState('');
   const [facilityFilter, setFacilityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [newFacilityName, setNewFacilityName] = useState('');
+  const [isFacilityManagementModalOpen, setIsFacilityManagementModalOpen] = useState(false);
+  const [activeFacilityTab, setActiveFacilityTab] = useState('list'); // 'list', 'add', 'edit'
+  const [facilityFormData, setFacilityFormData] = useState({
+    name: '',
+    description: '',
+    opening_time: '08:00',
+    closing_time: '20:00',
+    status: 'active',
+    location: ''
+  });
+  const [facilityFormErrors, setFacilityFormErrors] = useState({});
+  const [currentFacility, setCurrentFacility] = useState(null);
+  const [facilityStatusFilter, setFacilityStatusFilter] = useState('all');
+  const [facilitySearchQuery, setFacilitySearchQuery] = useState('');
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [commentDone, setCommentDone] = useState(false);
@@ -44,6 +58,7 @@ function FacilityRequests() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionUserId, setRejectionUserId] = useState(null);
+  const [isFacilityListModalOpen, setIsFacilityListModalOpen] = useState(false);
   // Feedback functionality removed
 
   useEffect(() => {
@@ -106,6 +121,25 @@ function FacilityRequests() {
     
     return format(date, 'yyyy-MM-dd');
   };
+  
+  // Convert 24-hour time format to 12-hour format with AM/PM
+  const formatTime = (time24h) => {
+    if (!time24h) return "N/A";
+    
+    // Parse the time string (expected format: "HH:MM")
+    const [hours, minutes] = time24h.split(':').map(Number);
+    
+    if (isNaN(hours) || isNaN(minutes)) {
+      return time24h; // Return original if invalid format
+    }
+    
+    // Convert to 12-hour format
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    
+    // Format with leading zeros for minutes
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
 
   const fetchRequests = async () => {
     try {
@@ -138,7 +172,12 @@ function FacilityRequests() {
       const querySnapshot = await getDocs(collection(db, 'facilities'));
       const facilitiesData = querySnapshot.docs.map(doc => ({
         id: doc.id,
-        name: doc.data().name
+        name: doc.data().name,
+        description: doc.data().description || '',
+        opening_time: doc.data().opening_time || '08:00',
+        closing_time: doc.data().closing_time || '20:00',
+        status: doc.data().status || 'active',
+        location: doc.data().location || ''
       }));
       setFacilities(facilitiesData);
     } catch (error) {
@@ -182,23 +221,181 @@ function FacilityRequests() {
     }
   };
   
-  const handleAddFacility = async () => {
-    if (!newFacilityName.trim()) {
-      toast.error('Facility name cannot be empty');
+  const openFacilityManagementModal = (tab = 'list') => {
+    if (tab === 'add') {
+      // Reset form data for adding a new facility
+      setFacilityFormData({
+        name: '',
+        description: '',
+        opening_time: '08:00',
+        closing_time: '20:00',
+        status: 'active',
+        location: ''
+      });
+      setCurrentFacility(null);
+      setFacilityFormErrors({});
+    }
+    setActiveFacilityTab(tab);
+    setIsFacilityManagementModalOpen(true);
+  };
+  
+  const handleFacilityFormChange = (e) => {
+    const { name, value } = e.target;
+    setFacilityFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear the error for this field if it exists
+    if (facilityFormErrors[name]) {
+      setFacilityFormErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
+  };
+  
+  const validateFacilityForm = () => {
+    const errors = {};
+    
+    if (!facilityFormData.name.trim()) {
+      errors.name = 'Facility name is required';
+    }
+    
+    if (!facilityFormData.opening_time) {
+      errors.opening_time = 'Opening time is required';
+    }
+    
+    if (!facilityFormData.closing_time) {
+      errors.closing_time = 'Closing time is required';
+    }
+    
+    setFacilityFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
+  const handleSaveFacility = async () => {
+    if (!validateFacilityForm()) {
       return;
     }
 
     try {
-      await addDoc(collection(db, 'facilities'), {
-        name: newFacilityName.trim(),
-        created_at: serverTimestamp()
+      if (currentFacility) {
+        // Update existing facility
+        await updateDoc(doc(db, 'facilities', currentFacility.id), {
+          name: facilityFormData.name.trim(),
+          description: facilityFormData.description.trim(),
+          opening_time: facilityFormData.opening_time,
+          closing_time: facilityFormData.closing_time,
+          status: facilityFormData.status,
+          location: facilityFormData.location.trim(),
+          updated_at: serverTimestamp()
+        });
+        
+        toast.success('Facility updated successfully!');
+      } else {
+        // Add new facility
+        await addDoc(collection(db, 'facilities'), {
+          name: facilityFormData.name.trim(),
+          description: facilityFormData.description.trim(),
+          opening_time: facilityFormData.opening_time,
+          closing_time: facilityFormData.closing_time,
+          status: facilityFormData.status,
+          location: facilityFormData.location.trim(),
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp()
+        });
+        
+        toast.success('New facility added successfully!');
+      }
+      
+      // Reset and switch back to list tab after saving
+      setCurrentFacility(null);
+      fetchFacilities();
+      setActiveFacilityTab('list');
+    } catch (error) {
+      toast.error(`Error ${currentFacility ? 'updating' : 'adding'} facility: ${error.message}`);
+    }
+  };
+  
+  // Handle filtering facilities
+  const filterFacilities = () => {
+    return facilities.filter(facility => {
+      // Filter by status
+      const matchesStatus = facilityStatusFilter === 'all' || facility.status === facilityStatusFilter;
+      
+      // Filter by search query
+      const matchesSearch = facility.name.toLowerCase().includes(facilitySearchQuery.toLowerCase()) ||
+                          (facility.description && facility.description.toLowerCase().includes(facilitySearchQuery.toLowerCase())) ||
+                          (facility.location && facility.location.toLowerCase().includes(facilitySearchQuery.toLowerCase()));
+      
+      return matchesStatus && matchesSearch;
+    });
+  };
+  
+  // Handle changing facility status
+  const handleChangeFacilityStatus = async (facilityId, newStatus) => {
+    try {
+      await updateDoc(doc(db, 'facilities', facilityId), {
+        status: newStatus,
+        updated_at: serverTimestamp()
       });
       
-      toast.success('New facility added successfully!');
-      setNewFacilityName('');
+      toast.success(`Facility status changed to ${newStatus}`);
       fetchFacilities();
     } catch (error) {
-      toast.error('Error adding facility: ' + error.message);
+      toast.error('Error updating facility status: ' + error.message);
+    }
+  };
+  
+  // Handle editing facility
+  const handleEditFacility = (facility) => {
+    setFacilityFormData({
+      name: facility.name || '',
+      description: facility.description || '',
+      opening_time: facility.opening_time || '08:00',
+      closing_time: facility.closing_time || '20:00',
+      status: facility.status || 'active',
+      location: facility.location || ''
+    });
+    setCurrentFacility(facility);
+    setFacilityFormErrors({});
+    setActiveFacilityTab('edit');
+    if (!isFacilityManagementModalOpen) {
+      setIsFacilityManagementModalOpen(true);
+    }
+  };
+  
+  // Handle deleting facility
+  const handleDeleteFacility = async (facilityId) => {
+    if (!facilityId) return;
+    
+    if (window.confirm('Are you sure you want to delete this facility? This action cannot be undone.')) {
+      try {
+        // Check if there are any pending requests for this facility
+        const requestsQuery = query(
+          collection(db, 'facility_requests'),
+          where('facility_id', '==', facilityId),
+          limit(1)
+        );
+        
+        const requestsSnapshot = await getDocs(requestsQuery);
+        
+        if (!requestsSnapshot.empty) {
+          toast.error('Cannot delete facility that has pending requests. Please resolve all requests first.');
+          return;
+        }
+        
+        // Delete the facility
+        await deleteDoc(doc(db, 'facilities', facilityId));
+        
+        toast.success('Facility deleted successfully!');
+        
+        // Refresh the facilities list
+        fetchFacilities();
+      } catch (error) {
+        toast.error(`Error deleting facility: ${error.message}`);
+      }
     }
   };
 
@@ -456,26 +653,23 @@ function FacilityRequests() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Facility Requests Management</h1>
             </div>
 
-        {/* Add New Facility */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-3">Add New Facility</h2>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Facility Name"
-                  value={newFacilityName}
-                  onChange={(e) => setNewFacilityName(e.target.value)}
-              className="flex-grow px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            <button 
-                  onClick={handleAddFacility}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
-                >
-                  <PlusIcon className="h-5 w-5 mr-1" />
-              Add
-            </button>
-              </div>
-            </div>
+        {/* Facility Management */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Facilities Management</h2>
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => openFacilityManagementModal('list')}
+              className="flex items-center"
+              size="sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              Manage Facilities
+            </Button>
+          </div>
+        </div>
             
         {/* Filters */}
         <div className="mb-6 flex flex-wrap gap-4">
@@ -851,6 +1045,313 @@ function FacilityRequests() {
           </p>
         </div>
       </Modal>
+      
+      {/* Facility Management Modal with Tabs */}
+      <Modal
+        isOpen={isFacilityManagementModalOpen}
+        onClose={() => {
+          setIsFacilityManagementModalOpen(false);
+          setCurrentFacility(null);
+          setActiveFacilityTab('list');
+        }}
+        title="Facility Management"
+        size="lg"
+      >
+        <div className="mb-4 border-b border-gray-200">
+          <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
+            <li className="mr-2">
+              <button
+                className={`inline-block p-4 rounded-t-lg ${
+                  activeFacilityTab === 'list'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'hover:text-gray-600 hover:border-gray-300'
+                }`}
+                onClick={() => setActiveFacilityTab('list')}
+              >
+                Facilities List
+              </button>
+            </li>
+            <li className="mr-2">
+              <button
+                className={`inline-block p-4 rounded-t-lg ${
+                  activeFacilityTab === 'add'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'hover:text-gray-600 hover:border-gray-300'
+                }`}
+                onClick={() => {
+                  setCurrentFacility(null);
+                  setActiveFacilityTab('add');
+                  setFacilityFormData({
+                    name: '',
+                    description: '',
+                    location: '',
+                    opening_time: '08:00',
+                    closing_time: '17:00',
+                    status: 'active'
+                  });
+                  setFacilityFormErrors({});
+                }}
+              >
+                Add New Facility
+              </button>
+            </li>
+            {currentFacility && activeFacilityTab === 'edit' && (
+              <li className="mr-2">
+                <button
+                  className={`inline-block p-4 rounded-t-lg text-blue-600 border-b-2 border-blue-600`}
+                >
+                  Edit Facility
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+        
+        {/* Facility List Tab */}
+        {activeFacilityTab === 'list' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search facilities..."
+                  value={facilitySearchQuery}
+                  onChange={(e) => setFacilitySearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <select
+                value={facilityStatusFilter}
+                onChange={(e) => setFacilityStatusFilter(e.target.value)}
+                className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+                <option value="maintenance">Maintenance Only</option>
+              </select>
+            </div>
+            
+            <div className="overflow-x-auto max-h-96">
+              {facilities.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
+                  <p className="mt-2 text-gray-500 text-lg">No facilities available</p>
+                  <p className="mt-1 text-gray-400 text-sm">Add facilities first to manage them</p>
+                </div>
+              ) : filterFacilities().length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p className="mt-2 text-gray-500 text-lg">No matching facilities found</p>
+                  <p className="mt-1 text-gray-400 text-sm">Try adjusting your search or filter criteria</p>
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filterFacilities().map((facility) => (
+                      <tr key={facility.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{facility.name}</div>
+                              <div className="text-sm text-gray-500">{facility.location}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{formatTime(facility.opening_time)} - {formatTime(facility.closing_time)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                            facility.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : facility.status === 'inactive'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {facility.status.charAt(0).toUpperCase() + facility.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex space-x-2 justify-end">
+                            <select
+                              value={facility.status}
+                              onChange={(e) => handleChangeFacilityStatus(facility.id, e.target.value)}
+                              className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                              <option value="active">Set Active</option>
+                              <option value="inactive">Set Inactive</option>
+                              <option value="maintenance">Set Maintenance</option>
+                            </select>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditFacility(facility)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDeleteFacility(facility.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Add/Edit Facility Form Tab */}
+        {(activeFacilityTab === 'add' || activeFacilityTab === 'edit') && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Facility Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={facilityFormData.name}
+                onChange={handleFacilityFormChange}
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  facilityFormErrors.name ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="e.g., Swimming Pool, Basketball Court, etc."
+              />
+              {facilityFormErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{facilityFormErrors.name}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                name="description"
+                id="description"
+                rows={3}
+                value={facilityFormData.description}
+                onChange={handleFacilityFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                placeholder="Describe the facility, its features, capacity, etc."
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="opening_time" className="block text-sm font-medium text-gray-700">
+                  Opening Time <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Current: {formatTime(facilityFormData.opening_time)})</span>
+                </label>
+                <input
+                  type="time"
+                  name="opening_time"
+                  id="opening_time"
+                  value={facilityFormData.opening_time}
+                  onChange={handleFacilityFormChange}
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                    facilityFormErrors.opening_time ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {facilityFormErrors.opening_time && (
+                  <p className="mt-1 text-sm text-red-600">{facilityFormErrors.opening_time}</p>
+                )}
+              </div>
+              
+              <div>
+                <label htmlFor="closing_time" className="block text-sm font-medium text-gray-700">
+                  Closing Time <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Current: {formatTime(facilityFormData.closing_time)})</span>
+                </label>
+                <input
+                  type="time"
+                  name="closing_time"
+                  id="closing_time"
+                  value={facilityFormData.closing_time}
+                  onChange={handleFacilityFormChange}
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                    facilityFormErrors.closing_time ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {facilityFormErrors.closing_time && (
+                  <p className="mt-1 text-sm text-red-600">{facilityFormErrors.closing_time}</p>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                Location
+              </label>
+              <input
+                type="text"
+                name="location"
+                id="location"
+                value={facilityFormData.location}
+                onChange={handleFacilityFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                placeholder="e.g., Building B, Ground Floor, etc."
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                name="status"
+                id="status"
+                value={facilityFormData.status}
+                onChange={handleFacilityFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="maintenance">Under Maintenance</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Active facilities can be booked by homeowners, inactive facilities will not appear in their booking options.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setActiveFacilityTab('list')}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveFacility}
+              >
+                {activeFacilityTab === 'edit' ? "Update Facility" : "Add Facility"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+      
+      {/* Facility List Modal removed - functionality merged into the Facility Management Modal */}
       
       {/* Feedback Modal removed */}
     </AdminLayout>

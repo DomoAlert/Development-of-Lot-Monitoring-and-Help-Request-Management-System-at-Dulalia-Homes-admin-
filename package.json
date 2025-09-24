@@ -12,6 +12,7 @@
     "chart.js": "^4.4.9",
     "date-fns": "^4.1.0",
     "firebase": "^11.7.3",
+    "firebase-admin": "^13.5.0",
     "framer-motion": "^12.11.0",
     "postcss-flexbugs-fixes": "^4.2.1",
     "postcss-normalize": "^13.0.1",

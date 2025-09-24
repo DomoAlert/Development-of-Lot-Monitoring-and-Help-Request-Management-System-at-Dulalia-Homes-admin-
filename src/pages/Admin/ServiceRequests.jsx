@@ -74,7 +74,8 @@ function ServiceRequests() {
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTypeFormData, setServiceTypeFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    active: true
   });
   const [serviceTypeFormErrors, setServiceTypeFormErrors] = useState({});
   const [isEditingServiceType, setIsEditingServiceType] = useState(false);
@@ -313,7 +314,8 @@ function ServiceRequests() {
   const handleEditServiceType = (serviceType) => {
     setServiceTypeFormData({
       name: serviceType.name,
-      description: serviceType.description || ''
+      description: serviceType.description || '',
+      active: serviceType.active !== undefined ? serviceType.active : true
     });
     setServiceTypeFormErrors({});
     setIsEditingServiceType(true);
@@ -333,10 +335,10 @@ function ServiceRequests() {
   };
   
   const handleServiceTypeFormChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setServiceTypeFormData({
       ...serviceTypeFormData,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
   
@@ -353,6 +355,7 @@ function ServiceRequests() {
         await updateDoc(doc(db, 'service_types', currentServiceTypeId), {
           name: serviceTypeFormData.name.trim(),
           description: serviceTypeFormData.description.trim(),
+          active: serviceTypeFormData.active,
           updatedAt: serverTimestamp()
         });
         
@@ -362,15 +365,29 @@ function ServiceRequests() {
         await addDoc(collection(db, 'service_types'), {
           name: serviceTypeFormData.name.trim(),
           description: serviceTypeFormData.description.trim(),
+          active: serviceTypeFormData.active,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
         
         toast.success('Service type added successfully');
       }
+      // Reset form data
+      setServiceTypeFormData({
+        name: '',
+        description: '',
+        active: true
+      });
+      setIsEditingServiceType(false);
+      setCurrentServiceTypeId(null);
+      setServiceTypeFormErrors({});
       
       fetchServiceTypes();
-      setIsServiceTypeModalOpen(false);
+      
+      if (isEditingServiceType) {
+        // If editing, close the modal
+        setIsServiceTypeModalOpen(false);
+      }
     } catch (error) {
       console.error('Error saving service type:', error);
       toast.error('Failed to save service type');
@@ -385,6 +402,21 @@ function ServiceRequests() {
     } catch (error) {
       console.error('Error deleting service type:', error);
       toast.error('Failed to delete service type');
+    }
+  };
+  
+  const handleToggleServiceTypeStatus = async (serviceType) => {
+    try {
+      const newActiveStatus = !serviceType.active;
+      await updateDoc(doc(db, 'service_types', serviceType.id), {
+        active: newActiveStatus,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(`Service type ${newActiveStatus ? 'activated' : 'deactivated'} successfully`);
+      fetchServiceTypes();
+    } catch (error) {
+      console.error('Error toggling service type status:', error);
+      toast.error('Failed to update service type status');
     }
   };
   
@@ -827,7 +859,20 @@ const formatTime = (timestamp) => {
     <AdminLayout>
       <div className="pt-20 px-6">
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Service Requests</h1>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Service Requests</h1>
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsServiceTypeModalOpen(true)}
+              className="flex items-center mt-3 md:mt-0"
+              size="sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Manage Service Types
+            </Button>
+          </div>
         </div>
         
         {/* Filters */}
@@ -1087,175 +1132,7 @@ const formatTime = (timestamp) => {
           </CardBody>
         </Card>
         
-        {/* Available Services Management */}
-        <Card className="mt-6">
-          <CardHeader 
-            title="Available Services"
-            actions={
-              <div className="flex space-x-2">
-                <Button 
-                  variant="secondary" 
-                  onClick={() => setIsServiceTypeModalOpen(true)}
-                  className="flex items-center"
-                  size="sm"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  Manage Service Types
-                </Button>
-              </div>
-            }
-          />
-          
-          {/* Services Search and Filter */}
-          <div className="px-6 py-2 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={serviceSearchQuery}
-                  onChange={handleServiceSearchChange}
-                  placeholder="Search services..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <select
-                  value={serviceStatusFilter}
-                  onChange={handleServiceStatusFilterChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="all">All Services</option>
-                  <option value="active">Active Only</option>
-                  <option value="inactive">Inactive Only</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <CardBody>
-            <div className="overflow-x-auto">
-              {loading ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                  <span className="ml-2 text-gray-500">Loading services...</span>
-                </div>
-              ) : availableServices.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                  <p className="mt-2 text-gray-500 text-lg">No services available</p>
-                  <p className="mt-1 text-gray-400 text-sm">Contact the system administrator to add services</p>
-                </div>
-              ) : filteredServices.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <p className="mt-2 text-gray-500 text-lg">No matching services found</p>
-                  <p className="mt-1 text-gray-400 text-sm">Try adjusting your search or filter criteria</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>Service Name</TableHeaderCell>
-                      <TableHeaderCell>Category</TableHeaderCell>
-                      <TableHeaderCell>Description</TableHeaderCell>
-                      <TableHeaderCell>Est. Time</TableHeaderCell>
-                      <TableHeaderCell>Price</TableHeaderCell>
-                      <TableHeaderCell>Status</TableHeaderCell>
-                      <TableHeaderCell>Actions</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredServices.map((service) => (
-                      <TableRow key={service.id}>
-                        <TableCell className="font-medium">{service.name}</TableCell>
-                        <TableCell>
-                          <span className="px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-800 capitalize">
-                            {service.category || 'general'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs truncate" title={service.description}>
-                            {service.description}
-                          </div>
-                        </TableCell>
-                        <TableCell>{service.estimated_time}</TableCell>
-                        <TableCell className="font-medium">{service.price}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={service.status === 'active' ? 'success' : 'danger'}
-                            className="cursor-pointer"
-                            onClick={() => handleToggleServiceStatus(service)}
-                          >
-                            {service.status === 'active' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="info"
-                              size="sm"
-                              onClick={() => handleEditService(service)}
-                              className="flex items-center"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                              </svg>
-                              View
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-            
-            {availableServices.length > 0 && (
-              <div className="mt-4 text-sm text-gray-500 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center mb-2 sm:mb-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span>
-                    Total services: {availableServices.length} ({availableServices.filter(s => s.status === 'active').length} active, {availableServices.filter(s => s.status === 'inactive').length} inactive)
-                  </span>
-                </div>
-                
-                {serviceSearchQuery || serviceStatusFilter !== 'all' ? (
-                  <div className="flex items-center text-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
-                    </svg>
-                    <span>Showing {filteredServices.length} of {availableServices.length} services</span>
-                    {(serviceSearchQuery || serviceStatusFilter !== 'all') && (
-                      <button 
-                        className="ml-2 text-xs underline hover:text-blue-800"
-                        onClick={() => {
-                          setServiceSearchQuery('');
-                          setServiceStatusFilter('all');
-                          filterServices(availableServices, '', 'all');
-                        }}
-                      >
-                        Clear filters
-                      </button>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+
         
         {/* Issue Details Modal */}
         <Transition appear show={isIssueModalOpen} as={Fragment}>
@@ -2029,7 +1906,17 @@ const formatTime = (timestamp) => {
         {/* Service Type Management Modal */}
         <Modal
           isOpen={isServiceTypeModalOpen}
-          onClose={() => setIsServiceTypeModalOpen(false)}
+          onClose={() => {
+            setIsServiceTypeModalOpen(false);
+            setServiceTypeFormData({
+              name: '',
+              description: '',
+              active: true
+            });
+            setIsEditingServiceType(false);
+            setCurrentServiceTypeId(null);
+            setServiceTypeFormErrors({});
+          }}
           title={isEditingServiceType ? "Edit Service Type" : "Add New Service Type"}
         >
           <form onSubmit={handleServiceTypeFormSubmit} className="space-y-4">
@@ -2067,12 +1954,44 @@ const formatTime = (timestamp) => {
                 placeholder="Optional description of this service type"
               />
             </div>
+            
+            <div className="mt-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="active"
+                  id="active"
+                  checked={serviceTypeFormData.active}
+                  onChange={(e) => setServiceTypeFormData({
+                    ...serviceTypeFormData,
+                    active: e.target.checked
+                  })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="active" className="ml-2 block text-sm text-gray-900">
+                  Active
+                </label>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Active service types can be selected when creating new requests
+              </p>
+            </div>
 
             <div className="flex justify-between pt-4">
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setIsServiceTypeModalOpen(false)}
+                onClick={() => {
+                  setIsServiceTypeModalOpen(false);
+                  setServiceTypeFormData({
+                    name: '',
+                    description: '',
+                    active: true
+                  });
+                  setIsEditingServiceType(false);
+                  setCurrentServiceTypeId(null);
+                  setServiceTypeFormErrors({});
+                }}
               >
                 Cancel
               </Button>
@@ -2093,6 +2012,9 @@ const formatTime = (timestamp) => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Name
                       </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
@@ -2106,6 +2028,16 @@ const formatTime = (timestamp) => {
                           {serviceType.description && (
                             <p className="text-xs text-gray-500 mt-1">{serviceType.description}</p>
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span 
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              serviceType.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            } cursor-pointer`}
+                            onClick={() => handleToggleServiceTypeStatus(serviceType)}
+                          >
+                            {serviceType.active ? 'Active' : 'Inactive'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button

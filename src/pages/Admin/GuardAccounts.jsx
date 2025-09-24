@@ -262,9 +262,13 @@ function GuardAccounts() {
 
   return (
     <AdminLayout>
-      <div className="pt-20 px-6">
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Guard Accounts</h1>
+      <div className="pt-20 px-6 max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+            <FaUserShield className="mr-3 text-blue-500 text-2xl" />
+            Guard Accounts
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage security personnel accounts and shift schedules</p>
         </div>
         <div className="flex justify-between items-center mb-6">
           <button 
@@ -272,8 +276,11 @@ function GuardAccounts() {
               resetForm();
               setShowForm(true);
             }}
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
             Add New Guard
           </button>
         </div>

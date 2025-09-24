@@ -34,23 +34,32 @@ const withAdminPage = (options = {}) => {
       return (
         <AdminLayout>
           {showHeader && (
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  {icon && <span className="mr-3 text-primary dark:text-secondary">{icon}</span>}
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{title}</h1>
-                </div>
-                {headerActions && (
-                  <div className="flex items-center space-x-2">
-                    {headerActions}
+            <div className="pt-20 px-6 max-w-7xl mx-auto">
+              <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+                      {icon && <span className="mr-3 text-blue-500">{icon}</span>}
+                      {title}
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-300 mt-2">
+                      {title === 'Visitor Logs' && 'Track and manage all visitor entries and access logs'}
+                    </p>
                   </div>
-                )}
+                  {headerActions && (
+                    <div className="flex items-center space-x-2">
+                      {headerActions}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
           
-          {/* All content is now full width by default */}
-          <Component {...props} />
+          {/* Wrap the component with the same max width container */}
+          <div className="px-6 max-w-7xl mx-auto">
+            <Component {...props} />
+          </div>
         </AdminLayout>
       );
     };

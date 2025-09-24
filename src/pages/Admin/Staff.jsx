@@ -308,9 +308,15 @@ function Staff() {
 
   return (
     <AdminLayout>
-      <div className="pt-20 px-6">
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Staff Management</h1>
+      <div className="pt-20 px-6 max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Staff Management
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage maintenance personnel and community staff members</p>
         </div>
         <div className="flex justify-between items-center mb-6">
           <button 
@@ -325,8 +331,11 @@ function Staff() {
               });
               setShowForm(true);
             }}
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
             Add New Staff
           </button>
         </div>

@@ -7,7 +7,15 @@ module.exports = {
       },
       stage: 3
     },
-    '@tailwindcss/postcss7-compat': {},
+    '@tailwindcss/postcss7-compat': {
+      purge: {
+        content: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
+      },
+      darkMode: 'class',
+      theme: {
+        extend: {}
+      }
+    },
     autoprefixer: {},
   }
 }

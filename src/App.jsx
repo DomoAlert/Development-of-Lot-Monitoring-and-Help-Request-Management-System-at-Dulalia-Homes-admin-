@@ -18,6 +18,19 @@ import GuardAccounts from './pages/Admin/GuardAccounts';
 import VisitorLogs from './pages/Admin/VisitorLogs';
 import LotMonitoring from './pages/Admin/LotStatus';
 
+// Root redirect component to handle the root URL path
+const RootRedirect = () => {
+  // Check if user is authenticated
+  const adminToken = localStorage.getItem('adminToken');
+  
+  // If authenticated, redirect to admin dashboard, otherwise to login
+  if (adminToken) {
+    return <Navigate to="/admin" replace />;
+  } else {
+    return <Navigate to="/login" replace />;
+  }
+};
+
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
   const [isChecking, setIsChecking] = React.useState(true);
@@ -70,7 +83,7 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -82,7 +95,16 @@ function App() {
       <UserProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Login />} />
+            {/* Root redirect to either admin (if logged in) or login page */}
+            <Route 
+              path="/" 
+              element={
+                <RootRedirect />
+              }
+            />
+            
+            {/* Explicit login route */}
+            <Route path="/login" element={<Login />} />
             
             {/* Protected Admin Routes - All wrapped with PageTitleProvider */}
             <Route 

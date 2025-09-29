@@ -51,8 +51,9 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminLastLogin');
     toast.success('Logged out successfully');
-    navigate('/');
+    navigate('/login');
   };
 
   const toggleMobileMenu = () => {

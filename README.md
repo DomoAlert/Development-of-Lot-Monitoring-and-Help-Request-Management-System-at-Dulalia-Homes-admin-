@@ -1,7 +1,5 @@
 # Dulalia Homes Admin Dashboard
 
-![Dulalia Admin Dashboard](src/assets/images/logo.png)
-
 ## 📋 Overview
 
 The Dulalia Homes Admin Dashboard is a comprehensive web application built with React for managing residential properties at Dulalia Homes. This administrative interface provides tools for monitoring lots, handling service requests, managing security personnel, and maintaining resident accounts.

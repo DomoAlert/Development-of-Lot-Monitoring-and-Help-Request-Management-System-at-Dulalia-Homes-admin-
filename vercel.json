@@ -46,7 +46,34 @@
       ]
     },
     {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
       "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/admin",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/admin/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -55,61 +82,15 @@
       ]
     }
   ],
-  "routes": [
-    { 
-      "src": "/static/(.*)", 
-      "headers": { 
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "dest": "/static/$1" 
-    },
-    { 
-      "src": "/assets/(.*)",
-      "headers": { 
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "dest": "/assets/$1" 
-    },
-    { 
-      "src": "/favicon.ico",
-      "dest": "/favicon.ico" 
-    },
-    { 
-      "src": "/logo192.png",
-      "dest": "/logo192.png" 
-    },
-    { 
-      "src": "/logo512.png",
-      "dest": "/logo512.png" 
-    },
-    { 
-      "src": "/manifest.json",
-      "headers": {
-        "content-type": "application/manifest+json"
-      },
-      "dest": "/manifest.json" 
-    },
-    { 
-      "src": "/apple-touch-icon.png", 
-      "dest": "/logo192.png" 
-    },
-    { 
-      "src": "/robots.txt",
-      "dest": "/robots.txt" 
-    },
-    {
-      "src": "^/admin/?$|^/admin/(.*)",
-      "headers": {
-        "cache-control": "public, max-age=0, must-revalidate"
-      },
-      "dest": "/index.html"
-    },
-    { 
-      "src": "/(.*)", 
-      "headers": {
-        "cache-control": "public, max-age=0, must-revalidate"
-      },
-      "dest": "/index.html" 
-    }
+  "rewrites": [
+    { "source": "/static/(.*)", "destination": "/static/$1" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/favicon.ico", "destination": "/favicon.ico" },
+    { "source": "/logo192.png", "destination": "/logo192.png" },
+    { "source": "/logo512.png", "destination": "/logo512.png" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/apple-touch-icon.png", "destination": "/logo192.png" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

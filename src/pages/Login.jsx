@@ -16,7 +16,8 @@ function Login() {
   const [passwordError, setPasswordError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showDiagnostics, setShowDiagnostics] = useState(process.env.NODE_ENV !== 'production' || new URLSearchParams(window.location.search).has('debug'));
+  // Set debug mode based on environment or URL parameter
+  const showDiagnostics = process.env.NODE_ENV !== 'production' || new URLSearchParams(window.location.search).has('debug');
   
   // Set page title
   document.title = "Admin Login";

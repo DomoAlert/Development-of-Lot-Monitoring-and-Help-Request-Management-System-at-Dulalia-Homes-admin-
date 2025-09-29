@@ -86,9 +86,11 @@ export const reportError = (error, context = '') => {
   }
 };
 
-export default {
+const debugUtils = {
   debugLog,
   checkEnvironment,
   checkFirebaseConfig,
   reportError
 };
+
+export default debugUtils;

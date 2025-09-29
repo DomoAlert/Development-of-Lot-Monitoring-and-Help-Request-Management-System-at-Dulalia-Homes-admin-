@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import 'tailwindcss/tailwind.css';
 import Navbar from './Navbar'; // Using the new dedicated Navbar component
 import { useTheme } from '../context/ThemeContext';
@@ -7,7 +7,8 @@ import { FaMoon, FaSun } from 'react-icons/fa';
 
 function AdminLayout({ children }) {
   const { darkMode, toggleDarkMode } = useTheme();
-  const pageTitle = usePageTitle();
+  // We're importing usePageTitle to maintain the context connection
+  usePageTitle(); // This ensures the PageTitleContext is used even if we don't use the value directly
 
   // Apply dark mode class to the root HTML element
   useEffect(() => {

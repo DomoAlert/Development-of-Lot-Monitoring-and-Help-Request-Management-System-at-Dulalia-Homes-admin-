@@ -44,10 +44,14 @@ try {
   
   const root = ReactDOM.createRoot(rootElement);
   root.render(
-    <ErrorBoundary onError={(error) => logError(error, 'Root ErrorBoundary')}>
-      <div style={rootStyles}>
+    <ErrorBoundary onError={(error) => {
+      logError(error, 'Root ErrorBoundary');
+      // Additional: Report to console with stack
+      console.error('Full error stack:', error.stack);
+    }}>
+      <React.StrictMode>  {/* Add StrictMode for better error detection */}
         <App />
-      </div>
+      </React.StrictMode>
     </ErrorBoundary>
   );
   console.log('Application rendered successfully');

@@ -152,4 +152,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-Developed with ❤️ for Dulalia Homes | © 2025
+Developed with AltF4(Doms) for Dulalia Homes | © 2025

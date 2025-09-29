@@ -1,21 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "buildCommand": "CI=false npm run build",
-        "installCommand": "npm install --legacy-peer-deps"
-      }
-    }
-  ],
-  "build": {
-    "env": {
-      "NODE_OPTIONS": "--max_old_space_size=4096",
-      "CI": "false",
-      "PUBLIC_URL": ""
-    }
+  "buildCommand": "CI=false npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "env": {
+    "NODE_OPTIONS": "--max_old_space_size=4096",
+    "CI": "false",
+    "PUBLIC_URL": ""
   },
   "headers": [
     {
@@ -91,13 +81,15 @@
       ]
     }
   ],
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
   "routes": [
-    { "src": "/login", "dest": "/index.html" },
-    { "src": "/admin/(.*)", "dest": "/index.html" },
+    { "src": "/static/(.*)", "dest": "/static/$1", "headers": { "cache-control": "public, max-age=31536000, immutable" } },
+    { "src": "/assets/(.*)", "dest": "/assets/$1", "headers": { "cache-control": "public, max-age=31536000, immutable" } },
+    { "src": "/(favicon.ico|logo192.png|logo512.png|robots.txt)", "dest": "/$1", "headers": { "cache-control": "public, max-age=86400" } },
+    { "src": "/manifest.json", "dest": "/manifest.json", "headers": { "content-type": "application/manifest+json" } },
     { "handle": "filesystem" },
+    { "src": "/login", "dest": "/index.html" },
+    { "src": "/admin", "dest": "/index.html" },
+    { "src": "/admin/(.*)", "dest": "/index.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

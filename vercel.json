@@ -5,9 +5,18 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "npm run build",
+        "buildCommand": "CI=false npm run build",
         "installCommand": "npm install --legacy-peer-deps"
       }
     }
+  ],
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max_old_space_size=4096",
+      "CI": "false"
+    }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

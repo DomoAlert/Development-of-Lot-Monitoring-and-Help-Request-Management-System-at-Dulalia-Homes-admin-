@@ -39,38 +39,28 @@ const checkAuth = () => {
 
 // Protected Route
 const ProtectedRoute = ({ children }) => {
-  const [isChecking, setIsChecking] = React.useState(true);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-
-  React.useEffect(() => {
-    const authenticated = checkAuth();
-    setIsAuthenticated(authenticated);
-    setIsChecking(false);
-  }, []);
-
-  if (isChecking) {
-    return <div className="flex items-center justify-center min-h-screen">Verifying...</div>;
+  // Simple direct check for authentication
+  const isAuthenticated = checkAuth();
+  
+  // Immediately redirect if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
-
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  
+  return children;
 };
 
 // Root Redirect
 const RootRedirect = () => {
-  const [isChecking, setIsChecking] = React.useState(true);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-
-  React.useEffect(() => {
-    const authenticated = checkAuth();
-    setIsAuthenticated(authenticated);
-    setIsChecking(false);
-  }, []);
-
-  if (isChecking) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  // Check if user is authenticated
+  const adminToken = localStorage.getItem('adminToken');
+  
+  // If authenticated, redirect to admin dashboard, otherwise to login
+  if (adminToken) {
+    return <Navigate to="/admin/dashboard" replace />;
+  } else {
+    return <Navigate to="/login" replace />;
   }
-
-  return isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/login" replace />;
 };
 
 // Inner Error Boundary for Routes

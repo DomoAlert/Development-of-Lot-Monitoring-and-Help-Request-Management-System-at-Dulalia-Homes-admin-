@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { signInAdmin } from '../services/authService';
 import logo from '../assets/images/logo.png';
 import { FaEye, FaEyeSlash} from 'react-icons/fa';
+import DiagnosticPanel from '../components/DiagnosticPanel';
+import { checkEnvironment } from '../utils/debug';
 
 function Login() {
   const navigate = useNavigate();
@@ -14,7 +16,26 @@ function Login() {
   const [passwordError, setPasswordError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(process.env.NODE_ENV !== 'production' || new URLSearchParams(window.location.search).has('debug'));
+  
+  // Set page title
   document.title = "Admin Login";
+  
+  // Run environment check on component mount
+  useEffect(() => {
+    try {
+      checkEnvironment();
+      console.log('Login component mounted');
+      
+      // Check if we already have a token and redirect if needed
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) {
+        console.log('Token found, checking if still valid...');
+      }
+    } catch (error) {
+      console.error('Error during login component initialization:', error);
+    }
+  }, []);
   const handleLogin = async () => {
     // Clear previous errors
     setEmailError(null);
@@ -28,29 +49,69 @@ function Login() {
     }
     if (!password) {
       setPasswordError('Please enter your password.');
+      toast.error('Please enter your password.');
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address.');
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+    
+    // Check for admin email domain
+    if (!email.endsWith('@admin.com')) {
+      setEmailError('Access restricted to admin users only.');
+      toast.error('Access restricted to admin users only.');
       return;
     }
 
+    console.log('Attempting login for:', email);
     setIsLoading(true);
+    
     try {
+      // First clear any existing tokens
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminLastLogin');
+      
       const user = await signInAdmin(email.trim().toLowerCase(), password.trim());
+      console.log('Login successful, storing token');
+      
       // Store the auth token
       localStorage.setItem('adminToken', user.accessToken);
+      localStorage.setItem('adminLastLogin', Date.now().toString());
+      
       // Show success message
       toast.success('Login successful!');
+      console.log('Navigating to admin dashboard');
+      
       // Navigate to admin dashboard
-      navigate('/admin');
+      setTimeout(() => navigate('/admin'), 1000);
     } catch (err) {
+      console.error('Login error:', err);
+      
       // Show specific error messages
       if (err.code === 'auth/user-not-found') {
         toast.error('Email not found. Please check your email address.');
       } else if (err.code === 'auth/wrong-password') {
         toast.error('Incorrect password. Please try again.');
-      } else if (!email.endsWith('@admin.com')) {
-        toast.error('Access restricted to admin users only.');
+        setPasswordError('Incorrect password. Please try again.');
+      } else if (err.code === 'auth/too-many-requests') {
+        toast.error('Too many failed login attempts. Please try again later.');
+      } else if (err.code === 'auth/network-request-failed') {
+        toast.error('Network error. Please check your internet connection.');
       } else {
         toast.error(err.message || 'Login failed. Please try again.');
       }
+      
+      // Log detailed error for debugging
+      console.error('Login error details:', {
+        code: err.code,
+        message: err.message,
+        fullError: err
+      });
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +181,9 @@ function Login() {
           pauseOnHover
         />
       </div>
+      
+      {/* Debug diagnostics panel - only visible in development or with ?debug in URL */}
+      {showDiagnostics && <DiagnosticPanel />}
     </div>
   );
 }

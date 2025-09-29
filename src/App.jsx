@@ -20,9 +20,56 @@ import LotMonitoring from './pages/Admin/LotStatus';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
-  const adminToken = localStorage.getItem('adminToken');
+  const [isChecking, setIsChecking] = React.useState(true);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   
-  if (!adminToken) {
+  React.useEffect(() => {
+    try {
+      console.log('Checking authentication status...');
+      const adminToken = localStorage.getItem('adminToken');
+      const lastLogin = localStorage.getItem('adminLastLogin');
+      
+      // Check for token existence
+      if (!adminToken) {
+        console.log('No admin token found, redirecting to login');
+        setIsAuthenticated(false);
+        setIsChecking(false);
+        return;
+      }
+      
+      // Check for token expiration (24 hours)
+      if (lastLogin && Date.now() - parseInt(lastLogin, 10) > 24 * 60 * 60 * 1000) {
+        console.log('Admin token expired, redirecting to login');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminLastLogin');
+        setIsAuthenticated(false);
+        setIsChecking(false);
+        return;
+      }
+      
+      // User is authenticated
+      console.log('User is authenticated');
+      setIsAuthenticated(true);
+      setIsChecking(false);
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsAuthenticated(false);
+      setIsChecking(false);
+    }
+  }, []);
+  
+  if (isChecking) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-neutral">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-700">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 

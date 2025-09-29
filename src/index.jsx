@@ -12,8 +12,21 @@ const rootStyles = {
   backgroundColor: '#f8f9fa'
 };
 
+// Enhanced error reporting
+const logError = (error, source) => {
+  console.error(`Error in ${source}:`, error);
+  // You could also implement additional error reporting to a service here
+};
+
+// Clear any existing auth tokens if in development mode or if requested
+if (process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).has('clearAuth')) {
+  localStorage.removeItem('adminToken');
+  console.log('Auth tokens cleared');
+}
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM fully loaded');
   const rootElement = document.getElementById('root');
   if (rootElement) {
     rootElement.style.minHeight = '100vh';
@@ -23,16 +36,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 try {
-  const root = ReactDOM.createRoot(document.getElementById('root'));
+  console.log('Starting application render');
+  const rootElement = document.getElementById('root');
+  if (!rootElement) {
+    throw new Error('Root element not found in the DOM');
+  }
+  
+  const root = ReactDOM.createRoot(rootElement);
   root.render(
-    <ErrorBoundary>
+    <ErrorBoundary onError={(error) => logError(error, 'Root ErrorBoundary')}>
       <div style={rootStyles}>
         <App />
       </div>
     </ErrorBoundary>
   );
+  console.log('Application rendered successfully');
 } catch (err) {
-  console.error('Failed to render application:', err);
+  logError(err, 'Application initialization');
   document.addEventListener('DOMContentLoaded', () => {
     const rootElement = document.getElementById('root');
     if (rootElement) {
@@ -41,6 +61,9 @@ try {
           <h2>Error Loading Application</h2>
           <p>${err.message || 'Unknown error occurred'}</p>
           <p>Please check the console for more details.</p>
+          <button onclick="window.location.reload(true)" style="padding: 8px 16px; background-color: #4a90e2; color: white; border: none; border-radius: 4px; margin-top: 10px; cursor: pointer;">
+            Reload Application
+          </button>
         </div>
       `;
     }

@@ -105,7 +105,7 @@ function App() {
                   <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
                   <Route path="/admin/guard-accounts" element={<ProtectedRoute><GuardAccounts /></ProtectedRoute>} />
                   <Route path="/admin/visitor-logs" element={<ProtectedRoute><VisitorLogs /></ProtectedRoute>} />
-                  <Route path="/admin/lot-monitoring" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
+                  <Route path="/admin/lot-status" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </RoutesErrorBoundary>

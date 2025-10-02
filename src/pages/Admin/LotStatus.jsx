@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import AdminLayout from '../../components/AdminLayout';
 import { FaHome, FaSearch, FaUserEdit, FaUserPlus, FaTimes, FaUser, FaTag, FaClock } from 'react-icons/fa';
 
-const LotMonitoring = () => {
+const LotStatus = () => {
   // State
   const [lots, setLots] = useState([]);
   const [users, setUsers] = useState([]);
@@ -944,4 +944,4 @@ const LotMonitoring = () => {
   );
 };
 
-export default LotMonitoring;
+export default LotStatus;

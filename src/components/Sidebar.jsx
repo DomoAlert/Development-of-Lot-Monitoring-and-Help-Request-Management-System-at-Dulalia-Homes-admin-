@@ -94,7 +94,7 @@ const Sidebar = () => {
               <NavItem to="/admin/announcements" icon={BellIcon} label="Announcements" />
               <NavItem to="/admin/feedback" icon={ChatIcon} label="Feedback" />
               <NavItem to="/admin/visitor-logs" icon={UserGroupIcon} label="Visitor Logs" />
-              <NavItem to="/admin/lot-status" icon={HomeIcon} label="Lot Monitoring" />
+              <NavItem to="/admin/lot-monitoring" icon={HomeIcon} label="Lot Monitoring" />
               <NavItem to="/admin/inventory" icon={AnnotationIcon} label="Inventory" />
             </ul>
           </nav>

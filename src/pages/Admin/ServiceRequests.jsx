@@ -57,11 +57,10 @@ function ServiceRequests() {
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
   const [isNoCommentModalOpen, setIsNoCommentModalOpen] = useState(false);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isNoIssueModalOpen, setIsNoIssueModalOpen] = useState(false);
+  const [isNotifyResidentModalOpen, setIsNotifyResidentModalOpen] = useState(false);
   const [currentIssue, setCurrentIssue] = useState('');
   const [currentComment, setCurrentComment] = useState('');
-  const [currentImage, setCurrentImage] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [currentNotifyDetails, setCurrentNotifyDetails] = useState({
     residentName: '',
@@ -695,12 +694,6 @@ function ServiceRequests() {
     }
   };
   
-  const handleShowImage = (imageUrl) => {
-    if (imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined') {
-      setCurrentImage(imageUrl);
-      setIsImageModalOpen(true);
-    }
-  };
   
   const handleShowComment = async (requestId) => {
     try {
@@ -732,6 +725,8 @@ function ServiceRequests() {
     }
   };
   
+  // REMOVED FOR WEB ADMIN VIEW: These functions are commented out as they're not needed in the view-only version
+  /*
   const sendNotification = async ({ residentName, residentUid, staffName, issue }) => {
     try {
       const staff = getStaffDetails(staffName);
@@ -782,6 +777,7 @@ function ServiceRequests() {
     });
     
     setIsNotifyModalOpen(true);
+    setIsNotifyResidentModalOpen(true);
   };
 
   const handleUpdateStatus = async (id, newStatus) => {
@@ -797,6 +793,7 @@ function ServiceRequests() {
       toast.error('Error updating request: ' + error.message);
     }
   };
+  */
 
   const getStatusVariant = (status) => {
     if (!status) return 'warning';
@@ -989,9 +986,7 @@ const formatTime = (timestamp) => {
                       <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Assignment
                       </TableHeaderCell>
-                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </TableHeaderCell>
+                      
                     </TableRow>
                   </TableHead>
               <TableBody>
@@ -1048,20 +1043,6 @@ const formatTime = (timestamp) => {
                             </svg>
                           </button>
                           
-                          {request.image_url && request.image_url !== "null" && request.image_url !== "undefined" ? (
-                            <button
-                              onClick={() => handleShowImage(request.image_url)}
-                              className="p-1.5 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors"
-                              title="View Image"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          ) : (
-                            <div className="text-sm text-gray-500">None</div>
-                          )}
-                          
                           <button
                             onClick={() => handleShowComment(request.id)}
                             className="p-1.5 rounded-md bg-green-50 hover:bg-green-100 transition-colors"
@@ -1092,68 +1073,12 @@ const formatTime = (timestamp) => {
                           {request.status || 'Pending'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <select
-                          value={request.staff || ''}
-                          onChange={(e) => handleAssignStaff(request.id, e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="">Assign Staff</option>
-                          {staffList.map((staff) => (
-                            <option key={staff.id} value={staff.name}>
-                              {staff.name}
-                            </option>
-                          ))}
-                        </select>
-                      </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <div className="flex space-x-2">
-                          <button
-                            disabled={!request.staff}
-                            onClick={() => handleNotifyButtonClick(request)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed"
-                          >
-                            Notify
-                          </button>
-                          
-                          {(!request.status || request.status === 'Pending') && (
-                            <>
-                              <Button 
-                                variant="info" 
-                                size="sm" 
-                                onClick={() => handleUpdateStatus(request.id, 'In-Progress')}
-                                className="mr-2"
-                              >
-                                Start Progress
-                              </Button>
-                              <Button 
-                                variant="success" 
-                                size="sm" 
-                                onClick={() => handleUpdateStatus(request.id, 'Confirmed')}
-                              >
-                                Confirm
-                              </Button>
-                            </>
-                          )}
-                          {request.status === 'In-Progress' && (
-                            <Button 
-                              variant="success" 
-                              size="sm" 
-                              onClick={() => handleUpdateStatus(request.id, 'Confirmed')}
-                            >
-                              Confirm
-                            </Button>
-                          )}
-                          {request.status === 'Confirmed' && (
-                            <Button 
-                              variant="primary" 
-                              size="sm" 
-                              onClick={() => handleUpdateStatus(request.id, 'Completed')}
-                            >
-                              Complete
-                            </Button>
-                          )}
-                        </div>
+                      <TableCell className="px-6 py-4 text-sm text-gray-700">
+                        {request.staff ? (
+                          <span className="text-gray-800 font-medium">{request.staff}</span>
+                        ) : (
+                          <span className="text-gray-400 italic">Unassigned</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -1320,65 +1245,6 @@ const formatTime = (timestamp) => {
           </div>
         </Modal>
         
-        {/* Image Modal */}
-        <Transition appear show={isImageModalOpen} as={Fragment}>
-          <Dialog
-            as="div"
-            className="fixed inset-0 z-50 overflow-y-auto"
-            onClose={() => setIsImageModalOpen(false)}
-          >
-            <div className="flex min-h-screen items-center justify-center px-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0"
-                enterTo="opacity-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-              >
-                <Dialog.Overlay className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-              </Transition.Child>
-
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                enterTo="opacity-100 translate-y-0 sm:scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-              >
-                <div className="inline-block transform overflow-hidden rounded-lg bg-white px-6 py-4 text-left align-middle shadow-xl transition-all sm:max-w-lg sm:w-full">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
-                    Image
-                  </Dialog.Title>
-                  <div className="mt-2">
-                    <img 
-                      src={currentImage} 
-                      alt="Request" 
-                      className="w-full h-auto rounded-md"
-                      onError={(e) => {
-                        e.target.src = "/placeholder-image.png";
-                        e.target.alt = "Failed to load image";
-                      }} 
-                    />
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                      onClick={() => setIsImageModalOpen(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </Transition.Child>
-            </div>
-          </Dialog>
-        </Transition>
-
         {/* Comment Modal */}
         <Transition appear show={isCommentModalOpen} as={Fragment}>
           <Dialog
@@ -1481,12 +1347,12 @@ const formatTime = (timestamp) => {
           </Dialog>
         </Transition>
 
-        {/* Notify Resident Modal */}
-        <Transition appear show={isNotifyModalOpen} as={Fragment}>
+        {/* Notify Resident Modal - Removed in Web Admin View Only version */}
+        <Transition appear show={isNotifyResidentModalOpen} as={Fragment}>
           <Dialog
             as="div"
             className="fixed inset-0 z-50 overflow-y-auto"
-            onClose={() => setIsNotifyModalOpen(false)}
+            onClose={() => setIsNotifyResidentModalOpen(false)}
           >
             <div className="flex min-h-screen items-center justify-center px-4 text-center">
               <Transition.Child
@@ -1515,28 +1381,15 @@ const formatTime = (timestamp) => {
                     Notify Resident
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Send a notification to {currentNotifyDetails.residentName} that {currentNotifyDetails.staffName} is on the way to address their issue.
-                    </p>
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700">Issue:</p>
-                      <p className="text-sm text-gray-500">{currentNotifyDetails.issue}</p>
-                    </div>
+                    <p className="text-sm text-gray-500">Are you sure you want to notify the resident?</p>
                   </div>
-                  <div className="mt-4 flex justify-end space-x-2">
+                  <div className="mt-4 flex justify-end">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
-                      onClick={() => setIsNotifyModalOpen(false)}
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsNotifyResidentModalOpen(false)}
                     >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                      onClick={() => sendNotification(currentNotifyDetails)}
-                    >
-                      Send Notification
+                      Close
                     </button>
                   </div>
                 </div>
@@ -1544,7 +1397,7 @@ const formatTime = (timestamp) => {
             </div>
           </Dialog>
         </Transition>
-      
+
         {/* Service Management Modal */}
         <Modal
           isOpen={isServiceModalOpen}
@@ -2048,9 +1901,7 @@ const formatTime = (timestamp) => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                     
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">

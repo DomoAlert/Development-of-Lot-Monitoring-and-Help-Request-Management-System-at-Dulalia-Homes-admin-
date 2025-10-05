@@ -21,6 +21,7 @@ function Navbar() {
   const location = useLocation();
   const [isRequestDropdownOpen, setIsRequestDropdownOpen] = useState(false);
   const [isAccountsDropdownOpen, setIsAccountsDropdownOpen] = useState(false);
+  const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { darkMode } = useTheme();
@@ -65,6 +66,7 @@ function Navbar() {
     const handleClickOutside = () => {
       setIsRequestDropdownOpen(false);
       setIsAccountsDropdownOpen(false);
+      setIsStaffDropdownOpen(false);
     };
     
     document.addEventListener('click', handleClickOutside);
@@ -189,14 +191,42 @@ function Navbar() {
                 )}
               </li>
               
-              <li>
+              {/* Staff Dropdown */}
+              <li className="relative">
                 <button 
-                  onClick={() => navigate('/admin/staff')}
-                  className={`${navLinkClass('/admin/staff')}`}
+                  onClick={(e) => handleDropdownClick(e, setIsStaffDropdownOpen)}
+                  className={`${dropdownClass}`}
                 >
-                  <FaClipboardList className="mr-2" size={16} />
-                  <span>Staff List</span>
+                  <div className="flex items-center">
+                    <FaClipboardList className="mr-2" size={16} />
+                    <span>Staff</span>
+                  </div>
+                  <span className={`ml-2 transition-transform duration-200 ${isStaffDropdownOpen ? 'rotate-180' : ''}`}>
+                    <FaChevronDown size={12} />
+                  </span>
                 </button>
+                {isStaffDropdownOpen && (
+                  <ul className={`${isMobile ? 'pl-6 mt-1 space-y-1' : 'absolute mt-1 bg-primary dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-50 min-w-[180px]'}`}>
+                    <li>
+                      <button 
+                        onClick={() => navigate('/admin/head-staff-accounts')}
+                        className={`w-full text-left ${navLinkClass('/admin/head-staff-accounts')}`}
+                      >
+                        <FaUserShield className="mr-2" size={16} />
+                        <span>Head Staff Accounts</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => navigate('/admin/staff')}
+                        className={`w-full text-left ${navLinkClass('/admin/staff')}`}
+                      >
+                        <FaClipboardList className="mr-2" size={16} />
+                        <span>Staff Accounts</span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
               </li>
               
               {/* Request Dropdown */}

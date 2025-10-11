@@ -23,6 +23,7 @@ const LotStatus = () => {
   const [newLotNumber, setNewLotNumber] = useState('');
   const [autoLotNumber, setAutoLotNumber] = useState(true);
   const [isAddingLot, setIsAddingLot] = useState(false);
+  const [lotNumberError, setLotNumberError] = useState('');
 
   // Valid statuses for lots
   const validStatuses = [
@@ -169,6 +170,58 @@ const LotStatus = () => {
     }
   };
 
+  // Handle removing homeowner directly
+  const handleRemoveHomeowner = async () => {
+    if (!selectedLot) {
+      toast.error('No lot selected');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      // Generate the lot document ID
+      const lotId = `B${selectedLot.block}-L${selectedLot.lot.toString().padStart(2, '0')}`;
+      const lotDocRef = doc(db, 'lots', lotId);
+      
+      // First update the lot status
+      await setDoc(lotDocRef, {
+        status: 'Vacant',
+        owner_id: null,
+        house_owner: null,
+        last_updated: serverTimestamp()
+      }, { merge: true });
+      
+      // Then, if we know the owner's ID, update their user record
+      if (selectedLot.owner_id) {
+        const userDocRef = doc(db, 'users', selectedLot.owner_id);
+        try {
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            await updateDoc(userDocRef, {
+              house_no: null,
+              block: null,
+              lot: null,
+              last_updated: serverTimestamp()
+            });
+          }
+        } catch (error) {
+          console.error('Error updating user record:', error);
+          // Continue even if user update fails
+        }
+      }
+      
+      toast.success('Lot marked as vacant and homeowner removed');
+      setShowAssignModal(false);
+      fetchLots(); // Refresh the lots data
+      fetchUsers(); // Refresh the users data
+    } catch (error) {
+      console.error('Error removing homeowner:', error);
+      toast.error('Failed to remove homeowner: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Function to handle assigning a lot to a user
   const handleAssignLot = async () => {
     if (!selectedLot) {
@@ -182,39 +235,8 @@ const LotStatus = () => {
       const lotId = `B${selectedLot.block}-L${selectedLot.lot.toString().padStart(2, '0')}`;
       const lotDocRef = doc(db, 'lots', lotId);
       
-      // CASE 1: Marking an occupied lot as vacant (removing homeowner)
-      if (selectedLot.status === 'Occupied' && selectedUserId === 'remove') {
-        // First update the lot status
-        await setDoc(lotDocRef, {
-          status: 'Vacant',
-          owner_id: null,
-          house_owner: null,
-          last_updated: serverTimestamp()
-        }, { merge: true });
-        
-        // Then, if we know the owner's ID, update their user record
-        if (selectedLot.owner_id) {
-          const userDocRef = doc(db, 'users', selectedLot.owner_id);
-          try {
-            const userSnap = await getDoc(userDocRef);
-            if (userSnap.exists()) {
-              await updateDoc(userDocRef, {
-                house_no: null,
-                block: null,
-                lot: null,
-                last_updated: serverTimestamp()
-              });
-            }
-          } catch (error) {
-            console.error('Error updating user record:', error);
-            // Continue even if user update fails
-          }
-        }
-        
-        toast.success('Lot marked as vacant and homeowner removed');
-      }
-      // CASE 2: Changing the status of an unoccupied lot
-      else if (selectedUserId === 'status-change') {
+      // CASE 1: Changing the status of an unoccupied lot
+      if (selectedUserId === 'status-change') {
         await setDoc(lotDocRef, {
           house_no: selectedLot.house_no,
           block: selectedLot.block,
@@ -225,7 +247,7 @@ const LotStatus = () => {
         
         toast.success(`Lot status updated to ${selectedLot.status}`);
       }
-      // CASE 3: Assigning a homeowner to a vacant lot
+      // CASE 2: Assigning a homeowner to a vacant lot
       else if (selectedUserId) {
         // Get the selected user data
         const userDocRef = doc(db, 'users', selectedUserId);
@@ -319,6 +341,41 @@ const LotStatus = () => {
     return maxLotNumber + 1;
   };
   
+  // Validate lot number input
+  const validateLotNumber = (blockNum, lotNum) => {
+    const lotNumber = parseInt(lotNum);
+    const blockNumber = parseInt(blockNum);
+    
+    // Clear previous error
+    setLotNumberError('');
+    
+    // Check if lot number is empty
+    if (!lotNum || lotNum === '') {
+      return false;
+    }
+    
+    // Check if lot number is valid
+    if (isNaN(lotNumber) || lotNumber <= 0) {
+      setLotNumberError('Lot number must be a positive number');
+      return false;
+    }
+    
+    // Check if lot number exceeds block limit
+    if (lotNumber > blockConfig[blockNum]) {
+      setLotNumberError(`Lot number cannot exceed ${blockConfig[blockNum]} for Block ${blockNum}`);
+      return false;
+    }
+    
+    // Check if lot already exists
+    const existingLot = lots.find(lot => lot.block === blockNumber && lot.lot === lotNumber);
+    if (existingLot) {
+      setLotNumberError(`Block ${blockNumber}, Lot ${lotNumber} already exists`);
+      return false;
+    }
+    
+    return true;
+  };
+  
   // Function to add a new lot to Firebase
   const handleAddNewLot = async () => {
     setIsAddingLot(true);
@@ -329,24 +386,24 @@ const LotStatus = () => {
         ? findNextAvailableLotNumber(newLotBlock) 
         : parseInt(newLotNumber);
       
-      // Ensure the lot number is valid
-      if (lotNumber <= 0 || lotNumber > blockConfig[newLotBlock]) {
-        toast.error(`Lot number must be between 1 and ${blockConfig[newLotBlock]}`);
-        setIsAddingLot(false);
-        return;
+      // For manual input, validate the lot number
+      if (!autoLotNumber) {
+        const isValid = validateLotNumber(newLotBlock, newLotNumber);
+        if (!isValid) {
+          setIsAddingLot(false);
+          return;
+        }
       }
       
-      // Check if this lot already exists
-      const blockNum = parseInt(newLotBlock);
-      const existingLot = lots.find(lot => lot.block === blockNum && lot.lot === lotNumber);
-      
-      if (existingLot) {
-        toast.error(`Block ${blockNum}, Lot ${lotNumber} already exists.`);
+      // For auto lot number, ensure it's valid
+      if (autoLotNumber && (lotNumber <= 0 || lotNumber > blockConfig[newLotBlock])) {
+        toast.error(`Cannot create lot: Block ${newLotBlock} is full or invalid`);
         setIsAddingLot(false);
         return;
       }
       
       // Calculate the house number based on our formula
+      const blockNum = parseInt(newLotBlock);
       const houseNo = (blockNum * 100) + lotNumber;
       
       // Generate the lot document ID
@@ -374,12 +431,41 @@ const LotStatus = () => {
       
       // Reset the form
       setNewLotNumber('');
+      setLotNumberError('');
       
     } catch (error) {
       console.error('Error adding new lot:', error);
       toast.error('Failed to add new lot: ' + error.message);
     } finally {
       setIsAddingLot(false);
+    }
+  };
+  
+  // Handle lot number input change with validation
+  const handleLotNumberChange = (e) => {
+    const value = e.target.value;
+    setNewLotNumber(value);
+    
+    // Clear error when user starts typing
+    if (lotNumberError) {
+      setLotNumberError('');
+    }
+    
+    // Validate on input if value is not empty
+    if (value && value.trim() !== '') {
+      validateLotNumber(newLotBlock, value);
+    }
+  };
+  
+  // Clear error when block changes
+  const handleBlockChange = (e) => {
+    const newBlock = e.target.value;
+    setNewLotBlock(newBlock);
+    setLotNumberError('');
+    
+    // Re-validate current lot number if it exists
+    if (newLotNumber && !autoLotNumber) {
+      validateLotNumber(newBlock, newLotNumber);
     }
   };
   
@@ -715,31 +801,10 @@ const LotStatus = () => {
                   </div>
                 </div>
                 
-                {/* If lot is Occupied, show option to mark as Vacant */}
+                {/* If lot is Occupied, no additional form controls needed */}
                 {selectedLot.status === 'Occupied' ? (
                   <div className="mb-4">
-                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-3">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <h3 className="text-sm font-medium text-yellow-800">Homeowner Leaving Notice</h3>
-                          <div className="mt-2 text-sm text-yellow-700">
-                            <p>This action will mark the lot as vacant and remove the current homeowner association. This should only be done when a homeowner is leaving Dulalia Homes.</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedUserId('remove')}
-                      className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      Mark Lot as Vacant (Remove Homeowner)
-                    </button>
+                    {/* No additional controls for occupied lots - action button is at the bottom */}
                   </div>
                 ) : (
                   /* For vacant lots, show status change options or homeowner assignment */
@@ -801,32 +866,50 @@ const LotStatus = () => {
                   >
                     Cancel
                   </button>
-                  <button
-                    onClick={handleAssignLot}
-                    disabled={isSubmitting || (selectedLot.status === 'Vacant' && !selectedUserId && selectedUserId !== 'remove')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                      isSubmitting || (selectedLot.status === 'Vacant' && !selectedUserId && selectedUserId !== 'remove')
-                        ? 'bg-blue-300 cursor-not-allowed' 
-                        : selectedUserId === 'remove'
-                          ? 'bg-red-600 hover:bg-red-700'
+                  {selectedLot.status === 'Occupied' ? (
+                    <button
+                      type="button"
+                      onClick={handleRemoveHomeowner}
+                      disabled={isSubmitting}
+                      className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${
+                        isSubmitting 
+                          ? 'bg-red-300 cursor-not-allowed' 
+                          : 'bg-red-600 hover:bg-red-700'
+                      }`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="inline-block animate-spin mr-2">⟳</span>
+                          Removing...
+                        </>
+                      ) : (
+                        'Mark as Vacant'
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAssignLot}
+                      disabled={isSubmitting || (selectedLot.status === 'Vacant' && !selectedUserId)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                        isSubmitting || (selectedLot.status === 'Vacant' && !selectedUserId)
+                          ? 'bg-blue-300 cursor-not-allowed' 
                           : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="inline-block animate-spin mr-2">⟳</span>
-                        Processing...
-                      </>
-                    ) : selectedLot.status === 'Occupied' ? (
-                      'Mark as Vacant'
-                    ) : selectedUserId === 'status-change' ? (
-                      `Update Status to ${selectedLot.status}`
-                    ) : selectedUserId ? (
-                      'Assign Lot'
-                    ) : (
-                      'Save Changes'
-                    )}
-                  </button>
+                      }`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="inline-block animate-spin mr-2">⟳</span>
+                          Processing...
+                        </>
+                      ) : selectedUserId === 'status-change' ? (
+                        `Update Status to ${selectedLot.status}`
+                      ) : selectedUserId ? (
+                        'Assign Lot'
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -843,7 +926,11 @@ const LotStatus = () => {
                   Add New Lot
                 </h3>
                 <button
-                  onClick={() => setShowAddLotModal(false)}
+                  onClick={() => {
+                    setShowAddLotModal(false);
+                    setLotNumberError('');
+                    setNewLotNumber('');
+                  }}
                   className="text-gray-400 hover:text-gray-500 focus:outline-none"
                 >
                   <FaTimes />
@@ -858,7 +945,7 @@ const LotStatus = () => {
                   </label>
                   <select
                     value={newLotBlock}
-                    onChange={(e) => setNewLotBlock(e.target.value)}
+                    onChange={handleBlockChange}
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   >
                     {Object.keys(blockConfig).map(blockNum => (
@@ -877,7 +964,13 @@ const LotStatus = () => {
                       name="autoLotNumber"
                       type="checkbox"
                       checked={autoLotNumber}
-                      onChange={(e) => setAutoLotNumber(e.target.checked)}
+                      onChange={(e) => {
+                        setAutoLotNumber(e.target.checked);
+                        // Clear error when switching to auto mode
+                        if (e.target.checked) {
+                          setLotNumberError('');
+                        }
+                      }}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <label htmlFor="autoLotNumber" className="ml-2 block text-sm font-medium text-gray-700">
@@ -897,30 +990,45 @@ const LotStatus = () => {
                     <input
                       type="number"
                       value={newLotNumber}
-                      onChange={(e) => setNewLotNumber(e.target.value)}
+                      onChange={handleLotNumberChange}
                       min="1"
                       max={blockConfig[newLotBlock]}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className={`block w-full px-3 py-2 border rounded-md leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm ${
+                        lotNumberError 
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
                       placeholder={`Enter lot number (1-${blockConfig[newLotBlock]})`}
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Manual lot number assignment may cause conflicts if not careful.
-                    </p>
+                    {lotNumberError && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {lotNumberError}
+                      </p>
+                    )}
+                    {!lotNumberError && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Manual lot number assignment may cause conflicts if not careful.
+                      </p>
+                    )}
                   </div>
                 )}
                 
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
-                    onClick={() => setShowAddLotModal(false)}
+                    onClick={() => {
+                      setShowAddLotModal(false);
+                      setLotNumberError('');
+                      setNewLotNumber('');
+                    }}
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleAddNewLot}
-                    disabled={isAddingLot || (!autoLotNumber && !newLotNumber)}
+                    disabled={isAddingLot || (!autoLotNumber && (!newLotNumber || lotNumberError))}
                     className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-                      isAddingLot || (!autoLotNumber && !newLotNumber)
+                      isAddingLot || (!autoLotNumber && (!newLotNumber || lotNumberError))
                         ? 'bg-green-300 cursor-not-allowed' 
                         : 'bg-green-600 hover:bg-green-700'
                     }`}

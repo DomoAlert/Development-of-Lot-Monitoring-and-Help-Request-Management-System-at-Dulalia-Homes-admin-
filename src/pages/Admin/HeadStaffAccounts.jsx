@@ -209,6 +209,18 @@ function HeadStaffAccounts() {
     }
   };
 
+  // Handle phone number input - only allow numbers
+  const handlePhoneNumberChange = (e) => {
+    const { value } = e.target;
+    // Only allow digits
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    setFormData({
+      ...formData,
+      phone: numericValue
+    });
+  };
+
   // Handle status toggle
   const handleStatusToggle = (e) => {
     setFormData({
@@ -811,7 +823,7 @@ function HeadStaffAccounts() {
                         name="phone"
                         id="phone"
                         value={formData.phone}
-                        onChange={handleInputChange}
+                        onChange={handlePhoneNumberChange}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="09XXXXXXXXX"
                         required

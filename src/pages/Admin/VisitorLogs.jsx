@@ -389,11 +389,35 @@ function VisitorLogs() {
     // Filter by date if date filter is set
     let matchesDate = true;
     if (dateFilter) {
-      const visitorDate = visitor.visit_date ? 
-        new Date(visitor.visit_date.seconds * 1000).toDateString() : 
-        visitor.created_at ? 
-          new Date(visitor.created_at.seconds * 1000).toDateString() : 
-          '';
+      let visitorDate = '';
+      
+      // Handle visit_date field
+      if (visitor.visit_date) {
+        if (typeof visitor.visit_date === 'string') {
+          // Handle string format "DD/MM/YYYY"
+          try {
+            const parts = visitor.visit_date.split('/');
+            if (parts.length === 3) {
+              // Create date using parts (day, month-1, year)
+              const date = new Date(parts[2], parts[1] - 1, parts[0]);
+              if (!isNaN(date.getTime())) {
+                visitorDate = date.toDateString();
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing visit date string:", e);
+          }
+        } else if (visitor.visit_date.seconds) {
+          // Handle Firebase timestamp
+          visitorDate = new Date(visitor.visit_date.seconds * 1000).toDateString();
+        }
+      }
+      
+      // Fall back to created_at if visit_date is not available or parsing failed
+      if (!visitorDate && visitor.created_at && visitor.created_at.seconds) {
+        visitorDate = new Date(visitor.created_at.seconds * 1000).toDateString();
+      }
+      
       const filterDate = new Date(dateFilter).toDateString();
       matchesDate = visitorDate === filterDate;
     }

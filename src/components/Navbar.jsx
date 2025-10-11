@@ -231,6 +231,64 @@ function Navbar() {
                 )}
               </li>
               
+              {/* Request Dropdown */}
+              <li className="relative">
+                <button 
+                  onClick={(e) => handleDropdownClick(e, setIsRequestDropdownOpen)}
+                  className={`${dropdownClass}`}
+                >
+                  <div className="flex items-center">
+                    <FaClipboardList className="mr-2" size={16} />
+                    <span>View Request</span>
+                  </div>
+                  <span className={`ml-2 transition-transform duration-200 ${isRequestDropdownOpen ? 'rotate-180' : ''}`}>
+                    <FaChevronDown size={12} />
+                  </span>
+                </button>
+                {isRequestDropdownOpen && (
+                  <ul className={`${isMobile ? 'pl-6 mt-1 space-y-1' : 'absolute mt-1 bg-primary dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-50 min-w-[180px]'}`}>
+                    <li>
+                      <button 
+                        onClick={() => navigate('/admin/facility-requests')}
+                        className={`w-full text-left ${navLinkClass('/admin/facility-requests')}`}
+                      >
+                        <FaClipboardList className="mr-2" size={16} />
+                        <span>Facility Request</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => navigate('/admin/service-requests')}
+                        className={`w-full text-left ${navLinkClass('/admin/service-requests')}`}
+                      >
+                        <FaClipboardList className="mr-2" size={16} />
+                        <span>Service Request</span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </li>
+
+              <li>
+                <button 
+                  onClick={() => navigate('/admin/lot-status')}
+                  className={`${navLinkClass('/admin/lot-status')}`}
+                >
+                  <FaHome className="mr-2" size={16} />
+                  <span>Lot Status</span>
+                </button>
+              </li>
+              
+              <li>
+                <button 
+                  onClick={() => navigate('/admin/visitor-logs')}
+                  className={`${navLinkClass('/admin/visitor-logs')}`}
+                >
+                  <FaQrcode className="mr-2" size={16} />
+                  <span>Visitor Logs</span>
+                </button>
+              </li>
+              
               {/* Staff Dropdown */}
               <li className="relative">
                 <button 
@@ -269,44 +327,6 @@ function Navbar() {
                 )}
               </li>
               
-              {/* Request Dropdown */}
-              <li className="relative">
-                <button 
-                  onClick={(e) => handleDropdownClick(e, setIsRequestDropdownOpen)}
-                  className={`${dropdownClass}`}
-                >
-                  <div className="flex items-center">
-                    <FaClipboardList className="mr-2" size={16} />
-                    <span>View Request</span>
-                  </div>
-                  <span className={`ml-2 transition-transform duration-200 ${isRequestDropdownOpen ? 'rotate-180' : ''}`}>
-                    <FaChevronDown size={12} />
-                  </span>
-                </button>
-                {isRequestDropdownOpen && (
-                  <ul className={`${isMobile ? 'pl-6 mt-1 space-y-1' : 'absolute mt-1 bg-primary dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-50 min-w-[180px]'}`}>
-                    <li>
-                      <button 
-                        onClick={() => navigate('/admin/facility-requests')}
-                        className={`w-full text-left ${navLinkClass('/admin/facility-requests')}`}
-                      >
-                        <FaClipboardList className="mr-2" size={16} />
-                        <span>Facility Request</span>
-                      </button>
-                    </li>
-                    <li>
-                      <button 
-                        onClick={() => navigate('/admin/service-requests')}
-                        className={`w-full text-left ${navLinkClass('/admin/service-requests')}`}
-                      >
-                        <FaClipboardList className="mr-2" size={16} />
-                        <span>Service Request</span>
-                      </button>
-                    </li>
-                  </ul>
-                )}
-              </li>
-              
               <li>
                 <button 
                   onClick={() => navigate('/admin/announcements')}
@@ -316,6 +336,7 @@ function Navbar() {
                   <span>Announcements</span>
                 </button>
               </li>
+              
               <li>
                 <button 
                   onClick={() => navigate('/admin/feedback')}
@@ -323,25 +344,6 @@ function Navbar() {
                 >
                   <FaComments className="mr-2" size={16} />
                   <span>Feedback</span>
-                </button>
-              </li>
-              
-              <li>
-                <button 
-                  onClick={() => navigate('/admin/visitor-logs')}
-                  className={`${navLinkClass('/admin/visitor-logs')}`}
-                >
-                  <FaQrcode className="mr-2" size={16} />
-                  <span>Visitor Logs</span>
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => navigate('/admin/lot-status')}
-                  className={`${navLinkClass('/admin/lot-status')}`}
-                >
-                  <FaHome className="mr-2" size={16} />
-                  <span>Lot Status</span>
                 </button>
               </li>
             </ul>

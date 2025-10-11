@@ -4,7 +4,7 @@ import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function UserAccounts() {
   const [users, setUsers] = useState([]);
@@ -18,6 +18,7 @@ function UserAccounts() {
   const [selectedLot, setSelectedLot] = useState(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -45,6 +46,20 @@ function UserAccounts() {
     fetchUsers();
     fetchAvailableLots();
   }, []);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showForm || showUserDetails) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showForm, showUserDetails]);
 
   // Blocks configuration - how many lots are in each block (same as in LotStatus.jsx)
   const blockConfig = {
@@ -254,6 +269,7 @@ function UserAccounts() {
       
       toast.success('User added successfully and lot assigned');
       setShowForm(false);
+      setShowPassword(false);
       resetForm();
       fetchUsers();
       fetchAvailableLots(); // Refresh available lots
@@ -464,6 +480,11 @@ function UserAccounts() {
     });
   };
 
+  const handleContactNumberChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove all non-digit characters
+    setFormData({...formData, contactNumber: value});
+  };
+
   const resetForm = () => {
     setFormData({
       firstName: '',
@@ -547,27 +568,37 @@ function UserAccounts() {
 
         {/* Add User Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8">
-              <div className="flex justify-between items-center p-6 border-b">
-                <h2 className="text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
-                <button 
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                >
-                  <FaTimes className="h-5 w-5" />
-                </button>
-              </div>
-              
-              <div className="flex flex-col md:flex-row p-6">
-                {/* Form Section */}
-                <div className="user-details flex-1 md:pr-6">
+          <div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowForm(false);
+                setShowPassword(false);
+              }
+            }}
+          >
+            <div className="flex min-h-full items-center justify-center p-4 py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
+                  <button 
+                    onClick={() => {
+                      setShowForm(false);
+                      setShowPassword(false);
+                    }}
+                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    <FaTimes className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <div className="p-6">
                   <form onSubmit={handleAddUser} className="space-y-5">
                     <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
                       <h3 className="font-medium text-blue-800 mb-2 flex items-center">
                         <FaUser className="mr-2" /> Personal Information
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             First Name *
@@ -602,26 +633,40 @@ function UserAccounts() {
                         <i className="fas fa-user-lock mr-2"></i> Account Information
                       </h3>
                       <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Username *
-                          </label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500 sm:text-sm">@</span>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Username *
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-500 sm:text-sm">@</span>
+                              </div>
+                              <input
+                                type="text"
+                                required
+                                value={formData.username}
+                                onChange={handleUsernameChange}
+                                className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                placeholder="johndoe"
+                              />
                             </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Contact Number
+                            </label>
                             <input
-                              type="text"
-                              required
-                              value={formData.username}
-                              onChange={handleUsernameChange}
-                              className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                              placeholder="johndoe"
+                              type="tel"
+                              value={formData.contactNumber}
+                              onChange={handleContactNumberChange}
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                              placeholder="e.g. 09123456789"
                             />
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Email
@@ -642,30 +687,30 @@ function UserAccounts() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Password
                             </label>
-                            <input
-                              type="password"
-                              value={formData.password}
-                              onChange={(e) => setFormData({...formData, password: e.target.value})}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                              placeholder="Leave blank to use username"
-                            />
+                            <div className="relative">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                value={formData.password}
+                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                className="w-full px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                placeholder="Leave blank to use username"
+                              />
+                              <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <FaEyeSlash className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                ) : (
+                                  <FaEye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                )}
+                              </button>
+                            </div>
                             <p className="text-xs text-gray-500 mt-1">
                               Default: same as username
                             </p>
                           </div>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Contact Number
-                          </label>
-                          <input
-                            type="tel"
-                            value={formData.contactNumber}
-                            onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                            placeholder="e.g. 09123456789"
-                          />
                         </div>
                       </div>
                     </div>
@@ -675,89 +720,91 @@ function UserAccounts() {
                         <FaMapMarkerAlt className="mr-2" /> Property Assignment
                       </h3>
                       <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Select Available Lot *
-                          </label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <FaMapMarkerAlt className="text-amber-600" />
-                            </div>
-                            {loadingLots ? (
-                              <div className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
-                                <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
-                                Loading available lots...
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Select Available Lot *
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FaMapMarkerAlt className="text-amber-600" />
                               </div>
-                            ) : (
-                              <select
-                                value={selectedLot ? selectedLot.id : ""}
-                                onChange={(e) => {
-                                  const selected = availableLots.find(lot => lot.id === e.target.value);
-                                  setSelectedLot(selected);
-                                  if (selected) {
-                                    setFormData({
-                                      ...formData,
-                                      house_no: selected.house_no,
-                                      block: selected.block,
-                                      lot: selected.lot
-                                    });
-                                  }
-                                }}
-                                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
-                                required
-                              >
-                                <option value="">-- Select a lot --</option>
-                                {availableLots.map(lot => (
-                                  <option key={lot.id} value={lot.id}>
-                                    {lot.displayName}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Only showing vacant lots that are available for assignment
-                          </p>
-                          
-                          {selectedLot && (
-                            <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-amber-700">Selected Lot Details:</span>
-                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
-                                  #{selectedLot.house_no}
-                                </span>
-                              </div>
-                              <div className="mt-2 text-sm">
-                                <div className="flex items-center text-gray-700">
-                                  <FaHome className="mr-1 text-amber-500" />
-                                  Block {selectedLot.block}, Lot {selectedLot.lot}
+                              {loadingLots ? (
+                                <div className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
+                                  <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
+                                  Loading available lots...
                                 </div>
-                              </div>
+                              ) : (
+                                <select
+                                  value={selectedLot ? selectedLot.id : ""}
+                                  onChange={(e) => {
+                                    const selected = availableLots.find(lot => lot.id === e.target.value);
+                                    setSelectedLot(selected);
+                                    if (selected) {
+                                      setFormData({
+                                        ...formData,
+                                        house_no: selected.house_no,
+                                        block: selected.block,
+                                        lot: selected.lot
+                                      });
+                                    }
+                                  }}
+                                  className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
+                                  required
+                                >
+                                  <option value="">-- Select a lot --</option>
+                                  {availableLots.map(lot => (
+                                    <option key={lot.id} value={lot.id}>
+                                      {lot.displayName}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
                             </div>
-                          )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              Only showing vacant lots that are available for assignment
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              House Model
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i className="fas fa-home text-amber-600"></i>
+                              </div>
+                              <select
+                                value={formData.houseModel}
+                                onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
+                                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
+                              >
+                                <option value="Standard">Standard Model</option>
+                                <option value="Premium">Premium Model</option>
+                                <option value="Deluxe">Deluxe Model</option>
+                                <option value="Executive">Executive Model</option>
+                                <option value="Custom">Custom Build</option>
+                              </select>
+                            </div>
+                          </div>
                         </div>
                         
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            House Model
-                          </label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <i className="fas fa-home text-amber-600"></i>
+                        {selectedLot && (
+                          <div className="col-span-2 mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-amber-700">Selected Lot Details:</span>
+                              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                                #{selectedLot.house_no}
+                              </span>
                             </div>
-                            <select
-                              value={formData.houseModel}
-                              onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
-                              className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
-                            >
-                              <option value="Standard">Standard Model</option>
-                              <option value="Premium">Premium Model</option>
-                              <option value="Deluxe">Deluxe Model</option>
-                              <option value="Executive">Executive Model</option>
-                              <option value="Custom">Custom Build</option>
-                            </select>
+                            <div className="mt-2 text-sm">
+                              <div className="flex items-center text-gray-700">
+                                <FaHome className="mr-1 text-amber-500" />
+                                Block {selectedLot.block}, Lot {selectedLot.lot}
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                     
@@ -793,37 +840,6 @@ function UserAccounts() {
                     </div>
                   </form>
                 </div>
-                <div className="user-preview hidden md:block bg-white p-6 rounded-lg shadow-md md:w-72 lg:w-80 ml-4 border border-gray-100">
-                  <div className="text-center">
-                    <h4 className="text-sm uppercase tracking-wide text-gray-500 mb-4">Account Preview</h4>
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-3 shadow-md">
-                      {formData.firstName && formData.lastName ? formData.firstName[0] + formData.lastName[0] : 'U'}
-                    </div>
-                    <h3 className="font-semibold text-xl">{formData.firstName} {formData.lastName}</h3>
-                    <p className="text-sm text-gray-500 mb-3">@{formData.username || 'username'}</p>
-                    
-                    <div className="border-t border-gray-100 pt-4 mt-3">
-                      <div className="flex items-center justify-center space-x-2 mb-3">
-                        <FaHome className="text-amber-500" />
-                        <p className="text-sm font-medium">
-                          {selectedLot ? `Block ${selectedLot.block}, Lot ${selectedLot.lot}` : 'No lot selected'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-amber-50 rounded-lg px-3 py-2 mb-4">
-                        <p className="text-sm text-center font-medium text-amber-800">
-                          House #{formData.house_no || '---'}
-                        </p>
-                      </div>
-                      
-                      <div className="mt-2 flex justify-center">
-                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 shadow-sm">
-                          Active Homeowner
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -831,20 +847,29 @@ function UserAccounts() {
 
         {/* User Details/Edit Modal */}
         {showUserDetails && selectedUser && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                  {isEditing ? 'Edit User' : 'User Details'}
-                </h2>
-                <button 
-                  onClick={closeUserDetails}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              
+          <div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                closeUserDetails();
+              }
+            }}
+          >
+            <div className="flex min-h-full items-center justify-center p-4 py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-lg font-semibold">
+                    {isEditing ? 'Edit User' : 'User Details'}
+                  </h2>
+                  <button 
+                    onClick={closeUserDetails}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+                
+                <div className="p-6">
               {!isEditing ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-center mb-6">
@@ -1074,7 +1099,7 @@ function UserAccounts() {
                     <input
                       type="tel"
                       value={formData.contactNumber}
-                      onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                      onChange={handleContactNumberChange}
                       className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="e.g. 09123456789"
                     />
@@ -1106,6 +1131,8 @@ function UserAccounts() {
                   </div>
                 </form>
               )}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1281,60 +1308,67 @@ function UserAccounts() {
                             <FaSpinner className="animate-spin text-primary" />
                           </div>
                         ) : (
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => handleViewUser(user)}
-                              className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors flex items-center"
-                            >
-                              <i className="fas fa-eye mr-1"></i>
-                              View
-                            </button>
+                          <div className="flex flex-col gap-2">
+                            {/* Top Section: View, Deactivate/Activate, Delete */}
+                            <div className="flex flex-wrap gap-1">
+                              <button
+                                onClick={() => handleViewUser(user)}
+                                className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors flex items-center"
+                              >
+                                <i className="fas fa-eye mr-1"></i>
+                                View
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleToggleStatus(user.id, user.status)}
+                                className={`px-2 py-1 text-xs rounded border flex items-center ${
+                                  user.status === 'Active' 
+                                  ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                                  : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                                }`}
+                              >
+                                <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
+                                {user.status === 'Active' ? 'Deactivate' : 'Activate'}
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                              >
+                                <i className="fas fa-trash-alt mr-1"></i>
+                                Delete
+                              </button>
+                            </div>
                             
-                            <button 
-                              onClick={() => handleToggleStatus(user.id, user.status)}
-                              className={`px-2 py-1 text-xs rounded border flex items-center ${
-                                user.status === 'Active' 
-                                ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
-                                : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                              }`}
-                            >
-                              <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
-                              {user.status === 'Active' ? 'Deactivate' : 'Activate'}
-                            </button>
-                            
-                            <div className="flex gap-1">
+                            {/* Bottom Section: Record Status Buttons */}
+                            <div className="flex flex-wrap gap-1">
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Good')}
-                                className="p-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100"
+                                className="px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
                                 title="Mark Good Record"
                               >
-                                <i className="fas fa-thumbs-up"></i>
+                                <i className="fas fa-thumbs-up mr-1"></i>
+                                Good Record
                               </button>
                               
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
-                                className="p-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100"
+                                className="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
                                 title="Reset Record Status"
                               >
-                                <i className="fas fa-minus"></i>
+                                <i className="fas fa-minus mr-1"></i>
+                                Neutral
                               </button>
                               
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Bad')}
-                                className="p-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100"
+                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
                                 title="Mark Bad Record"
                               >
-                                <i className="fas fa-thumbs-down"></i>
+                                <i className="fas fa-thumbs-down mr-1"></i>
+                                Bad Record
                               </button>
                             </div>
-                            
-                            <button 
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
-                            >
-                              <i className="fas fa-trash-alt mr-1"></i>
-                              Delete
-                            </button>
                           </div>
                         )}
                       </td>

@@ -3,7 +3,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { toast } from 'react-toastify';
-import { FaUserShield, FaEdit, FaTrash, FaTimes, FaSpinner, FaClock, FaToggleOn, FaToggleOff, FaSearch, FaFilter, FaSyncAlt } from 'react-icons/fa';
+import { FaUserShield, FaEdit, FaTrash, FaTimes, FaSpinner, FaClock, FaToggleOn, FaToggleOff, FaSearch, FaFilter, FaSyncAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 function GuardAccounts() {
@@ -17,6 +17,7 @@ function GuardAccounts() {
   const [actionLoading, setActionLoading] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -86,6 +87,7 @@ function GuardAccounts() {
       
       toast.success("Guard account created successfully!");
       setShowForm(false);
+      setShowPassword(false);
       setFormData({
         name: '',
         username: '',
@@ -118,6 +120,11 @@ function GuardAccounts() {
       username,
       email: username ? `${username}@guard.com` : ''
     });
+  };
+
+  const handleContactNumberChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove all non-digit characters
+    setFormData({...formData, contactNumber: value});
   };
 
   const handleViewGuard = (guard) => {
@@ -229,6 +236,36 @@ function GuardAccounts() {
     } catch (error) {
       console.error("Error toggling guard status: ", error);
       toast.error("Failed to update guard status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const toggleShiftStatus = async (guardId, currentShiftStatus) => {
+    setActionLoading(guardId);
+    
+    try {
+      const guardRef = doc(db, 'guards', guardId);
+      const newShiftStatus = currentShiftStatus === 'On-duty' ? 'Off-duty' : 'On-duty';
+      
+      await updateDoc(guardRef, {
+        shift_status: newShiftStatus,
+        updatedAt: serverTimestamp(),
+      });
+      
+      toast.success(`Guard is now ${newShiftStatus.toLowerCase()}`);
+      
+      // Update UI
+      setGuards(prev => prev.map(guard => {
+        if (guard.id === guardId) {
+          return { ...guard, shift_status: newShiftStatus };
+        }
+        return guard;
+      }));
+      
+    } catch (error) {
+      console.error("Error toggling shift status: ", error);
+      toast.error("Failed to update shift status");
     } finally {
       setActionLoading(null);
     }
@@ -359,13 +396,25 @@ function GuardAccounts() {
 
         {/* Add Guard Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-4 overflow-hidden">
-              <div className="p-6">
+          <div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowForm(false);
+                setShowPassword(false);
+              }
+            }}
+          >
+            <div className="flex min-h-full items-center justify-center p-4 py-8">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="p-6 sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Add New Guard</h2>
                   <button 
-                    onClick={() => setShowForm(false)}
+                    onClick={() => {
+                      setShowForm(false);
+                      setShowPassword(false);
+                    }}
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   >
                     <FaTimes className="h-5 w-5" />
@@ -419,14 +468,27 @@ function GuardAccounts() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Create a strong password"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        className="w-full px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Create a strong password"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <FaEyeSlash className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                        ) : (
+                          <FaEye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                        )}
+                      </button>
+                    </div>
                     <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
                   </div>
                 
@@ -437,7 +499,7 @@ function GuardAccounts() {
                     <input
                       type="tel"
                       value={formData.contactNumber}
-                      onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                      onChange={handleContactNumberChange}
                       className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g. 09123456789"
                     />
@@ -509,6 +571,7 @@ function GuardAccounts() {
                     </div>
                   </div>
                 </form>
+                </div>
               </div>
             </div>
           </div>
@@ -516,9 +579,17 @@ function GuardAccounts() {
 
         {/* Guard Details Modal */}
         {showGuardDetails && selectedGuard && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
+          <div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                closeGuardDetails();
+              }
+            }}
+          >
+            <div className="flex min-h-full items-center justify-center p-4 py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
                 <h2 className="text-lg font-semibold">
                   {isEditing ? 'Edit Guard' : 'Guard Details'}
                 </h2>
@@ -530,6 +601,7 @@ function GuardAccounts() {
                 </button>
               </div>
               
+              <div className="p-6">
               {!isEditing ? (
                 <div className="space-y-6">
                   <div className="flex items-center justify-center mb-4">
@@ -652,7 +724,7 @@ function GuardAccounts() {
                     <input
                       type="tel"
                       value={formData.contactNumber}
-                      onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                      onChange={handleContactNumberChange}
                       className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g. 09123456789"
                     />
@@ -682,6 +754,34 @@ function GuardAccounts() {
                     />
                   </div>
                   
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Shift Status
+                    </label>
+                    <select
+                      value={formData.shift_status}
+                      onChange={(e) => setFormData({...formData, shift_status: e.target.value})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Off-duty">Off-duty</option>
+                      <option value="On-duty">On-duty</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Status
+                    </label>
+                    <select
+                      value={formData.isActive}
+                      onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
+                  </div>
+                  
                   <div className="flex justify-end space-x-2">
                     <button
                       type="button"
@@ -709,6 +809,8 @@ function GuardAccounts() {
                   </div>
                 </form>
               )}
+              </div>
+              </div>
             </div>
           </div>
         )}
@@ -752,7 +854,11 @@ function GuardAccounts() {
                     </tr>
                   ) : (
                     filteredGuards.map((guard) => (
-                      <tr key={guard.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={guard.id} 
+                        className="hover:bg-blue-50/30 transition-colors duration-150 cursor-pointer"
+                        onClick={() => handleViewGuard(guard)}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -788,41 +894,52 @@ function GuardAccounts() {
                             }`}></span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleViewGuard(guard)}
-                              className="text-blue-600 hover:text-blue-900"
-                              aria-label={`View ${guard.name}`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </button>
-                            
-                            <button
-                              onClick={() => toggleGuardStatus(guard.id, guard.isActive)}
-                              className={`${guard.isActive ? 'text-green-600 hover:text-green-900' : 'text-gray-400 hover:text-gray-600'}`}
-                              disabled={actionLoading === guard.id}
-                              aria-label={`${guard.isActive ? 'Deactivate' : 'Activate'} ${guard.name}`}
-                            >
-                              {actionLoading === guard.id ? (
-                                <FaSpinner className="animate-spin h-5 w-5 text-gray-400" />
-                              ) : (
-                                guard.isActive ? <FaToggleOn className="h-5 w-5" /> : <FaToggleOff className="h-5 w-5" />
-                              )}
-                            </button>
-                            
-                            <button
-                              onClick={() => handleDeleteGuard(guard.id)}
-                              className="text-red-600 hover:text-red-900"
-                              disabled={actionLoading === guard.id}
-                              aria-label={`Delete ${guard.name}`}
-                            >
-                              <FaTrash className="h-4 w-4" />
-                            </button>
-                          </div>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={(e) => e.stopPropagation()}>
+                          {actionLoading === guard.id ? (
+                            <div className="flex items-center justify-center">
+                              <FaSpinner className="animate-spin text-primary" />
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              {/* Top Section: Activate/Deactivate, Delete */}
+                              <div className="flex flex-wrap gap-1">
+                                <button
+                                  onClick={() => toggleGuardStatus(guard.id, guard.isActive)}
+                                  className={`px-2 py-1 text-xs rounded border flex items-center ${
+                                    guard.isActive 
+                                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                                    : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                                  }`}
+                                >
+                                  <i className={`fas fa-toggle-${guard.isActive ? 'off' : 'on'} mr-1`}></i>
+                                  {guard.isActive ? 'Deactivate' : 'Activate'}
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleDeleteGuard(guard.id)}
+                                  className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                                >
+                                  <i className="fas fa-trash-alt mr-1"></i>
+                                  Delete
+                                </button>
+                              </div>
+                              
+                              {/* Bottom Section: Shift Status Toggle */}
+                              <div className="flex flex-wrap gap-1">
+                                <button
+                                  onClick={() => toggleShiftStatus(guard.id, guard.shift_status)}
+                                  className={`px-2 py-1 text-xs rounded border flex items-center ${
+                                    guard.shift_status === 'On-duty'
+                                    ? 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100'
+                                    : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  <i className={`fas ${guard.shift_status === 'On-duty' ? 'fa-moon' : 'fa-sun'} mr-1`}></i>
+                                  {guard.shift_status === 'On-duty' ? 'Go Off Duty' : 'Go On Duty'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))

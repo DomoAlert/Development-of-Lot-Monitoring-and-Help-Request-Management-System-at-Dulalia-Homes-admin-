@@ -31,12 +31,16 @@ function Login() {
       // Check if we already have a token and redirect if needed
       const adminToken = localStorage.getItem('adminToken');
       if (adminToken) {
-        console.log('Token found, checking if still valid...');
+        console.log('Token found, redirecting to admin dashboard...');
+        // If user is already logged in, redirect to admin dashboard immediately
+        navigate('/admin', { replace: true });
+        return;
       }
     } catch (error) {
       console.error('Error during login component initialization:', error);
     }
-  }, []);
+  }, [navigate]);
+  
   const handleLogin = async () => {
     // Clear previous errors
     setEmailError(null);
@@ -88,8 +92,8 @@ function Login() {
       toast.success('Login successful!');
       console.log('Navigating to admin dashboard');
       
-      // Navigate to admin dashboard
-      setTimeout(() => navigate('/admin'), 1000);
+      // Navigate to admin dashboard with replace: true to prevent back button issues
+      setTimeout(() => navigate('/admin', { replace: true }), 1000);
     } catch (err) {
       console.error('Login error:', err);
       

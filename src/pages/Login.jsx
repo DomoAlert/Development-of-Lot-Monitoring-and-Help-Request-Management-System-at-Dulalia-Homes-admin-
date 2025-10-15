@@ -4,6 +4,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { signInAdmin } from '../services/authService';
 import logo from '../assets/images/logo.png';
+import overlayPng from '../assets/images/images.jpg';
+import bgPattern from '../assets/images/dulalia.webp';
 import { FaEye, FaEyeSlash} from 'react-icons/fa';
 import DiagnosticPanel from '../components/DiagnosticPanel';
 import { checkEnvironment } from '../utils/debug';
@@ -16,6 +18,7 @@ function Login() {
   const [passwordError, setPasswordError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false); // Controls both animations
   // Set debug mode based on environment or URL parameter
   const showDiagnostics = process.env.NODE_ENV !== 'production' || new URLSearchParams(window.location.search).has('debug');
   
@@ -40,7 +43,7 @@ function Login() {
       console.error('Error during login component initialization:', error);
     }
   }, [navigate]);
-  
+
   const handleLogin = async () => {
     // Clear previous errors
     setEmailError(null);
@@ -88,12 +91,13 @@ function Login() {
       localStorage.setItem('adminToken', user.accessToken);
       localStorage.setItem('adminLastLogin', Date.now().toString());
       
-      // Show success message
       toast.success('Login successful!');
       console.log('Navigating to admin dashboard');
       
+      // Set login success state for animations
+      setLoginSuccess(true);
       // Navigate to admin dashboard with replace: true to prevent back button issues
-      setTimeout(() => navigate('/admin', { replace: true }), 1000);
+      setTimeout(() => navigate('/admin', { replace: true }), 1500);
     } catch (err) {
       console.error('Login error:', err);
       
@@ -128,65 +132,149 @@ function Login() {
     }
   };
 
-  return (    <div className="min-h-screen flex items-center justify-center bg-neutral">
-      <div className="bg-base p-8 rounded-lg shadow-lg w-full max-w-md border-t-4 border-secondary">
-        <img src={logo} alt="Logo" className="mx-auto h-24 mb-6" />
-        <h2 className="text-2xl font-bold text-primary text-center mb-6">Admin Login</h2>
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Background: brightens on success */}
+      <div
+        className="absolute inset-0 z-0 transition-all duration-1000"
+        style={{
+          backgroundImage: `url(${bgPattern})`,
+          backgroundColor: '#0a2540',
+          backgroundBlendMode: 'overlay',
+          opacity: loginSuccess ? 0.3 : 0.9,
+        }}
+      />
 
-        <input
-          type="email"
-          placeholder="Admin Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyPress={handleKeyPress}          className="w-full px-4 py-3 mb-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-secondary bg-neutral"
-        />
-        {emailError && <p className="text-accent text-sm mb-2">{emailError}</p>}
-
-        <div className="relative">
-          <input
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="w-full px-4 py-3 mb-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-secondary bg-neutral"
-          />
-          <span
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3 cursor-pointer text-gray-500 hover:text-gray-700"
-          >
-        {showPassword ? (
-            <FaEye className="h-5 w-5" />
-          ) : (
-          <FaEyeSlash className="h-5 w-5" />
-          )}
-          </span>
-        </div>
-        {passwordError && <p className="text-red-500 text-sm mb-2">{passwordError}</p>}        <button
-          onClick={handleLogin}
-          disabled={isLoading}
-          className="w-full py-3 px-4 bg-primary text-white font-semibold rounded-lg hover:bg-primaryLight transition duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+      {/* Login Card */}
+      <div className="w-full max-w-md bg-neutral rounded-2xl shadow-lg overflow-hidden border border-gray-200/50 z-10">
+        {/* 🔹 Logo Container — 3D flip enabled */}
+        <div 
+          className="relative w-full h-32 bg-primary flex justify-center items-center overflow-hidden"
+          style={{ 
+            transformStyle: 'preserve-3d',
+            perspective: '1000px'
+          }}
         >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
+          <img
+            src={overlayPng}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            aria-hidden="true"
+          />
+          
+          {/* 🔹 Logo wrapper for flip animation */}
+          <div 
+            className={`relative z-10 ${
+              loginSuccess ? 'card-flip-logo' : ''
+            }`}
+            style={{
+              transformStyle: 'preserve-3d',
+              backfaceVisibility: 'hidden'
+            }}
+          >
+            <img
+              src={logo}
+              alt="Admin Logo"
+              className="h-16 w-auto object-contain"
+              style={{
+                filter: 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.4))',
+                backfaceVisibility: 'hidden',
+              }}
+            />
+          </div>
+        </div>
 
-        <a href="/forgot-password" className="text-sm text-primary hover:text-primaryLight block text-center mt-5">
-          Forgot password?
-        </a>
+        <div className="p-8">
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">Admin Portal</h2>
+          <p className="text-gray-500 text-center mb-8">Secure access for authorized personnel</p>
 
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
+          <div className="mb-5">
+            <input
+              type="email"
+              placeholder="Admin Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="w-full px-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent bg-neutral"
+              disabled={isLoading || loginSuccess}
+            />
+            {emailError && <p className="text-accent text-sm mt-1">{emailError}</p>}
+          </div>
+
+          <div className="mb-6 relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="w-full px-4 py-3.5 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent bg-neutral"
+              disabled={isLoading || loginSuccess}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              disabled={loginSuccess}
+            >
+              {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+            </button>
+            {passwordError && <p className="text-accent text-sm mt-1">{passwordError}</p>}
+          </div>
+
+          {/* ✅ Login Button with Success State */}
+          <button
+            onClick={handleLogin}
+            disabled={isLoading || loginSuccess}
+            className={`w-full py-3.5 font-semibold rounded-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg disabled:cursor-not-allowed ${
+              loginSuccess
+                ? 'bg-green-500 text-white login-success-pulse'
+                : 'bg-primary text-white hover:bg-primaryLight'
+            }`}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Logging in...
+              </span>
+            ) : loginSuccess ? (
+              <span className="flex items-center justify-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Login Successful!
+              </span>
+            ) : (
+              'Login'
+            )}
+          </button>
+
+          {!loginSuccess && (
+            <a
+              href="/forgot-password"
+              className="block text-center mt-5 text-sm text-primary hover:text-primaryLight font-medium transition"
+            >
+              Forgot password?
+            </a>
+          )}
+        </div>
       </div>
-      
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
       {/* Debug diagnostics panel - only visible in development or with ?debug in URL */}
       {showDiagnostics && <DiagnosticPanel />}
     </div>

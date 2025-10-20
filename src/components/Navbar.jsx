@@ -15,30 +15,29 @@ import {
   FaMoon,
   FaSun,
 } from 'react-icons/fa';
-import logo from '../assets/images/logoo.png';
 import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
+import logo from '../assets/images/logoo.png';
 
-export default function Navbar({ onToggleCollapse }) {
+const Navbar = ({ onToggleCollapse }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isAccountsDropdownOpen, setIsAccountsDropdownOpen] = useState(false);
-  const [isRequestDropdownOpen, setIsRequestDropdownOpen] = useState(false);
-  const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false);
+  const [isAccountsOpen, setIsAccountsOpen] = useState(false);
+  const [isRequestsOpen, setIsRequestsOpen] = useState(false);
+  const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
-
   const settingsRef = useRef(null);
+  const DULALIA_BLUE = '#174361';
+  const LIGHT_BLUE = '#3b6b8a';
+  const SOFT_BLUE = '#93c5fd';
 
-  const DULALIA_BLUE = '#174361'; // 💙 Custom brand color
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (settingsRef.current && !settingsRef.current.contains(event.target)) {
-        setShowSettingsDropdown(false);
+        setShowSettings(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -48,29 +47,35 @@ export default function Navbar({ onToggleCollapse }) {
   const toggleCollapse = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
-    if (onToggleCollapse) onToggleCollapse(newState);
+    onToggleCollapse?.(newState);
+    if (newState) {
+      setIsAccountsOpen(false);
+      setIsRequestsOpen(false);
+      setIsStaffOpen(false);
+    }
   };
 
   const isActive = (path) => location.pathname === path;
 
   const navLinkClass = (path) =>
-    `flex items-center py-2 px-4 rounded-lg cursor-pointer transition-all duration-200 ${
+    `flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 ${
       isActive(path)
         ? darkMode
-          ? 'bg-gray-700 text-white'
-          : 'bg-blue-900 text-white'
+          ? 'bg-gray-700 text-white shadow-md'
+          : `bg-[${DULALIA_BLUE}] text-white shadow-md`
         : darkMode
-        ? 'text-gray-300 hover:bg-gray-700/60'
-        : 'text-white hover:bg-blue-900/40'
+        ? `text-gray-300 hover:bg-gray-700/60 hover:text-[${SOFT_BLUE}]`
+        : `text-white hover:bg-[${LIGHT_BLUE}] hover:text-[${SOFT_BLUE}]`
     }`;
 
-  const dropdownClass = `flex justify-between items-center py-2 px-4 rounded-lg cursor-pointer transition-all duration-200 ${
+  const dropdownClass = `flex justify-between items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 ${
     darkMode
-      ? 'text-gray-300 hover:bg-gray-700/60'
-      : 'text-white hover:bg-blue-900/40'
+      ? `text-gray-300 hover:bg-gray-700/60 hover:text-[${SOFT_BLUE}]`
+      : `text-white hover:bg-[${LIGHT_BLUE}] hover:text-[${SOFT_BLUE}]`
   }`;
 
   const handleLogout = () => setShowLogoutConfirm(true);
+
   const confirmLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminLastLogin');
@@ -79,54 +84,33 @@ export default function Navbar({ onToggleCollapse }) {
     setShowLogoutConfirm(false);
   };
 
-  const cancelLogout = () => setShowLogoutConfirm(false);
-
   return (
     <>
-      {/* Sidebar */}
-    <aside
-  className={`fixed top-0 left-0 h-full z-40 flex flex-col ${
-    darkMode ? 'bg-gray-900' : ''
-  }`}
-  style={{
-    backgroundColor: darkMode ? '#0f172a' : DULALIA_BLUE,
-    width: isCollapsed ? '5rem' : '12rem',
-    overflowY: 'auto', // ✅ Enables scrolling if needed
-    scrollbarWidth: 'none', // ✅ Hides scrollbar (Firefox)
-    msOverflowStyle: 'none', // ✅ Hides scrollbar (IE/Edge)
-    transition: 'width 0.3s ease',
-    boxShadow: '2px 0 15px rgba(0, 0, 0, 0.15)',
-    borderRight: darkMode ? '1px solid #1e293b' : '1px solid #1a3d57',
-  }}
->
-
-
-        {/* Header */}
+      <aside
+        className="fixed top-0 left-0 h-full z-40 flex flex-col transition-all duration-400 ease-in-out shadow-lg"
+        style={{ 
+          backgroundColor: darkMode ? '#0f172a' : DULALIA_BLUE,
+          width: isCollapsed ? '5rem' : '12rem' 
+        }}
+      >
         <div
-          className="flex items-center justify-between p-4"
-          style={{
-            backgroundColor: darkMode ? '#0f172a' : DULALIA_BLUE,
-            borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #1a3d57',
-          }}
+          className={`flex items-center justify-between p-4 border-b ${
+            darkMode ? 'border-gray-700' : 'border-[#1a3d57]'
+          }`}
         >
-     <div
-  className="flex items-center space-x-2 cursor-pointer"
-  onClick={toggleCollapse}
->
-  {/* Logo with white outline */}
-  <div className="p-1 rounded-lg border-2 border-white dark:border-gray-200 bg-white/10 flex items-center justify-center">
-    <img src={logo} alt="Logo" className="h-10 w-10 object-contain" />
-  </div>
-  {!isCollapsed && (
-    <h2 className="text-white font-bold text-lg">Dulalia</h2>
-  )}
-</div>
-
-
+          <div 
+            className="flex items-center space-x-2 cursor-pointer transform hover:scale-105 transition-transform duration-200" 
+            onClick={toggleCollapse}
+          >
+            <div className="p-1 rounded-lg border-2 border-white bg-white/10">
+              <img src={logo} alt="Logo" className="h-10 w-10 object-contain" />
+            </div>
+            {!isCollapsed && <h2 className="text-white font-bold text-lg">Dulalia</h2>}
+          </div>
           {!isCollapsed && (
-            <button
+            <button 
               onClick={toggleCollapse}
-              className="text-white hover:text-gray-300"
+              className="text-white hover:text-[#93c5fd] transition-colors duration-200" 
               title="Collapse Menu"
             >
               <FaTimes />
@@ -134,235 +118,193 @@ export default function Navbar({ onToggleCollapse }) {
           )}
         </div>
 
-        {/* Nav Links */}
-        <nav
-          className={`flex-1 p-4 space-y-2 ${
-            isCollapsed ? 'overflow-hidden' : 'overflow-y-auto'
-          }`}
-        >
-          <button
-            onClick={() => navigate('/admin')}
+        <nav className="flex-1 p-4 space-y-2">
+          <button 
+            onClick={() => navigate('/admin')} 
             className={navLinkClass('/admin')}
+            title="Dashboard"
           >
-            <FaHome className="mr-3 flex-shrink-0" />
+            <FaHome className="mr-3" />
             {!isCollapsed && 'Dashboard'}
           </button>
 
-          {/* Accounts Dropdown */}
           <div>
-            <button
-              onClick={() =>
-                setIsAccountsDropdownOpen(!isAccountsDropdownOpen)
-              }
+            <button 
+              onClick={() => isCollapsed ? navigate('/admin/user-accounts') : setIsAccountsOpen(!isAccountsOpen)} 
               className={dropdownClass}
+              title="Accounts"
             >
               <div className="flex items-center">
-                <FaUsers className="mr-3 flex-shrink-0" />
+                <FaUsers className="mr-3" />
                 {!isCollapsed && 'Accounts'}
               </div>
               {!isCollapsed && (
                 <FaChevronDown
                   size={12}
-                  className={`transition-transform ${
-                    isAccountsDropdownOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`transition-transform duration-200 ${isAccountsOpen ? 'rotate-180' : ''}`}
                 />
               )}
             </button>
-            {isAccountsDropdownOpen && !isCollapsed && (
-              <div className="pl-6 space-y-1">
+            {isAccountsOpen && !isCollapsed && (
+              <div className="pl-6 space-y-1 transition-all duration-200 ease-in-out">
                 <button
                   onClick={() => navigate('/admin/user-accounts')}
                   className={navLinkClass('/admin/user-accounts')}
                 >
-                  <FaUsers className="mr-2 flex-shrink-0" /> User Accounts
+                  <FaUsers className="mr-2" /> User Accounts
                 </button>
                 <button
                   onClick={() => navigate('/admin/guard-accounts')}
                   className={navLinkClass('/admin/guard-accounts')}
                 >
-                  <FaUserShield className="mr-2 flex-shrink-0" /> Guard Accounts
+                  <FaUserShield className="mr-2" /> Guard Accounts
                 </button>
               </div>
             )}
           </div>
 
-          {/* Requests Dropdown */}
           <div>
-            <button
-              onClick={() =>
-                setIsRequestDropdownOpen(!isRequestDropdownOpen)
-              }
+            <button 
+              onClick={() => isCollapsed ? navigate('/admin/facility-requests') : setIsRequestsOpen(!isRequestsOpen)} 
               className={dropdownClass}
+              title="Requests"
             >
               <div className="flex items-center">
-                <FaClipboardList className="mr-3 flex-shrink-0" />
+                <FaClipboardList className="mr-3" />
                 {!isCollapsed && 'Requests'}
               </div>
               {!isCollapsed && (
                 <FaChevronDown
                   size={12}
-                  className={`transition-transform ${
-                    isRequestDropdownOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`transition-transform duration-200 ${isRequestsOpen ? 'rotate-180' : ''}`}
                 />
               )}
             </button>
-            {isRequestDropdownOpen && !isCollapsed && (
-              <div className="pl-6 space-y-1">
+            {isRequestsOpen && !isCollapsed && (
+              <div className="pl-6 space-y-1 transition-all duration-200 ease-in-out">
                 <button
                   onClick={() => navigate('/admin/facility-requests')}
                   className={navLinkClass('/admin/facility-requests')}
                 >
-                  <FaClipboardList className="mr-2 flex-shrink-0" /> Facility Requests
+                  <FaClipboardList className="mr-2" /> Facility Requests
                 </button>
                 <button
                   onClick={() => navigate('/admin/service-requests')}
                   className={navLinkClass('/admin/service-requests')}
                 >
-                  <FaClipboardList className="mr-2 flex-shrink-0" /> Service Requests
+                  <FaClipboardList className="mr-2" /> Service Requests
                 </button>
               </div>
             )}
           </div>
 
-          <button
-            onClick={() => navigate('/admin/lot-status')}
+          <button 
+            onClick={() => navigate('/admin/lot-status')} 
             className={navLinkClass('/admin/lot-status')}
+            title="Lot Status"
           >
-            <FaHome className="mr-3 flex-shrink-0" />
+            <FaHome className="mr-3" />
             {!isCollapsed && 'Lot Status'}
           </button>
 
-          <button
-            onClick={() => navigate('/admin/visitor-logs')}
+          <button 
+            onClick={() => navigate('/admin/visitor-logs')} 
             className={navLinkClass('/admin/visitor-logs')}
+            title="Visitor Logs"
           >
-            <FaQrcode className="mr-3 flex-shrink-0" />
+            <FaQrcode className="mr-3" />
             {!isCollapsed && 'Visitor Logs'}
           </button>
 
-          {/* Staff Dropdown */}
           <div>
-            <button
-              onClick={() => setIsStaffDropdownOpen(!isStaffDropdownOpen)}
+            <button 
+              onClick={() => isCollapsed ? navigate('/admin/staff') : setIsStaffOpen(!isStaffOpen)} 
               className={dropdownClass}
+              title="Staff"
             >
               <div className="flex items-center">
-                <FaClipboardList className="mr-3 flex-shrink-0" />
+                <FaClipboardList className="mr-3" />
                 {!isCollapsed && 'Staff'}
               </div>
               {!isCollapsed && (
                 <FaChevronDown
                   size={12}
-                  className={`transition-transform ${
-                    isStaffDropdownOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`}
                 />
               )}
-        </button>
-{isStaffDropdownOpen && !isCollapsed && (
-  <div className="pl-6 space-y-1">
-    <button
-      onClick={() => navigate('/admin/head-staff-accounts')}
-      className={navLinkClass('/admin/head-staff-accounts')}
-    >
-      <FaUserShield className="mr-2 flex-shrink-0" /> Head Staff
-    </button>
-    <button
-      onClick={() => navigate('/admin/staff')}
-      className={navLinkClass('/admin/staff')}
-    >
-      <FaClipboardList className="mr-2 flex-shrink-0" /> Staff Accounts
-    </button>
-  </div>
-)}
-</div>
+            </button>
+            {isStaffOpen && !isCollapsed && (
+              <div className="pl-6 space-y-1 transition-all duration-200 ease-in-out">
+                <button
+                  onClick={() => navigate('/admin/head-staff-accounts')}
+                  className={navLinkClass('/admin/head-staff-accounts')}
+                >
+                  <FaUserShield className="mr-2" /> Head Staff
+                </button>
+                <button
+                  onClick={() => navigate('/admin/staff')}
+                  className={navLinkClass('/admin/staff')}
+                >
+                  <FaClipboardList className="mr-2" /> Staff Accounts
+                </button>
+              </div>
+            )}
+          </div>
 
-<button
-  onClick={() => navigate('/admin/announcements')}
-  className={navLinkClass('/admin/announcements')}
->
-  <FaBullhorn className="mr-3 flex-shrink-0" />
-  {!isCollapsed && 'Announcements'}
-</button>
+          <button 
+            onClick={() => navigate('/admin/announcements')} 
+            className={navLinkClass('/admin/announcements')}
+            title="Announcements"
+          >
+            <FaBullhorn className="mr-3" />
+            {!isCollapsed && 'Announcements'}
+          </button>
 
-<button
-  onClick={() => navigate('/admin/feedback')}
-  className={navLinkClass('/admin/feedback')}
->
-  <FaComments className="mr-3 flex-shrink-0" />
-  {!isCollapsed && 'Feedback'}
-</button>
-</nav>
-</aside>
+          <button 
+            onClick={() => navigate('/admin/feedback')} 
+            className={navLinkClass('/admin/feedback')}
+            title="Feedback"
+          >
+            <FaComments className="mr-3" />
+            {!isCollapsed && 'Feedback'}
+          </button>
+        </nav>
+      </aside>
 
-{/* Top Navbar with Welcome & Settings */}
-<header
-  className="fixed top-0 left-0 right-0 h-16 z-30 flex items-center justify-between px-4"
-  style={{
-    backgroundColor: darkMode ? DULALIA_BLUE : '#FEE209',
-    marginLeft: isCollapsed ? '5rem' : '12rem', // ✅ Adjusted to match new sidebar width
-    transition: 'margin-left 0.3s ease',
-    borderBottom: darkMode
-      ? '1px solid #1a3d57'
-      : '1px solid #E6C700',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  }}
->
-  {/* Welcome Text */}
-  <div>
-    <h1
-      className="font-semibold text-lg"
-      style={{
-        color: darkMode ? '#ffffff' : '#174361',
-      }}
-    >
-      Welcome, Admin
-    </h1>
-  </div>
+      <header
+        className="fixed top-0 left-0 right-0 h-16 z-30 flex items-center justify-between px-4 transition-all duration-400 ease-in-out shadow-md bg-white"
+        style={{ marginLeft: isCollapsed ? '5rem' : '12rem' }}
+      >
+        <h1 className="font-semibold text-lg text-[#174361]">
+          Welcome, Admin
+        </h1>
 
-
-        {/* Settings Dropdown */}
         <div className="relative" ref={settingsRef}>
           <button
-            onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-            className="flex items-center space-x-2 focus:outline-none"
-            aria-label="User settings"
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center space-x-2 focus:outline-none transform hover:scale-105 transition-transform duration-200"
           >
-            <span
-              className="font-medium"
-              style={{
-                color: darkMode ? '#ffffff' : '#174361',
-              }}
-            >
+            <span className="font-medium text-[#174361]">
               Settings
             </span>
             <FaChevronDown
               size={12}
-              style={{
-                color: darkMode ? '#ffffff' : '#174361',
-                transition: 'transform 0.2s',
-                transform: showSettingsDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-              }}
+              className={`transition-transform duration-200 ${showSettings ? 'rotate-180' : ''}`}
+              style={{ color: '#174361' }}
             />
           </button>
-
-          {/* Dropdown Menu */}
-          {showSettingsDropdown && (
+          {showSettings && (
             <div
-              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border"
-              style={{
-                borderColor: darkMode ? '#1a3d57' : '#E6C700',
-              }}
+              className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border transition-all duration-200 ease-in-out ${
+                darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#1a3d57]'
+              }`}
             >
-              {/* Theme Toggle */}
               <button
                 onClick={() => {
                   toggleDarkMode();
-                  setShowSettingsDropdown(false);
+                  setShowSettings(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#93c5fd]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
               >
                 {darkMode ? (
                   <>
@@ -371,21 +313,18 @@ export default function Navbar({ onToggleCollapse }) {
                   </>
                 ) : (
                   <>
-                    <FaMoon className="text-gray-700" />
+                    <FaMoon className="text-[#174361]" />
                     <span>Dark Mode</span>
                   </>
                 )}
               </button>
-
               <hr className="my-1 border-gray-200 dark:border-gray-700" />
-
-              {/* Logout */}
               <button
                 onClick={() => {
-                  setShowSettingsDropdown(false);
+                  setShowSettings(false);
                   handleLogout();
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#93c5fd]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
               >
                 <FaSignOutAlt />
                 <span>Logout</span>
@@ -395,39 +334,46 @@ export default function Navbar({ onToggleCollapse }) {
         </div>
       </header>
 
-      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div
           className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowLogoutConfirm(false);
-          }}
+          onClick={(e) => e.target === e.currentTarget && setShowLogoutConfirm(false)}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+          <div
+            className={`rounded-lg shadow-xl w-full max-w-md p-6 transition-all duration-200 ease-in-out ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}
+          >
             <div className="flex items-center justify-center mb-4">
-              <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+              <div
+                className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                  darkMode ? 'bg-red-900' : 'bg-red-100'
+                }`}
+              >
                 <FaExclamationTriangle
-                  className="text-red-600 dark:text-red-400"
+                  className={darkMode ? 'text-red-400' : 'text-red-600'}
                   size={24}
                 />
               </div>
             </div>
-            <h3 className="text-lg font-medium text-center mb-2 text-gray-900 dark:text-white">
+            <h3 className={`text-lg font-medium text-center mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Confirm Logout
             </h3>
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
+            <p className={`text-sm text-center mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               Are you sure you want to log out?
             </p>
             <div className="flex justify-center gap-3">
               <button
-                onClick={cancelLogout}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                onClick={() => setShowLogoutConfirm(false)}
+                className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+                  darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                }`}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
               >
                 Logout
               </button>
@@ -437,4 +383,6 @@ export default function Navbar({ onToggleCollapse }) {
       )}
     </>
   );
-}
+};
+
+export default Navbar;

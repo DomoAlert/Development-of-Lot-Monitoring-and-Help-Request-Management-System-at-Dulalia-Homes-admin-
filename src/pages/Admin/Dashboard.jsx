@@ -452,6 +452,13 @@ function Dashboard() {
       toast.error('Error fetching dashboard data: ' + error.message);
     } finally {
       setLoading(false);
+      // Notify any listeners (e.g., splash screen) that the app finished loading data
+      try {
+        const evt = new Event('app-ready');
+        window.dispatchEvent(evt);
+      } catch (e) {
+        // ignore
+      }
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { Suspense, useState } from 'react';
+import SplashScreen from './components/SplashScreen';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -92,6 +93,9 @@ function App() {
     <ThemeProvider>
       <UserProvider>
         <Router>
+          {/* Splash screen mounted at the very top so it covers initial render. */}
+          {/* showOncePerSession={false} makes it appear on every full page refresh for website use. */}
+          <SplashScreen background="#ffffff" minDuration={4000} showOncePerSession={false} ignoreAppReady={true} />
           <PageTitleProvider>
             <ToastContainer />
             <div className="flex min-h-screen">

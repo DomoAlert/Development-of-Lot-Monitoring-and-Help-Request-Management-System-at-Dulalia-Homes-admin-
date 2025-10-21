@@ -96,6 +96,11 @@ function Login() {
       
       // Set login success state for animations
       setLoginSuccess(true);
+      // Show the splash screen programmatically while redirecting to dashboard
+      try {
+        const evt = new CustomEvent('show-splash', { detail: { minDuration: 30000, ignoreAppReady: true, setSession: false } });
+        window.dispatchEvent(evt);
+      } catch (e) {}
       // Navigate to admin dashboard with replace: true to prevent back button issues
       setTimeout(() => navigate('/admin', { replace: true }), 1500);
     } catch (err) {

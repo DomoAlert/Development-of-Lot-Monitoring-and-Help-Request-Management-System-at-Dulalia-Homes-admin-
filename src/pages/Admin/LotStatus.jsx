@@ -48,6 +48,31 @@ const LotStatus = () => {
   const [newBlockNumber, setNewBlockNumber] = useState('');
   const [newBlockMax, setNewBlockMax] = useState('');
 
+  // Helper to safely set numeric block values in edit form
+  const setBlockValue = (blockNum, value) => {
+    setBlockEditValues(prev => ({ ...prev, [blockNum]: value }));
+  };
+
+  const incrementBlock = (blockNum) => {
+    const current = parseInt(blockEditValues[blockNum] || 0) || 0;
+    setBlockValue(blockNum, current + 1);
+  };
+
+  const decrementBlock = (blockNum, minAllowed = 1) => {
+    const current = parseInt(blockEditValues[blockNum] || 0) || 0;
+    const next = current - 1;
+    if (next < minAllowed) return; // disabled by UI but double-guard
+    setBlockValue(blockNum, next);
+  };
+
+  // Helpers for new block stepper
+  const incrementNewBlockMax = () => setNewBlockMax((parseInt(newBlockMax || '0') || 0) + 1 + '');
+  const decrementNewBlockMax = () => {
+    const cur = parseInt(newBlockMax || '0') || 0;
+    if (cur <= 1) return;
+    setNewBlockMax((cur - 1) + '');
+  };
+
   // Set page title and fetch lots and users from Firebase
   useEffect(() => {
     document.title = "Lot Monitoring";
@@ -1110,19 +1135,43 @@ const LotStatus = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.keys(blockEditValues).sort((a,b)=>parseInt(a)-parseInt(b)).map(blockNum => {
                     const existingCount = lots.filter(l => l.block === parseInt(blockNum)).length;
-                    const newMax = parseInt(blockEditValues[blockNum] || 0);
+                    const rawVal = blockEditValues[blockNum];
+                    const newMax = parseInt(rawVal || 0) || 0;
                     const willShrinkBelowExisting = newMax > 0 && newMax < existingCount;
+                    const minAllowed = Math.max(1, existingCount);
                     return (
                       <div key={blockNum} className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
                         <div className="flex items-center space-x-3 w-full sm:w-auto">
                           <div className="w-24">Block {blockNum}</div>
-                          <input
-                            type="number"
-                            value={blockEditValues[blockNum]}
-                            onChange={(e) => setBlockEditValues(prev => ({ ...prev, [blockNum]: parseInt(e.target.value || 0) }))}
-                            className="px-3 py-2 border rounded-md w-32"
-                            min="1"
-                          />
+                          <div className="flex items-center border rounded-md overflow-hidden">
+                            <button
+                              onClick={() => decrementBlock(blockNum, minAllowed)}
+                              disabled={newMax <= minAllowed}
+                              className={`px-3 py-2 ${newMax <= minAllowed ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'}`}
+                              aria-label={`Decrease Block ${blockNum} max`}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              value={rawVal}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value || '0') || 0;
+                                // Clamp to minAllowed
+                                const clamped = val < minAllowed ? minAllowed : val;
+                                setBlockValue(blockNum, clamped);
+                              }}
+                              className="w-20 px-3 py-2 text-center"
+                              min={minAllowed}
+                            />
+                            <button
+                              onClick={() => incrementBlock(blockNum)}
+                              className="px-3 py-2 text-gray-700 bg-white hover:bg-gray-50"
+                              aria-label={`Increase Block ${blockNum} max`}
+                            >
+                              +
+                            </button>
+                          </div>
                           <button
                             className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                             onClick={() => {
@@ -1149,7 +1198,24 @@ const LotStatus = () => {
                   </div>
                   <div>
                     <label className="block text-sm text-gray-700">Max Lots</label>
-                    <input type="number" value={newBlockMax} onChange={e => setNewBlockMax(e.target.value)} className="px-3 py-2 border rounded-md w-full" min="1" />
+                    <div className="flex items-center border rounded-md overflow-hidden">
+                      <button
+                        onClick={decrementNewBlockMax}
+                        disabled={(parseInt(newBlockMax || '0') || 0) <= 1}
+                        className={`px-3 py-2 ${((parseInt(newBlockMax || '0') || 0) <= 1) ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'}`}
+                        aria-label="Decrease new block max"
+                      >
+                        −
+                      </button>
+                      <input type="number" value={newBlockMax} onChange={e => setNewBlockMax(e.target.value)} className="w-24 px-3 py-2 text-center" min="1" />
+                      <button
+                        onClick={incrementNewBlockMax}
+                        className="px-3 py-2 text-gray-700 bg-white hover:bg-gray-50"
+                        aria-label="Increase new block max"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <button

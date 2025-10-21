@@ -35,20 +35,56 @@ const LotStatus = () => {
   ];
 
   // Blocks configuration - how many lots are in each block
-  const blockConfig = {
-    1: 20, // Block 1 has 20 lots
-    2: 25, // Block 2 has 25 lots
-    3: 15, // Block 3 has 15 lots
-    4: 22, // Block 4 has 22 lots
-    5: 18  // Block 5 has 18 lots
-  };
+  // Stored in Firestore under collection 'settings' doc 'lotConfig'
+  const [blockConfig, setBlockConfig] = useState({
+    1: 20,
+    2: 25,
+    3: 15,
+    4: 22,
+    5: 18
+  });
+  const [isManagingBlocks, setIsManagingBlocks] = useState(false);
+  const [blockEditValues, setBlockEditValues] = useState({}); // { blockNum: maxLots }
+  const [newBlockNumber, setNewBlockNumber] = useState('');
+  const [newBlockMax, setNewBlockMax] = useState('');
 
   // Set page title and fetch lots and users from Firebase
   useEffect(() => {
     document.title = "Lot Monitoring";
     fetchLots();
     fetchUsers();
+    fetchBlockConfig();
   }, []);
+
+  // Fetch block configuration from Firestore
+  const fetchBlockConfig = async () => {
+    try {
+      const configDocRef = doc(db, 'settings', 'lotConfig');
+      const configSnap = await getDoc(configDocRef);
+      if (configSnap.exists()) {
+        const data = configSnap.data();
+        if (data && data.blocks) {
+          setBlockConfig(data.blocks);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching block configuration:', error);
+      // keep defaults
+    }
+  };
+
+  // Save block configuration to Firestore
+  const saveBlockConfig = async (newConfig) => {
+    try {
+      const configDocRef = doc(db, 'settings', 'lotConfig');
+      await setDoc(configDocRef, { blocks: newConfig, updatedAt: serverTimestamp() }, { merge: true });
+      setBlockConfig(newConfig);
+      toast.success('Block configuration saved');
+    } catch (error) {
+      console.error('Error saving block configuration:', error);
+      toast.error('Failed to save block configuration: ' + error.message);
+    }
+  };
 
   // Fetch all available users for lot assignment
   const fetchUsers = async () => {
@@ -595,6 +631,19 @@ const LotStatus = () => {
               >
                 <FaUserPlus className="mr-2" /> Add New Lot
               </button>
+              <button
+                onClick={() => {
+                  const edits = {};
+                  Object.keys(blockConfig).forEach(k => edits[k] = blockConfig[k]);
+                  setBlockEditValues(edits);
+                  setNewBlockNumber('');
+                  setNewBlockMax('');
+                  setIsManagingBlocks(true);
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center"
+              >
+                <FaTag className="mr-2" /> Manage Blocks
+              </button>
             </div>
           </div>
         </div>
@@ -642,7 +691,7 @@ const LotStatus = () => {
                 <div key={blockNumber} className="mb-10">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-blue-800">
-                      Block {blockNumber}
+                      Block {blockNumber} {blockConfig[blockNumber] ? `— max ${blockConfig[blockNumber]} lots` : ''}
                     </h3>
                     <span className="text-sm text-gray-500">
                       {lotsByBlock[blockNumber].length} lots
@@ -1042,6 +1091,91 @@ const LotStatus = () => {
                       'Create New Lot'
                     )}
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Manage Blocks Modal */}
+        {isManagingBlocks && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl">
+              <div className="px-6 py-4 border-b flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Manage Blocks</h3>
+                <button onClick={() => setIsManagingBlocks(false)} className="text-gray-400 hover:text-gray-500"><FaTimes /></button>
+              </div>
+              <div className="px-6 py-4 space-y-4">
+                <p className="text-sm text-gray-600">Edit maximum lots per block, add a new block, or remove an existing block. Changes are saved to the database.</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.keys(blockEditValues).sort((a,b)=>parseInt(a)-parseInt(b)).map(blockNum => {
+                    const existingCount = lots.filter(l => l.block === parseInt(blockNum)).length;
+                    const newMax = parseInt(blockEditValues[blockNum] || 0);
+                    const willShrinkBelowExisting = newMax > 0 && newMax < existingCount;
+                    return (
+                      <div key={blockNum} className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+                        <div className="flex items-center space-x-3 w-full sm:w-auto">
+                          <div className="w-24">Block {blockNum}</div>
+                          <input
+                            type="number"
+                            value={blockEditValues[blockNum]}
+                            onChange={(e) => setBlockEditValues(prev => ({ ...prev, [blockNum]: parseInt(e.target.value || 0) }))}
+                            className="px-3 py-2 border rounded-md w-32"
+                            min="1"
+                          />
+                          <button
+                            className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                            onClick={() => {
+                              const copy = { ...blockEditValues };
+                              delete copy[blockNum];
+                              setBlockEditValues(copy);
+                            }}
+                          >Remove</button>
+                        </div>
+                        {willShrinkBelowExisting && (
+                          <p className="text-xs text-yellow-700 mt-1 sm:mt-0">Warning: There are currently {existingCount} lots in Block {blockNum}. Reducing the max below this number may orphan existing lots.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 border-t"></div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label className="block text-sm text-gray-700">New Block Number</label>
+                    <input type="number" value={newBlockNumber} onChange={e => setNewBlockNumber(e.target.value)} className="px-3 py-2 border rounded-md w-full" min="1" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-700">Max Lots</label>
+                    <input type="number" value={newBlockMax} onChange={e => setNewBlockMax(e.target.value)} className="px-3 py-2 border rounded-md w-full" min="1" />
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => {
+                        const bn = newBlockNumber.toString();
+                        const max = parseInt(newBlockMax || '0');
+                        if (!bn || isNaN(max) || max <= 0) {
+                          toast.error('Enter a valid block number and max lots');
+                          return;
+                        }
+                        if (blockEditValues[bn]) {
+                          toast.error('Block already exists in the list');
+                          return;
+                        }
+                        setBlockEditValues(prev => ({ ...prev, [bn]: max }));
+                        setNewBlockNumber('');
+                        setNewBlockMax('');
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    >Add Block</button>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex justify-end space-x-3">
+                  <button onClick={() => setIsManagingBlocks(false)} className="px-4 py-2 border rounded-md">Cancel</button>
+                  <button onClick={() => saveBlockConfig(blockEditValues)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
                 </div>
               </div>
             </div>

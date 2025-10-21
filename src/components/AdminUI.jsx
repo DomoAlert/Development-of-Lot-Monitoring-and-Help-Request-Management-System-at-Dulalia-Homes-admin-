@@ -247,6 +247,7 @@ export const Modal = ({
   footer,
   size = "md",
   className = "", 
+  zIndex = 50,
   ...props 
 }) => {
   if (!isOpen) return null;
@@ -262,7 +263,7 @@ export const Modal = ({
   const sizeClass = sizeClasses[size] || sizeClasses.md;
   
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" {...props}>
+    <div className="fixed inset-0 overflow-y-auto" style={{ zIndex }} aria-labelledby="modal-title" role="dialog" aria-modal="true" {...props}>
       <div className="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
         

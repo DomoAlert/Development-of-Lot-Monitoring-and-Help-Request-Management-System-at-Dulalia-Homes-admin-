@@ -1285,6 +1285,7 @@ const formatTime = (timestamp) => {
         {/* Confirm Delete Service Type Modal */}
         <Modal
           isOpen={isConfirmDeleteServiceTypeModalOpen}
+          zIndex={60}
           onClose={() => { setIsConfirmDeleteServiceTypeModalOpen(false); setServiceTypePendingDelete(null); }}
           title="Delete Service Type"
         >

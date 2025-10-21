@@ -79,6 +79,8 @@ function ServiceRequests() {
   const [serviceTypeFormErrors, setServiceTypeFormErrors] = useState({});
   const [isEditingServiceType, setIsEditingServiceType] = useState(false);
   const [currentServiceTypeId, setCurrentServiceTypeId] = useState(null);
+  const [isConfirmDeleteServiceTypeModalOpen, setIsConfirmDeleteServiceTypeModalOpen] = useState(false);
+  const [serviceTypePendingDelete, setServiceTypePendingDelete] = useState(null);
   
   // New service request state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -351,6 +353,8 @@ function ServiceRequests() {
       ...serviceTypeFormData,
       [name]: type === 'checkbox' ? checked : value
     });
+    // Clear inline errors for the field being edited
+    setServiceTypeFormErrors(prev => ({ ...prev, [name]: undefined }));
   };
   
   const handleServiceTypeFormSubmit = async (e) => {
@@ -361,6 +365,29 @@ function ServiceRequests() {
     }
     
     try {
+      // Duplicate check: name OR description matching existing service types
+      const newName = serviceTypeFormData.name.trim().toLowerCase();
+      const newDesc = (serviceTypeFormData.description || '').trim().toLowerCase();
+
+      // Identify which field(s) conflict, and set inline errors accordingly
+      let conflictName = false;
+      let conflictDesc = false;
+
+      serviceTypes.forEach(st => {
+        if (isEditingServiceType && st.id === currentServiceTypeId) return; // ignore self
+        const existingName = (st.name || '').trim().toLowerCase();
+        const existingDesc = (st.description || '').trim().toLowerCase();
+        if (existingName === newName) conflictName = true;
+        if (newDesc && existingDesc === newDesc) conflictDesc = true;
+      });
+
+      if (conflictName || conflictDesc) {
+        const errors = {};
+        if (conflictName) errors.name = 'A service type with this name already exists.';
+        if (conflictDesc) errors.description = 'A service type with this description already exists.';
+        setServiceTypeFormErrors(prev => ({ ...prev, ...errors }));
+        return;
+      }
       if (isEditingServiceType) {
         // Update existing service type
         await updateDoc(doc(db, 'service_types', currentServiceTypeId), {
@@ -369,7 +396,7 @@ function ServiceRequests() {
           active: serviceTypeFormData.active,
           updatedAt: serverTimestamp()
         });
-        
+
         toast.success('Service type updated successfully');
       } else {
         // Add new service type
@@ -380,7 +407,7 @@ function ServiceRequests() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        
+
         toast.success('Service type added successfully');
       }
       // Reset form data
@@ -406,13 +433,24 @@ function ServiceRequests() {
   };
   
   const handleDeleteServiceType = async (serviceTypeId) => {
+    // Open confirmation modal instead of deleting immediately
+    const st = serviceTypes.find(s => s.id === serviceTypeId);
+    setServiceTypePendingDelete(st || null);
+    setIsConfirmDeleteServiceTypeModalOpen(true);
+  };
+
+  const confirmDeleteServiceType = async () => {
+    if (!serviceTypePendingDelete) return;
     try {
-      await deleteDoc(doc(db, 'service_types', serviceTypeId));
+      await deleteDoc(doc(db, 'service_types', serviceTypePendingDelete.id));
       toast.success('Service type deleted successfully');
       fetchServiceTypes();
     } catch (error) {
       console.error('Error deleting service type:', error);
       toast.error('Failed to delete service type');
+    } finally {
+      setIsConfirmDeleteServiceTypeModalOpen(false);
+      setServiceTypePendingDelete(null);
     }
   };
   
@@ -1244,6 +1282,25 @@ const formatTime = (timestamp) => {
             )}
           </div>
         </Modal>
+        {/* Confirm Delete Service Type Modal */}
+        <Modal
+          isOpen={isConfirmDeleteServiceTypeModalOpen}
+          onClose={() => { setIsConfirmDeleteServiceTypeModalOpen(false); setServiceTypePendingDelete(null); }}
+          title="Delete Service Type"
+        >
+          <div className="p-4">
+            {serviceTypePendingDelete ? (
+              <>
+                <p className="text-sm text-gray-700">Are you sure you want to delete the service type <strong>{serviceTypePendingDelete.name}</strong>?</p>
+                <p className="text-xs text-gray-500 mt-2">This action cannot be undone and will remove the service type from the system.</p>
+                <div className="mt-4 flex justify-end space-x-3">
+                  <Button variant="outline" onClick={() => { setIsConfirmDeleteServiceTypeModalOpen(false); setServiceTypePendingDelete(null); }}>Cancel</Button>
+                  <Button variant="danger" onClick={confirmDeleteServiceType}>Delete</Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </Modal>
         
         {/* Comment Modal */}
         <Transition appear show={isCommentModalOpen} as={Fragment}>
@@ -1792,6 +1849,7 @@ const formatTime = (timestamp) => {
         {/* Service Type Management Modal */}
         <Modal
           isOpen={isServiceTypeModalOpen}
+          size="lg"
           onClose={() => {
             setIsServiceTypeModalOpen(false);
             setServiceTypeFormData({

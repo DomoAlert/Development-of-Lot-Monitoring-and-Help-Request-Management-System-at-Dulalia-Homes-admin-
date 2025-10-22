@@ -1,46 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaWifi, FaSpinner } from 'react-icons/fa';
 
-const OfflinePage = () => {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+const DEFAULT_PING_URL = 'https://www.gstatic.com/generate_204';
+
+const OfflinePage = ({ pingUrl = DEFAULT_PING_URL, pollInterval = 2500, pingTimeout = 2500 }) => {
+  const [isOffline, setIsOffline] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    const handleOffline = () => setIsOffline(true);
-    const handleOnline = () => setIsOffline(false);
+    mounted.current = true;
 
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('online', handleOnline);
+    // Robust connectivity check that uses navigator.onLine + a lightweight fetch ping
+    const checkConnectivity = async () => {
+      try {
+        if (navigator.onLine === false) {
+          if (mounted.current) setIsOffline(true);
+          return;
+        }
+
+        // Try to fetch a lightweight URL with timeout
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), pingTimeout);
+
+        await fetch(pingUrl, { method: 'GET', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+        clearTimeout(id);
+
+        if (mounted.current) setIsOffline(false);
+      } catch (err) {
+        if (mounted.current) setIsOffline(true);
+      }
+    };
+
+    // initial check
+    checkConnectivity();
+
+    // event listeners for browsers that support them
+    const onOnline = () => { if (mounted.current) setIsOffline(false); };
+    const onOffline = () => { if (mounted.current) setIsOffline(true); };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+
+    // polling fallback for browsers (like Opera GX) that may not update navigator.onLine reliably
+    const interval = setInterval(checkConnectivity, pollInterval);
+
+    // expose manual helpers for debugging / testing
+    // eslint-disable-next-line no-underscore-dangle
+    window.__showOffline = () => { if (mounted.current) setIsOffline(true); };
+    // eslint-disable-next-line no-underscore-dangle
+    window.__hideOffline = () => { if (mounted.current) setIsOffline(false); };
 
     return () => {
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('online', handleOnline);
+      mounted.current = false;
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      clearInterval(interval);
+      // cleanup helpers
+      // eslint-disable-next-line no-underscore-dangle
+      try { delete window.__showOffline; delete window.__hideOffline; } catch (e) {}
     };
-  }, []);
+  }, [pingUrl, pollInterval, pingTimeout]);
 
   const handleRetry = () => {
     setIsRetrying(true);
-    // The reload will only succeed if the connection is back.
-    // The spinner provides feedback while the browser attempts to reload.
-    window.location.reload();
+    // Give a short delay so spinner is visible before reload
+    setTimeout(() => window.location.reload(), 300);
   };
 
-  if (!isOffline) {
-    return null;
-  }
+  if (!isOffline) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-[9999] transition-opacity duration-300 animate-fadeIn">
-      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full text-center transform transition-all animate-scaleIn">
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-[9999] transition-opacity duration-300">
+      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full text-center transform transition-all">
         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100">
           <FaWifi className="h-8 w-8 text-red-600 transform rotate-45" />
         </div>
-        <h2 className="mt-6 text-2xl font-bold text-gray-900">
-          No Internet Connection
-        </h2>
-        <p className="mt-3 text-gray-600">
-          Please check your connection and try again.
-        </p>
+        <h2 className="mt-6 text-2xl font-bold text-gray-900">No Internet Connection</h2>
+        <p className="mt-3 text-gray-600">Please check your connection and try again.</p>
         <div className="mt-8">
           <button
             onClick={handleRetry}
@@ -61,25 +97,5 @@ const OfflinePage = () => {
     </div>
   );
 };
-
-// Simple keyframe animations for the fade-in effect
-const style = document.createElement('style');
-style.innerHTML = `
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes scaleIn {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-  .animate-fadeIn {
-    animation: fadeIn 0.3s ease-out forwards;
-  }
-  .animate-scaleIn {
-    animation: scaleIn 0.3s ease-out forwards;
-  }
-`;
-document.head.appendChild(style);
 
 export default OfflinePage;

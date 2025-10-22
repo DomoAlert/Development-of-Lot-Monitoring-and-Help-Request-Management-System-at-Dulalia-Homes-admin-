@@ -6,12 +6,12 @@ import { getStorage } from 'firebase/storage';
 import { debugLog, checkFirebaseConfig, reportError } from '../utils/debug';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDbkipGwNvBRB9lFZZwV0ef1RHNXtZp86c',
-  authDomain: 'dulalia-fb.firebaseapp.com',
-  projectId: 'dulalia-fb',
-  storageBucket: 'dulalia-fb.appspot.com',
-  messagingSenderId: '317007260701',
-  appId: '1:317007260701:web:acbe6f3bfb1e10f4ed2af4',
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 // Debug log the config

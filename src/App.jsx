@@ -116,7 +116,7 @@ function App() {
           <SplashScreen 
             background="#ffffff" 
             minDuration={4000} 
-            showOncePerSession={true} 
+            showOncePerSession={false} 
             ignoreAppReady={false} 
           />
           <OfflinePage />

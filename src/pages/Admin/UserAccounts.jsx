@@ -476,7 +476,7 @@ function UserAccounts() {
     setFormData({
       ...formData,
       username,
-      email: `${username}@example.com`
+      email: `${username}@dulalia.com`
     });
   };
 

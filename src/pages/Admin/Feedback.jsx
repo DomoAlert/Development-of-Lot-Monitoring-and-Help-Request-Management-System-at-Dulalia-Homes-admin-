@@ -3,6 +3,7 @@ import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firesto
 import { db } from '../../services/firebase';
 import { format } from 'date-fns';
 import { FaStar, FaRegStar, FaCommentAlt, FaSpinner, FaFilter, FaExclamationTriangle } from 'react-icons/fa';
+import CustomSelect from '../../components/CustomSelect';
 import { toast } from 'react-toastify';
 import AdminLayout from '../../components/AdminLayout';
 import { Card, CardHeader, CardBody, Button, Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell, Badge, Modal, DataSearch } from '../../components/AdminUI';
@@ -203,49 +204,41 @@ const Feedback = () => {
                 {/* Filter section */}
                 {isFilterExpanded && (
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-100 transition-all">
-                        <h3 className="font-semibold text-gray-700 mb-4 border-b pb-2">Filter Options</h3>
+                        <h3 className="font-semibold text-gray-700 dark:text-white mb-4 border-b pb-2">Filter Options</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black-700 dark:text-black-300 mb-2">
                                     Filter by Rating
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={ratingFilter}
-                                        onChange={(e) => setRatingFilter(e.target.value)}
-                                        className="block w-full pl-3 pr-10 py-2.5 text-base border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg bg-gray-50 hover:bg-white transition-colors shadow-sm"
-                                    >
-                                        <option value="">All Ratings</option>
-                                        {[1, 2, 3, 4, 5].map((rating) => (
-                                            <option key={rating} value={rating}>
-                                                {rating} {rating === 1 ? 'Star' : 'Stars'}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <FaStar className="text-amber-500" />
-                                    </div>
-                                </div>
+                                <CustomSelect
+                                    options={[
+                                        { value: '', label: 'All Ratings' },
+                                        { value: '1', label: '1 Star' },
+                                        { value: '2', label: '2 Stars' },
+                                        { value: '3', label: '3 Stars' },
+                                        { value: '4', label: '4 Stars' },
+                                        { value: '5', label: '5 Stars' },
+                                    ]}
+                                    value={ratingFilter}
+                                    onChange={setRatingFilter}
+                                    placeholder="All Ratings"
+                                    icon={FaStar}
+                                />
                             </div>
                             
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Filter by Service
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={serviceFilter}
-                                        onChange={(e) => setServiceFilter(e.target.value)}
-                                        className="block w-full pl-3 pr-10 py-2.5 text-base border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg bg-gray-50 hover:bg-white transition-colors shadow-sm"
-                                    >
-                                        <option value="">All Services</option>
-                                        {uniqueServices.map((service) => (
-                                            <option key={service} value={service}>
-                                                {service}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <CustomSelect
+                                    options={[
+                                        { value: '', label: 'All Services' },
+                                        ...uniqueServices.map(service => ({ value: service, label: service }))
+                                    ]}
+                                    value={serviceFilter}
+                                    onChange={setServiceFilter}
+                                    placeholder="All Services"
+                                />
                             </div>
                             
                             <div className="flex items-end">
@@ -261,7 +254,7 @@ const Feedback = () => {
                             </div>
                         </div>
                         <div className="mt-6 pt-4 border-t border-gray-100">
-                            <p className="text-sm text-gray-600 flex items-center justify-end">
+                            <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center justify-end">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>

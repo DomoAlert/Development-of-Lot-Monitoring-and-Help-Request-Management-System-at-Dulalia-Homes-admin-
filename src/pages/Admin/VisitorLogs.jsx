@@ -48,11 +48,7 @@ function VisitorLogs() {
   useEffect(() => {
     document.title = "Visitor Logs";
     fetchVisitors();
-    
-    // Refresh data every minute
-    const refreshInterval = setInterval(fetchVisitors, 600000);
-    return () => clearInterval(refreshInterval);
-  }, []);
+  }, [refreshTrigger]);
   
   // Fetch user data
   const fetchUserData = useCallback(async (uid) => {

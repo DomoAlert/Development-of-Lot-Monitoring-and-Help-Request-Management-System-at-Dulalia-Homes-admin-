@@ -1,20 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  FaHome,
-  FaUsers,
-  FaClipboardList,
-  FaBullhorn,
-  FaComments,
-  FaSignOutAlt,
-  FaUserShield,
-  FaQrcode,
-  FaChevronDown,
-  FaTimes,
-  FaExclamationTriangle,
-  FaMoon,
-  FaSun,
-} from 'react-icons/fa';
+  MdDashboard,
+  MdPeople,
+  MdAssignment,
+  MdAnnouncement,
+  MdChat,
+  MdLogout,
+  MdSecurity,
+  MdQrCode,
+  MdExpandMore,
+  MdClose,
+  MdWarning,
+  MdLightMode,
+  MdDarkMode,
+} from 'react-icons/md';
+import { Tooltip } from 'react-tooltip';
 import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/images/logoo.png';
@@ -30,9 +31,9 @@ const Navbar = ({ onToggleCollapse }) => {
   const [showSettings, setShowSettings] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
   const settingsRef = useRef(null);
-  const DULALIA_BLUE = '#174361';
-  const LIGHT_BLUE = '#3b6b8a';
-  const SOFT_BLUE = '#93c5fd';
+  const DULALIA_PURPLE = '#04317aff';
+  const LIGHT_PURPLE = '#9F7AEA';
+  const ORANGE_ACCENT = '#F6AD55';
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,20 +59,14 @@ const Navbar = ({ onToggleCollapse }) => {
   const isActive = (path) => location.pathname === path;
 
   const navLinkClass = (path) =>
-    `flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 ${
+    `flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out hover:bg-[${LIGHT_PURPLE}]/20 ${
       isActive(path)
-        ? darkMode
-          ? 'bg-gray-700 text-white shadow-md'
-          : `bg-[${DULALIA_BLUE}] text-white shadow-md`
-        : darkMode
-        ? `text-gray-300 hover:bg-gray-700/60 hover:text-[${SOFT_BLUE}]`
-        : `text-white hover:bg-[${LIGHT_BLUE}] hover:text-[${SOFT_BLUE}]`
+        ? `bg-[${DULALIA_PURPLE}] text-white shadow-md`
+        : `text-white hover:text-[${ORANGE_ACCENT}]`
     }`;
 
-  const dropdownClass = `flex justify-between items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 ${
-    darkMode
-      ? `text-gray-300 hover:bg-gray-700/60 hover:text-[${SOFT_BLUE}]`
-      : `text-white hover:bg-[${LIGHT_BLUE}] hover:text-[${SOFT_BLUE}]`
+  const dropdownClass = `flex justify-between items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ease-in-out hover:bg-[${LIGHT_PURPLE}]/20 ${
+    `text-white hover:text-[${ORANGE_ACCENT}]`
   }`;
 
   const handleLogout = () => setShowLogoutConfirm(true);
@@ -87,60 +82,63 @@ const Navbar = ({ onToggleCollapse }) => {
   return (
     <>
       <aside
-        className="fixed top-0 left-0 h-full z-40 flex flex-col transition-all duration-400 ease-in-out shadow-lg"
-        style={{ 
-          backgroundColor: darkMode ? '#0f172a' : DULALIA_BLUE,
-          width: isCollapsed ? '5rem' : '12rem' 
+        className="fixed top-0 left-0 h-full z-40 flex flex-col transition-all duration-400 ease-in-out shadow-lg rounded-r-lg"
+        style={{
+          backgroundColor: DULALIA_PURPLE,
+          width: isCollapsed ? '5rem' : '12rem',
         }}
       >
-        <div
-          className={`flex items-center justify-between p-4 border-b ${
-            darkMode ? 'border-gray-700' : 'border-[#1a3d57]'
-          }`}
-        >
-          <div 
-            className="flex items-center space-x-2 cursor-pointer transform hover:scale-105 transition-transform duration-200" 
+        <div className="flex items-center justify-between p-4 border-b border-[${LIGHT_PURPLE}]">
+          <div
+            className="flex items-center space-x-2 cursor-pointer transform hover:scale-105 transition-transform duration-200"
             onClick={toggleCollapse}
+            data-tooltip-id="logo-tooltip"
+            data-tooltip-content="Toggle Sidebar"
           >
-            <div className="p-1 rounded-lg border-2 border-white bg-white/10">
-              <img src={logo} alt="Logo" className="h-10 w-10 object-contain" />
+            <div className="p-1 rounded-lg bg-white/10">
+              <img src={logo} alt="Dulalia Logo" className="h-10 w-10 object-contain" />
             </div>
             {!isCollapsed && <h2 className="text-white font-bold text-lg">Dulalia</h2>}
           </div>
           {!isCollapsed && (
-            <button 
+            <button
               onClick={toggleCollapse}
-              className="text-white hover:text-[#93c5fd] transition-colors duration-200" 
-              title="Collapse Menu"
+              className="text-white hover:text-[${ORANGE_ACCENT}] transition-colors duration-200"
+              data-tooltip-id="collapse-tooltip"
+              data-tooltip-content="Collapse Menu"
             >
-              <FaTimes />
+              <MdClose size={20} />
             </button>
           )}
+          <Tooltip id="logo-tooltip" place="right" className="z-50" />
+          <Tooltip id="collapse-tooltip" place="right" className="z-50" />
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <button 
-            onClick={() => navigate('/admin')} 
+          <button
+            onClick={() => navigate('/admin')}
             className={navLinkClass('/admin')}
-            title="Dashboard"
+            data-tooltip-id="dashboard-tooltip"
+            data-tooltip-content="Dashboard"
           >
-            <FaHome className="mr-3" />
+            <MdDashboard className="mr-3 text-xl" />
             {!isCollapsed && 'Dashboard'}
           </button>
 
           <div>
-            <button 
-              onClick={() => isCollapsed ? navigate('/admin/user-accounts') : setIsAccountsOpen(!isAccountsOpen)} 
+            <button
+              onClick={() => (isCollapsed ? navigate('/admin/user-accounts') : setIsAccountsOpen(!isAccountsOpen))}
               className={dropdownClass}
-              title="Accounts"
+              data-tooltip-id="accounts-tooltip"
+              data-tooltip-content="Accounts"
             >
               <div className="flex items-center">
-                <FaUsers className="mr-3" />
+                <MdPeople className="mr-3 text-xl" />
                 {!isCollapsed && 'Accounts'}
               </div>
               {!isCollapsed && (
-                <FaChevronDown
-                  size={12}
+                <MdExpandMore
+                  size={14}
                   className={`transition-transform duration-200 ${isAccountsOpen ? 'rotate-180' : ''}`}
                 />
               )}
@@ -151,31 +149,32 @@ const Navbar = ({ onToggleCollapse }) => {
                   onClick={() => navigate('/admin/user-accounts')}
                   className={navLinkClass('/admin/user-accounts')}
                 >
-                  <FaUsers className="mr-2" /> User Accounts
+                  <MdPeople className="mr-2 text-lg" /> User Accounts
                 </button>
                 <button
                   onClick={() => navigate('/admin/guard-accounts')}
                   className={navLinkClass('/admin/guard-accounts')}
                 >
-                  <FaUserShield className="mr-2" /> Guard Accounts
+                  <MdSecurity className="mr-2 text-lg" /> Guard Accounts
                 </button>
               </div>
             )}
           </div>
 
           <div>
-            <button 
-              onClick={() => isCollapsed ? navigate('/admin/facility-requests') : setIsRequestsOpen(!isRequestsOpen)} 
+            <button
+              onClick={() => (isCollapsed ? navigate('/admin/facility-requests') : setIsRequestsOpen(!isRequestsOpen))}
               className={dropdownClass}
-              title="Requests"
+              data-tooltip-id="requests-tooltip"
+              data-tooltip-content="Requests"
             >
               <div className="flex items-center">
-                <FaClipboardList className="mr-3" />
+                <MdAssignment className="mr-3 text-xl" />
                 {!isCollapsed && 'Requests'}
               </div>
               {!isCollapsed && (
-                <FaChevronDown
-                  size={12}
+                <MdExpandMore
+                  size={14}
                   className={`transition-transform duration-200 ${isRequestsOpen ? 'rotate-180' : ''}`}
                 />
               )}
@@ -186,49 +185,52 @@ const Navbar = ({ onToggleCollapse }) => {
                   onClick={() => navigate('/admin/facility-requests')}
                   className={navLinkClass('/admin/facility-requests')}
                 >
-                  <FaClipboardList className="mr-2" /> Facility Requests
+                  <MdAssignment className="mr-2 text-lg" /> Facility Requests
                 </button>
                 <button
                   onClick={() => navigate('/admin/service-requests')}
                   className={navLinkClass('/admin/service-requests')}
                 >
-                  <FaClipboardList className="mr-2" /> Service Requests
+                  <MdAssignment className="mr-2 text-lg" /> Service Requests
                 </button>
               </div>
             )}
           </div>
 
-          <button 
-            onClick={() => navigate('/admin/lot-status')} 
+          <button
+            onClick={() => navigate('/admin/lot-status')}
             className={navLinkClass('/admin/lot-status')}
-            title="Lot Status"
+            data-tooltip-id="lot-status-tooltip"
+            data-tooltip-content="Lot Status"
           >
-            <FaHome className="mr-3" />
+            <MdDashboard className="mr-3 text-xl" />
             {!isCollapsed && 'Lot Status'}
           </button>
 
-          <button 
-            onClick={() => navigate('/admin/visitor-logs')} 
+          <button
+            onClick={() => navigate('/admin/visitor-logs')}
             className={navLinkClass('/admin/visitor-logs')}
-            title="Visitor Logs"
+            data-tooltip-id="visitor-logs-tooltip"
+            data-tooltip-content="Visitor Logs"
           >
-            <FaQrcode className="mr-3" />
+            <MdQrCode className="mr-3 text-xl" />
             {!isCollapsed && 'Visitor Logs'}
           </button>
 
           <div>
-            <button 
-              onClick={() => isCollapsed ? navigate('/admin/staff') : setIsStaffOpen(!isStaffOpen)} 
+            <button
+              onClick={() => (isCollapsed ? navigate('/admin/staff') : setIsStaffOpen(!isStaffOpen))}
               className={dropdownClass}
-              title="Staff"
+              data-tooltip-id="staff-tooltip"
+              data-tooltip-content="Staff"
             >
               <div className="flex items-center">
-                <FaClipboardList className="mr-3" />
+                <MdAssignment className="mr-3 text-xl" />
                 {!isCollapsed && 'Staff'}
               </div>
               {!isCollapsed && (
-                <FaChevronDown
-                  size={12}
+                <MdExpandMore
+                  size={14}
                   className={`transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`}
                 />
               )}
@@ -239,43 +241,53 @@ const Navbar = ({ onToggleCollapse }) => {
                   onClick={() => navigate('/admin/head-staff-accounts')}
                   className={navLinkClass('/admin/head-staff-accounts')}
                 >
-                  <FaUserShield className="mr-2" /> Head Staff
+                  <MdSecurity className="mr-2 text-lg" /> Head Staff
                 </button>
                 <button
                   onClick={() => navigate('/admin/staff')}
                   className={navLinkClass('/admin/staff')}
                 >
-                  <FaClipboardList className="mr-2" /> Staff Accounts
+                  <MdAssignment className="mr-2 text-lg" /> Staff Accounts
                 </button>
               </div>
             )}
           </div>
 
-          <button 
-            onClick={() => navigate('/admin/announcements')} 
+          <button
+            onClick={() => navigate('/admin/announcements')}
             className={navLinkClass('/admin/announcements')}
-            title="Announcements"
+            data-tooltip-id="announcements-tooltip"
+            data-tooltip-content="Announcements"
           >
-            <FaBullhorn className="mr-3" />
+            <MdAnnouncement className="mr-3 text-xl" />
             {!isCollapsed && 'Announcements'}
           </button>
 
-          <button 
-            onClick={() => navigate('/admin/feedback')} 
+          <button
+            onClick={() => navigate('/admin/feedback')}
             className={navLinkClass('/admin/feedback')}
-            title="Feedback"
+            data-tooltip-id="feedback-tooltip"
+            data-tooltip-content="Feedback"
           >
-            <FaComments className="mr-3" />
+            <MdChat className="mr-3 text-xl" />
             {!isCollapsed && 'Feedback'}
           </button>
         </nav>
+        <Tooltip id="dashboard-tooltip" place="right" className="z-50" />
+        <Tooltip id="accounts-tooltip" place="right" className="z-50" />
+        <Tooltip id="requests-tooltip" place="right" className="z-50" />
+        <Tooltip id="lot-status-tooltip" place="right" className="z-50" />
+        <Tooltip id="visitor-logs-tooltip" place="right" className="z-50" />
+        <Tooltip id="staff-tooltip" place="right" className="z-50" />
+        <Tooltip id="announcements-tooltip" place="right" className="z-50" />
+        <Tooltip id="feedback-tooltip" place="right" className="z-50" />
       </aside>
 
       <header
         className="fixed top-0 left-0 right-0 h-16 z-30 flex items-center justify-between px-4 transition-all duration-400 ease-in-out shadow-md bg-white"
         style={{ marginLeft: isCollapsed ? '5rem' : '12rem' }}
       >
-        <h1 className="font-semibold text-lg text-[#174361]">
+        <h1 className="font-semibold text-lg text-[#6B46C1]">
           Welcome, Admin
         </h1>
 
@@ -284,19 +296,19 @@ const Navbar = ({ onToggleCollapse }) => {
             onClick={() => setShowSettings(!showSettings)}
             className="flex items-center space-x-2 focus:outline-none transform hover:scale-105 transition-transform duration-200"
           >
-            <span className="font-medium text-[#174361]">
+            <span className="font-medium text-[#6B46C1]">
               Settings
             </span>
-            <FaChevronDown
-              size={12}
+            <MdExpandMore
+              size={14}
               className={`transition-transform duration-200 ${showSettings ? 'rotate-180' : ''}`}
-              style={{ color: '#174361' }}
+              style={{ color: '#6B46C1' }}
             />
           </button>
           {showSettings && (
             <div
               className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border transition-all duration-200 ease-in-out ${
-                darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#1a3d57]'
+                darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#9F7AEA]'
               }`}
             >
               <button
@@ -304,16 +316,16 @@ const Navbar = ({ onToggleCollapse }) => {
                   toggleDarkMode();
                   setShowSettings(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#93c5fd]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#9F7AEA]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
               >
                 {darkMode ? (
                   <>
-                    <FaSun className="text-yellow-500" />
+                    <MdLightMode className="text-yellow-500 text-lg" />
                     <span>Light Mode</span>
                   </>
                 ) : (
                   <>
-                    <FaMoon className="text-[#174361]" />
+                    <MdDarkMode className="text-[#6B46C1] text-lg" />
                     <span>Dark Mode</span>
                   </>
                 )}
@@ -324,9 +336,9 @@ const Navbar = ({ onToggleCollapse }) => {
                   setShowSettings(false);
                   handleLogout();
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#93c5fd]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#9F7AEA]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
               >
-                <FaSignOutAlt />
+                <MdLogout className="text-lg" />
                 <span>Logout</span>
               </button>
             </div>
@@ -350,7 +362,7 @@ const Navbar = ({ onToggleCollapse }) => {
                   darkMode ? 'bg-red-900' : 'bg-red-100'
                 }`}
               >
-                <FaExclamationTriangle
+                <MdWarning
                   className={darkMode ? 'text-red-400' : 'text-red-600'}
                   size={24}
                 />

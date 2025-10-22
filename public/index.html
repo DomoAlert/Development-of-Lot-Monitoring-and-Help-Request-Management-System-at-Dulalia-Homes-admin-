@@ -26,6 +26,14 @@
     -->
     <title>Dulalia Homes Admin</title>
     <style>
+      /* Prevent flash of unstyled content before React loads */
+      /* Root starts hidden by default until React signals readiness */
+      html.app-loading #root {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
+    <style>
       /* Fallback styles in case CSS doesn't load */
       body {
         margin: 0;
@@ -42,6 +50,10 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      // Mark the document as loading so the root stays hidden until React mounts
+      document.documentElement.classList.add('app-loading');
+    </script>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.

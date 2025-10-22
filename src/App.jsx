@@ -20,6 +20,7 @@ import Feedback from './pages/Admin/Feedback';
 import GuardAccounts from './pages/Admin/GuardAccounts';
 import VisitorLogs from './pages/Admin/VisitorLogs';
 import LotMonitoring from './pages/Admin/LotStatus';
+import OfflinePage from './components/OfflinePage';
 
 // Safe auth check utility
 const checkAuth = () => {
@@ -85,55 +86,70 @@ const RoutesErrorBoundary = ({ children }) => {
 function App() {
   const [isNavbarCollapsed, setIsNavbarCollapsed] = useState(false);
 
+  // Remove the initial app-loading class added in index.html so the app becomes visible
+  // after React has mounted (prevents flash of unstyled content behind the splash)
+  React.useEffect(() => {
+    try {
+      document.documentElement.classList.remove('app-loading');
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   const handleToggleCollapse = (collapsed) => {
     setIsNavbarCollapsed(collapsed);
   };
 
   return (
-    <ThemeProvider>
-      <UserProvider>
-        <Router>
-          {/* Splash screen mounted at the very top so it covers initial render. */}
-          {/* showOncePerSession={false} makes it appear on every full page refresh for website use. */}
-          <SplashScreen background="#ffffff" minDuration={4000} showOncePerSession={false} ignoreAppReady={true} />
-          <PageTitleProvider>
-            <ToastContainer />
-            <div className="flex min-h-screen">
-              {checkAuth() && <Navbar onToggleCollapse={handleToggleCollapse} />}
-              <main
-                className="flex-1 transition-all duration-400 ease-in-out"
-                style={{ 
-                  marginLeft: checkAuth() ? (isNavbarCollapsed ? '5rem' : '12rem') : '0',
-                  marginTop: checkAuth() ? '4rem' : '0'
-                }}
-              >
-                <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading app...</div>}>
-                  <RoutesErrorBoundary>
-                    <Routes>
-                      <Route path="/" element={<RootRedirect />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                      <Route path="/admin/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-                      <Route path="/admin/head-staff-accounts" element={<ProtectedRoute><HeadStaffAccounts /></ProtectedRoute>} />
-                      <Route path="/admin/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
-                      <Route path="/admin/user-accounts" element={<ProtectedRoute><UserAccounts /></ProtectedRoute>} />
-                      <Route path="/admin/facility-requests" element={<ProtectedRoute><FacilityRequests /></ProtectedRoute>} />
-                      <Route path="/admin/service-requests" element={<ProtectedRoute><ServiceRequests /></ProtectedRoute>} />
-                      <Route path="/admin/announcements" element={<ProtectedRoute><Announcements /></ProtectedRoute>} />
-                      <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
-                      <Route path="/admin/guard-accounts" element={<ProtectedRoute><GuardAccounts /></ProtectedRoute>} />
-                      <Route path="/admin/visitor-logs" element={<ProtectedRoute><VisitorLogs /></ProtectedRoute>} />
-                      <Route path="/admin/lot-status" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </RoutesErrorBoundary>
-                </Suspense>
-              </main>
-            </div>
-          </PageTitleProvider>
-        </Router>
-      </UserProvider>
-    </ThemeProvider>
+    <UserProvider>
+      <ThemeProvider>
+        <React.Fragment>
+          <ToastContainer 
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            closeOnClick
+            pauseOnHover
+            draggable
+            theme="light"
+          />
+          <SplashScreen 
+            background="#ffffff" 
+            minDuration={4000} 
+            showOncePerSession={true} 
+            ignoreAppReady={false} 
+          />
+          <OfflinePage />
+          <Router>
+            <PageTitleProvider>
+              <Suspense fallback={<div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+              </div>}>
+                <RoutesErrorBoundary>
+                  <Routes>
+                    <Route path="/" element={<RootRedirect />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/admin/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                    <Route path="/admin/head-staff-accounts" element={<ProtectedRoute><HeadStaffAccounts /></ProtectedRoute>} />
+                    <Route path="/admin/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+                    <Route path="/admin/user-accounts" element={<ProtectedRoute><UserAccounts /></ProtectedRoute>} />
+                    <Route path="/admin/facility-requests" element={<ProtectedRoute><FacilityRequests /></ProtectedRoute>} />
+                    <Route path="/admin/service-requests" element={<ProtectedRoute><ServiceRequests /></ProtectedRoute>} />
+                    <Route path="/admin/announcements" element={<ProtectedRoute><Announcements /></ProtectedRoute>} />
+                    <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+                    <Route path="/admin/guard-accounts" element={<ProtectedRoute><GuardAccounts /></ProtectedRoute>} />
+                    <Route path="/admin/visitor-logs" element={<ProtectedRoute><VisitorLogs /></ProtectedRoute>} />
+                    <Route path="/admin/lot-status" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </RoutesErrorBoundary>
+              </Suspense>
+            </PageTitleProvider>
+          </Router>
+        </React.Fragment>
+      </ThemeProvider>
+    </UserProvider>
   );
 }
 

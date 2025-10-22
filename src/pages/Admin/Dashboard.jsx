@@ -452,13 +452,6 @@ function Dashboard() {
       toast.error('Error fetching dashboard data: ' + error.message);
     } finally {
       setLoading(false);
-      // Notify any listeners (e.g., splash screen) that the app finished loading data
-      try {
-        const evt = new Event('app-ready');
-        window.dispatchEvent(evt);
-      } catch (e) {
-        // ignore
-      }
     }
   };
 
@@ -549,638 +542,393 @@ function Dashboard() {
   };
 
   return (
-    <AdminLayout>
-      <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <div className="flex flex-wrap justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Dashboard Overview
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-2">Monitor community statistics and key performance indicators</p>
-            </div>
-            <button
-              onClick={refreshData}
-              disabled={loading}
-              className={`flex items-center px-4 py-2 rounded-lg text-sm ${
-                loading 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-              } transition-colors mt-2 sm:mt-0`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {loading ? 'Refreshing...' : 'Refresh Data'}
-            </button>
+   <AdminLayout>
+  <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    {/* Header Section */}
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 mb-8 shadow-xl">
+      <div className="flex flex-wrap justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
+            <p className="text-sm opacity-80 mt-1">Monitor community metrics and performance indicators</p>
+          </div>
+        </div>
+        <button
+          onClick={refreshData}
+          disabled={loading}
+          className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+            loading 
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+              : 'bg-white text-blue-600 hover:bg-blue-50 hover:shadow-md'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {loading ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </div>
+    </div>
+
+    {loading ? (
+      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl shadow-lg">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-600 font-medium">Loading dashboard data...</p>
+      </div>
+    ) : (
+      <>
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { icon: FaQrcode, text: 'View Visitor QR', path: '/admin/visitor-logs', color: 'blue' },
+              { icon: FaUserShield, text: 'Manage Guards', path: '/admin/guard-accounts', color: 'green' },
+              { icon: FaUser, text: 'Manage Users', path: '/admin/user-accounts', color: 'purple' },
+              { icon: FaCommentAlt, text: 'View Feedback', path: '/admin/feedback', color: 'yellow' },
+            ].map(({ icon: Icon, text, path, color }, index) => (
+              <button
+                key={index}
+                onClick={() => navigate(path)}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl bg-${color}-50 hover:bg-${color}-100 hover:shadow-md transition-all duration-200 transform hover:-translate-y-1`}
+              >
+                <Icon className={`h-8 w-8 text-${color}-600 mb-2`} />
+                <span className="text-sm font-medium text-gray-800">{text}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-600">Loading dashboard data...</p>
-          </div>
-        ) : (
-          <>
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow mb-8">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">Quick Actions</h2>
-              </div>
-              <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button 
-                  onClick={() => navigate('/admin/visitor-logs')}
-                  className="flex flex-col items-center justify-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <FaQrcode className="h-8 w-8 text-blue-600 mb-2" />
-                  <span className="text-sm font-medium">View Visitor QR</span>
-                </button>
-                
-                <button 
-                  onClick={() => navigate('/admin/guard-accounts')}
-                  className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <FaUserShield className="h-8 w-8 text-green-600 mb-2" />
-                  <span className="text-sm font-medium">Manage Guards</span>
-                </button>
-                
-                <button 
-                  onClick={() => navigate('/admin/user-accounts')}
-                  className="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                >
-                  <FaUser className="h-8 w-8 text-purple-600 mb-2" />
-                  <span className="text-sm font-medium">Manage Users</span>
-                </button>
-                
-                <button 
-                  onClick={() => navigate('/admin/feedback')}
-                  className="flex flex-col items-center justify-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
-                >
-                  <FaCommentAlt className="h-8 w-8 text-yellow-600 mb-2" />
-                  <span className="text-sm font-medium">View Feedback</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow p-6"
-              >
-                <div className="flex items-center justify-between">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[
+            { icon: UserCircleIcon, title: 'Total Homeowners', value: stats.totalHomeowners, color: 'blue' },
+            { icon: ClockIcon, title: 'Pending Requests', value: stats.pendingRequests, color: 'yellow' },
+            { icon: FaUsers, title: `${stats.currentMonth} Visitors`, value: stats.currentMonthVisitors, color: 'green' },
+            { icon: UserGroupIcon, title: 'Active Staff', value: stats.activeStaff, color: 'purple' },
+            { icon: IdentificationIcon, title: 'IDs Left', value: stats.idsLeft, color: 'indigo' },
+            { icon: FaStar, title: 'Average Rating', value: stats.averageRating, color: 'yellow', render: renderStars },
+          ].map(({ icon: Icon, title, value, color, render }, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-200"
+            >
+              <div className="flex items-center">
+                <div className={`p-3 rounded-full bg-${color}-100 bg-opacity-75`}>
+                  <Icon className={`h-8 w-8 text-${color}-600`} />
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm text-gray-600 font-medium">{title}</h2>
                   <div className="flex items-center">
-                    <div className="p-3 rounded-full bg-blue-100 bg-opacity-75">
-                      <UserCircleIcon className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div className="ml-4">
-                      <h2 className="text-gray-600 text-sm">Total Homeowners</h2>
-                      <p className="text-2xl font-semibold text-gray-800">{stats.totalHomeowners}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow p-6"
-              >
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-yellow-100 bg-opacity-75">
-                    <ClockIcon className="h-8 w-8 text-yellow-600" />
-                  </div>
-                  <div className="ml-4">
-                    <h2 className="text-gray-600 text-sm">Pending Requests</h2>
-                    <p className="text-2xl font-semibold text-gray-800">{stats.pendingRequests}</p>
-                  </div>
-                </div>
-              </motion.div>
-
-<motion.div 
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.3 }}
-  className="bg-white rounded-lg shadow p-6"
->
-  <div className="flex items-center">
-    <div className="p-3 rounded-full bg-green-100 bg-opacity-75">
-      <FaUsers className="h-8 w-8 text-green-600" />
-    </div>
-    <div className="ml-4">
-      <h2 className="text-gray-600 text-sm">{stats.currentMonth} Visitors</h2>
-      <p className="text-2xl font-semibold text-gray-800">{stats.currentMonthVisitors}</p>
-    </div>
-  </div>
-</motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow p-6"
-              >
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-purple-100 bg-opacity-75">
-                    <UserGroupIcon className="h-8 w-8 text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <h2 className="text-gray-600 text-sm">Active Staff</h2>
-                    <p className="text-2xl font-semibold text-gray-800">{stats.activeStaff}</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow p-6"
-              >
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-indigo-100 bg-opacity-75">
-                    <IdentificationIcon className="h-8 w-8 text-indigo-600" />
-                  </div>
-                  <div className="ml-4">
-                    <h2 className="text-gray-600 text-sm">IDs Left</h2>
-                    <p className="text-2xl font-semibold text-gray-800">{stats.idsLeft}</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow p-6"
-              >
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-yellow-100 bg-opacity-75">
-                    <FaStar className="h-8 w-8 text-yellow-600" />
-                  </div>
-                  <div className="ml-4">
-                    <h2 className="text-gray-600 text-sm">Average Rating</h2>
-                    <div className="flex items-center">
-                      <p className="text-2xl font-semibold text-gray-800 mr-2">{stats.averageRating}</p>
-                      <div className="text-yellow-400 text-sm">
-                        {renderStars(stats.averageRating)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Second row: Bar graphs side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              {/* Visitor Statistics Bar Chart */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="text-lg font-semibold">Visitor Statistics</h2>
-                  <div className="flex items-center space-x-2">
-                    <button 
-                      onClick={previousYear}
-                      className="p-1 rounded hover:bg-gray-100"
-                      aria-label="Previous year"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="font-medium">{selectedYear}</span>
-                    <button 
-                      onClick={nextYear}
-                      className="p-1 rounded hover:bg-gray-100"
-                      aria-label="Next year"
-                      disabled={selectedYear >= new Date().getFullYear()}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="mb-6 h-64">
-                    <Bar
-                      data={{
-                        labels: visitorMonthlyData.labels,
-                        datasets: [{
-                          label: 'Visitors',
-                          data: visitorMonthlyData.visitors,
-                          backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue color
-                          borderColor: 'rgb(59, 130, 246)',
-                          borderWidth: 1
-                        }]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              precision: 0
-                            }
-                          }
-                        },
-                        plugins: {
-                          legend: {
-                            display: true,
-                            position: 'top'
-                          },
-                          title: {
-                            display: true,
-                            text: `Monthly Visitors for ${selectedYear}`,
-                            font: {
-                              size: 16
-                            }
-                          },
-                          tooltip: {
-                            callbacks: {
-                              title: (items) => {
-                                if (!items.length) return '';
-                                const monthIndex = visitorMonthlyData.labels.indexOf(items[0].label);
-                                return `${items[0].label} ${selectedYear}`;
-                              },
-                              label: (item) => {
-                                return `Visitors: ${item.formattedValue}`;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                  
-                  
-                  <div className="mt-6 text-center">
-                    <button 
-                      onClick={() => navigate('/admin/visitor-logs')}
-                      className="text-sm text-indigo-600 hover:text-indigo-800"
-                    >
-                      View all visitor logs
-                    </button>
+                    <p className="text-xl font-semibold text-gray-800">{render ? render(value) : value}</p>
                   </div>
                 </div>
               </div>
+            </motion.div>
+          ))}
+        </div>
 
-              {/* Rating Distribution Chart */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">Rating Distribution</h2>
-                <div className="flex justify-center">
-                  <div className="w-full h-64">
-                    <Bar
-                      data={{
-                        labels: ['1★', '2★', '3★', '4★', '5★'],
-                        datasets: [{
-                          label: 'All Services',
-                          data: [
-                            ratingDistribution[1],
-                            ratingDistribution[2],
-                            ratingDistribution[3],
-                            ratingDistribution[4],
-                            ratingDistribution[5]
-                          ],
-                          backgroundColor: 'rgba(99, 102, 241, 0.7)', // indigo
-                          borderColor: 'rgb(99, 102, 241)',
+        {/* Service Ratings Chart */}
+        <div className="mb-8 bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Service Ratings Overview</h2>
+          <div className="h-80">
+            <Bar
+              data={{
+                labels: Object.keys(serviceRatings),
+                datasets: [
+                  {
+                    label: 'Average Rating',
+                    data: Object.keys(serviceRatings).map(service => serviceRatings[service].average),
+                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    borderColor: 'rgb(99, 102, 241)',
+                    borderWidth: 1,
+                  },
+                  {
+                    label: 'Number of Reviews',
+                    data: Object.keys(serviceRatings).map(service => serviceRatings[service].count),
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Value', font: { size: 12, weight: 'bold' } },
+                  },
+                  x: {
+                    title: { display: true, text: 'Services', font: { size: 12, weight: 'bold' } },
+                  },
+                },
+                plugins: {
+                  legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => {
+                        const value = context.raw;
+                        return `${context.dataset.label}: ${typeof value === 'number' ? (context.dataset.label === 'Average Rating' ? value.toFixed(1) : value) : value || 'N/A'}`;
+                      },
+                    },
+                  },
+                  title: { display: true, text: 'Service Ratings Overview', font: { size: 16, weight: 'bold' }, padding: { bottom: 10 } },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Visitor Statistics */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800">Visitor Statistics</h2>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={previousYear}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Previous year"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="font-medium text-gray-800">{selectedYear}</span>
+                <button
+                  onClick={nextYear}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Next year"
+                  disabled={selectedYear >= new Date().getFullYear()}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="h-80">
+                <Bar
+                  data={{
+                    labels: visitorMonthlyData.labels,
+                    datasets: [{
+                      label: 'Visitors',
+                      data: visitorMonthlyData.visitors,
+                      backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                      borderColor: 'rgb(59, 130, 246)',
+                      borderWidth: 1,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: { beginAtZero: true, ticks: { precision: 0 } },
+                    },
+                    plugins: {
+                      legend: { display: true, position: 'top' },
+                      title: { display: true, text: `Monthly Visitors for ${selectedYear}`, font: { size: 16 } },
+                      tooltip: {
+                        callbacks: {
+                          title: (items) => items.length ? `${items[0].label} ${selectedYear}` : '',
+                          label: (item) => `Visitors: ${item.formattedValue}`,
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => navigate('/admin/visitor-logs')}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                  View all visitor logs
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Rating Distribution */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Rating Distribution</h2>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: ['1★', '2★', '3★', '4★', '5★'],
+                  datasets: [
+                    {
+                      label: 'All Services',
+                      data: [ratingDistribution[1], ratingDistribution[2], ratingDistribution[3], ratingDistribution[4], ratingDistribution[5]],
+                      backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                      borderColor: 'rgb(99, 102, 241)',
+                      borderWidth: 1,
+                      barPercentage: 0.6,
+                      categoryPercentage: 0.7,
+                    },
+                    ...Object.keys(serviceRatings)
+                      .filter(service => ['plumber', 'street sweeper', 'electrician'].includes(service.toLowerCase()) && serviceRatings[service].count > 0)
+                      .map((service, index) => {
+                        const colors = [
+                          { bg: 'rgba(239, 68, 68, 0.7)', border: 'rgb(239, 68, 68)' },
+                          { bg: 'rgba(16, 185, 129, 0.7)', border: 'rgb(16, 185, 129)' },
+                          { bg: 'rgba(245, 158, 11, 0.7)', border: 'rgb(245, 158, 11)' },
+                        ];
+                        const serviceDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                        recentFeedback
+                          .filter(item => item.service_name && item.service_name.toLowerCase() === service.toLowerCase())
+                          .forEach(item => {
+                            const rating = parseInt(item.rating) || 0;
+                            if (rating >= 1 && rating <= 5) serviceDistribution[rating] += 1;
+                          });
+                        return {
+                          label: service,
+                          data: [serviceDistribution[1], serviceDistribution[2], serviceDistribution[3], serviceDistribution[4], serviceDistribution[5]],
+                          backgroundColor: colors[index % colors.length].bg,
+                          borderColor: colors[index % colors.length].border,
                           borderWidth: 1,
                           barPercentage: 0.6,
-                          categoryPercentage: 0.7
+                          categoryPercentage: 0.7,
+                        };
+                      }),
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Number of Ratings', font: { size: 12, weight: 'bold' } } },
+                    x: { title: { display: true, text: 'Rating Stars', font: { size: 12, weight: 'bold' } } },
+                  },
+                  plugins: {
+                    legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: {
+                      callbacks: {
+                        title: (tooltipItems) => `${tooltipItems[0].label} Star Rating`,
+                        label: (context) => {
+                          const value = context.raw;
+                          return `${context.dataset.label}: ${typeof value === 'number' ? (context.dataset.label === 'Average Rating' ? value.toFixed(1) : value) : value || 'N/A'}`;
                         },
-                        // Add service-specific datasets, but only for services with actual ratings
-                        ...Object.keys(serviceRatings)
-                          .filter(service => 
-                            // Only include services from our list that have at least one rating
-                            ['plumber', 'street sweeper', 'electrician'].includes(service.toLowerCase()) && 
-                            serviceRatings[service].count > 0
-                          )
-                          .map((service, index) => {
-                            // Different colors for each service
-                            const colors = [
-                              { bg: 'rgba(239, 68, 68, 0.7)', border: 'rgb(239, 68, 68)' }, // red
-                              { bg: 'rgba(16, 185, 129, 0.7)', border: 'rgb(16, 185, 129)' }, // green
-                              { bg: 'rgba(245, 158, 11, 0.7)', border: 'rgb(245, 158, 11)' }  // amber
-                            ];
-                            
-                            // Get distribution of ratings for this service
-                            const serviceDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-                            const feedbackData = recentFeedback.filter(item => 
-                              item.service_name && 
-                              item.service_name.toLowerCase() === service.toLowerCase()
-                            );
-                            
-                            feedbackData.forEach(item => {
-                              const rating = parseInt(item.rating) || 0;
-                              if (rating >= 1 && rating <= 5) {
-                                serviceDistribution[rating] += 1;
-                              }
-                            });
-                            
-                            return {
-                              label: service,
-                              data: [
-                                serviceDistribution[1],
-                                serviceDistribution[2],
-                                serviceDistribution[3],
-                                serviceDistribution[4],
-                                serviceDistribution[5]
-                              ],
-                              backgroundColor: colors[index % colors.length].bg,
-                              borderColor: colors[index % colors.length].border,
-                              borderWidth: 1,
-                              barPercentage: 0.6,
-                              categoryPercentage: 0.7
-                            };
-                          })
-                        ]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              precision: 0
-                            },
-                            title: {
-                              display: true,
-                              text: 'Number of Ratings',
-                              font: {
-                                size: 12,
-                                weight: 'bold'
-                              }
-                            }
-                          },
-                          x: {
-                            title: {
-                              display: true,
-                              text: 'Rating Stars',
-                              font: {
-                                size: 12,
-                                weight: 'bold'
-                              }
-                            }
-                          }
-                        },
-                        plugins: {
-                          legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                              boxWidth: 12,
-                              font: {
-                                size: 11
-                              }
-                            }
-                          },
-                          tooltip: {
-                            callbacks: {
-                              title: (tooltipItems) => {
-                                return `${tooltipItems[0].label} Star Rating`;
-                              },
-                              label: (context) => {
-                                const value = context.raw; // Get the raw value
-                                if (typeof value === 'number') {
-                                  // If the value is a number, format it
-                                  if (context.dataset.label === 'Average Rating') {
-                                    return `${context.dataset.label}: ${value.toFixed(1)}`;
-                                  }
-                                  return `${context.dataset.label}: ${value}`;
-                                }
-                                // If the value is not a number, return it as is
-                                return `${context.dataset.label}: ${value || 'N/A'}`;
-                              }
-                            }
-                          },
-                          title: {
-                            display: true,
-                            text: 'Feedback Ratings by Service Type',
-                            font: {
-                              size: 16,
-                              weight: 'bold'
-                            },
-                            padding: {
-                              bottom: 10
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                
-                {/* Add a legend explanation */}
-                <div className="mt-4 text-xs text-gray-500 border-t pt-3">
-                  <p>This chart shows the distribution of star ratings across different services. 
-                  Higher bars for 4-5 star ratings indicate better service satisfaction.</p>
-                  <p className="mt-1">Note: Only services with at least one rating are shown in the chart.</p>
-                </div>
-              </div>
+                      },
+                    },
+                    title: { display: true, text: 'Feedback Ratings by Service Type', font: { size: 16, weight: 'bold' }, padding: { bottom: 10 } },
+                  },
+                }}
+              />
             </div>
+            <div className="mt-4 text-xs text-gray-500 border-t pt-3">
+              <p>Higher bars for 4-5 star ratings indicate better service satisfaction.</p>
+              <p className="mt-1">Note: Only services with at least one rating are shown.</p>
+            </div>
+          </div>
+        </div>
 
-            {/* Third row: Recent requests and feedback */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Recent Requests */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Recent Requests</h2>
-                </div>
-                <div className="p-6">
-                  {recentRequests.length === 0 ? (
-                    <p className="text-gray-500">No recent requests</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {recentRequests.map((request) => (
-                        <div key={request.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                          {request.type === 'service' ? (
-                            <div className="p-2 rounded-full bg-blue-100 mr-3">
-                              <FaWrench className="h-6 w-6 text-blue-600" />
-                            </div>
-                          ) : (
-                            <div className="p-2 rounded-full bg-purple-100 mr-3">
-                              <FaBuilding className="h-6 w-6 text-purple-600" />
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <div className="flex justify-between">
-                              <p className="text-sm font-medium text-gray-900">
-                                {request.type === 'service' ? request.serviceName : request.facilityName}
-                              </p>
-                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                request.status === 'Approved' ? 'bg-green-100 text-green-800' : 
-                                request.status === 'Completed' ? 'bg-blue-100 text-blue-800' : 
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {request.status}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              From: {request.userName || 'Unknown User'}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {formatTimestamp(request.timestamp || request.created_at)}
-                            </p>
-                          </div>
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Requests */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">Recent Requests</h2>
+            </div>
+            <div className="p-6">
+              {recentRequests.length === 0 ? (
+                <p className="text-gray-500">No recent requests</p>
+              ) : (
+                <div className="space-y-4">
+                  {recentRequests.map((request) => (
+                    <div key={request.id} className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      {request.type === 'service' ? (
+                        <div className="p-2 rounded-full bg-blue-100 mr-3">
+                          <FaWrench className="h-6 w-6 text-blue-600" />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Recent Feedback */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Recent Feedback</h2>
-                </div>
-                <div className="p-6">
-                  {recentFeedback.length === 0 ? (
-                    <p className="text-gray-500">No recent feedback</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {recentFeedback.map((feedback) => (
-                        <div key={feedback.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
-                          <div className="flex justify-between items-center mb-2">
-                            <div className="flex items-center">
-                              <div className="text-yellow-400 mr-2">
-                                {renderStars(feedback.rating)}
-                              </div>
-                              <span className="text-sm text-gray-500">
-                                for {feedback.service_name || 'Unknown Service'}
-                              </span>
-                            </div>
-                            <span className="text-xs text-gray-400">
-                              {formatTimestamp(feedback.timestamp)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700">
-                            "{feedback.feedback || 'No comment provided'}"
+                      ) : (
+                        <div className="p-2 rounded-full bg-purple-100 mr-3">
+                          <FaBuilding className="h-6 w-6 text-purple-600" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium text-gray-900">
+                            {request.type === 'service' ? request.serviceName : request.facilityName}
                           </p>
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            request.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                            request.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {request.status}
+                          </span>
                         </div>
-                      ))}
+                        <p className="text-xs text-gray-500">
+                          From: {request.userName || 'Unknown User'}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatTimestamp(request.timestamp || request.created_at)}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="mt-4 text-center">
-                    <button 
-                      onClick={() => navigate('/admin/feedback')}
-                      className="text-sm text-indigo-600 hover:text-indigo-800"
-                    >
-                      View all feedback
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              </div>
-              
-            {/* First row: Service Ratings chart at the top */}
-            <div className="mb-8">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">Service Ratings</h2>
-                <div className="h-64">
-                  <Bar
-                    data={{
-                      labels: Object.keys(serviceRatings), // Service names as labels
-                      datasets: [
-                        {
-                          label: 'Average Rating',
-                          data: Object.keys(serviceRatings).map(service => serviceRatings[service].average), // Average ratings
-                          backgroundColor: 'rgba(99, 102, 241, 0.7)', // Indigo color
-                          borderColor: 'rgb(99, 102, 241)',
-                          borderWidth: 1,
-                        },
-                        {
-                          label: 'Number of Reviews',
-                          data: Object.keys(serviceRatings).map(service => serviceRatings[service].count), // Number of reviews
-                          backgroundColor: 'rgba(16, 185, 129, 0.7)', // Green color
-                          borderColor: 'rgb(16, 185, 129)',
-                          borderWidth: 1,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          title: {
-                            display: true,
-                            text: 'Value',
-                            font: {
-                              size: 12,
-                              weight: 'bold',
-                            },
-                          },
-                        },
-                        x: {
-                          title: {
-                            display: true,
-                            text: 'Services',
-                            font: {
-                              size: 12,
-                              weight: 'bold',
-                            },
-                          },
-                        },
-                      },
-                      plugins: {
-                        legend: {
-                          display: true,
-                          position: 'top',
-                          labels: {
-                            boxWidth: 12,
-                            font: {
-                              size: 11,
-                            },
-                          },
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: (context) => {
-                              const value = context.raw; // Get the raw value
-                              if (typeof value === 'number') {
-                                // If the value is a number, format it
-                                if (context.dataset.label === 'Average Rating') {
-                                  return `${context.dataset.label}: ${value.toFixed(1)}`;
-                                }
-                                return `${context.dataset.label}: ${value}`;
-                              }
-                              // If the value is not a number, return it as is
-                              return `${context.dataset.label}: ${value || 'N/A'}`;
-                            },
-                          },
-                        },
-                        title: {
-                          display: true,
-                          text: 'Service Ratings Overview',
-                          font: {
-                            size: 16,
-                            weight: 'bold',
-                          },
-                          padding: {
-                            bottom: 10,
-                          },
-                        },
-                      },
-                    }}
-                  />
+              )}
+            </div>
+          </div>
+
+          {/* Recent Feedback */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">Recent Feedback</h2>
+            </div>
+            <div className="p-6">
+              {recentFeedback.length === 0 ? (
+                <p className="text-gray-500">No recent feedback</p>
+              ) : (
+                <div className="space-y-4">
+                  {recentFeedback.map((feedback) => (
+                    <div key={feedback.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center">
+                          <div className="text-yellow-400 mr-2">{renderStars(feedback.rating)}</div>
+                          <span className="text-sm text-gray-500">
+                            for {feedback.service_name || 'Unknown Service'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {formatTimestamp(feedback.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        "{feedback.feedback || 'No comment provided'}"
+                      </p>
+                    </div>
+                  ))}
                 </div>
+              )}
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => navigate('/admin/feedback')}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                  View all feedback
+                </button>
               </div>
             </div>
-            </div>
-          </>
-        )}
-      </div>
-    </AdminLayout>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+</AdminLayout>
   );
 }
 

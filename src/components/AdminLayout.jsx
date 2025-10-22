@@ -5,48 +5,56 @@ import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../context/PageTitleContext';
 
 function AdminLayout({ children }) {
-  const { darkMode } = useTheme(); // toggleDarkMode no longer needed here
+  const { darkMode } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
   usePageTitle();
 
+  // Apply dark mode class to <html>
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('darkMode', darkMode);
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);
 
   return (
-    <div className="relative min-h-screen bg-neutral dark:bg-gray-900 transition-colors duration-200">
-      {/* Background Image with 80% Opacity */}
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Background Image (subtle) */}
       <div
-        className="absolute inset-0 z-0 opacity-80"
+        className="absolute inset-0 z-0 opacity-10"
         style={{
           backgroundImage: `url('/images/dulalia.webp')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
         }}
+        aria-hidden="true"
       />
-
-      {/* Overlay to improve text readability */}
+      {/* Readability overlay */}
       <div className="absolute inset-0 z-10 bg-white/70 dark:bg-gray-900/70"></div>
 
-      {/* Layout Content */}
+      {/* Main layout container */}
       <div className="relative z-20 flex min-h-screen">
-        {/* Sidebar + Top Navbar */}
-        <Navbar onToggleCollapse={(collapsed) => setIsCollapsed(collapsed)} />
+        {/* Sidebar */}
+        <div
+          className={`transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'w-20' : 'w-64'
+          } flex-shrink-0`}
+        >
+          <Navbar onToggleCollapse={setIsCollapsed} isCollapsed={isCollapsed} />
+        </div>
 
         {/* Main Content */}
-        <main
-          className={`flex-1 transition-all duration-300 pt-16 ${
-            isCollapsed ? 'ml-20' : 'ml-64'
-          } p-4 sm:p-6 md:p-8`}
-        >
-          {/* Page Content */}
-          <div className="container mx-auto">{children}</div>
+        <main className="flex-1 flex flex-col min-w-0">
+          {/* Top padding to account for fixed navbar (if any) */}
+          <div className="pt-16"></div>
+
+          {/* Page content with responsive padding */}
+          <div className="flex-1 p-4 sm:p-6 md:p-8">
+            <div className="max-w-7xl mx-auto w-full">{children}</div>
+          </div>
         </main>
       </div>
     </div>

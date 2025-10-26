@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, getDoc, where } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
@@ -39,6 +39,8 @@ function UserAccounts() {
   });
   
   const [searchQuery, setSearchQuery] = useState('');
+  const headerRef = useRef(null);
+  const personalInfoRef = useRef(null);
 
   // Fetch users and available lots
   useEffect(() => {
@@ -538,7 +540,7 @@ function UserAccounts() {
             </svg>
             User Accounts
           </h1>
-              <p className="text-gray-600 text-gray-700 mt-2">
+              <p className="text-black mt-2">
                 Manage resident accounts and their access permissions
               </p>
         </div>
@@ -589,6 +591,7 @@ function UserAccounts() {
                       setShowPassword(false);
                     }}
                     className="text-black text-black hover:text-gray-700 focus:outline-none"
+                    style={{ color: '#000' }}
                   >
                     <FaTimes className="h-5 w-5" />
                   </button>
@@ -597,8 +600,8 @@ function UserAccounts() {
                 <div className="p-4 sm:p-6">
                   <form onSubmit={handleAddUser} className="space-y-4 sm:space-y-5">
                     <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-blue-100">
-                      <h3 className="font-medium text-blue-800 mb-2 flex items-center text-sm sm:text-base">
-                        <FaUser className="mr-2 text-sm sm:text-base" /> Personal Information
+                      <h3 className="!font-medium !text-black !mb-2 flex items-center text-sm sm:text-base" style={{ color: '#000' }} ref={personalInfoRef}>
+                        <FaUser className="mr-2 text-blue-500" /> Personal Information
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
@@ -612,6 +615,7 @@ function UserAccounts() {
                             onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                             className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                             placeholder="John"
+                            style={{ color: '#000' }}
                           />
                         </div>
                         <div>
@@ -625,19 +629,20 @@ function UserAccounts() {
                             onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                             className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                             placeholder="Doe"
+                            style={{ color: '#000' }}
                           />
                         </div>
                       </div>
                     </div>
                     
                     <div className="bg-indigo-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-indigo-100">
-                      <h3 className="font-medium text-indigo-800 mb-2 flex items-center text-sm sm:text-base">
-                        <i className="fas fa-user-lock mr-2"></i> Account Information
+                      <h3 className="font-medium text-black mb-2 flex items-center text-sm sm:text-base" style={{ color: '#000' }}>
+                        <i className="fas fa-user-lock mr-2 text-indigo-500" style={{ color: '#000' }}></i> Account Information
                       </h3>
                       <div className="space-y-3 sm:space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black mb-1">
                               Username *
                             </label>
                             <div className="relative">
@@ -651,6 +656,7 @@ function UserAccounts() {
                                 onChange={handleUsernameChange}
                                 className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                                 placeholder="johndoe"
+                                style={{ color: '#000' }}
                               />
                             </div>
                           </div>
@@ -664,6 +670,7 @@ function UserAccounts() {
                               onChange={handleContactNumberChange}
                               className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                               placeholder="e.g. 09123456789"
+                              style={{ color: '#000' }}
                             />
                           </div>
                         </div>
@@ -679,6 +686,7 @@ function UserAccounts() {
                               onChange={(e) => setFormData({...formData, email: e.target.value})}
                               className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                               placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
+                              style={{ color: '#000' }}
                             />
                             <p className="text-xs text-black text-black mt-1">
                               Auto-generated if left empty
@@ -696,6 +704,7 @@ function UserAccounts() {
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 className="w-full px-3 sm:px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                                 placeholder="Leave blank to use username"
+                                style={{ color: '#000' }}
                               />
                               <button
                                 type="button"
@@ -703,9 +712,9 @@ function UserAccounts() {
                                 onClick={() => setShowPassword(!showPassword)}
                               >
                                 {showPassword ? (
-                                  <FaEyeSlash className="h-4 w-4 text-black text-black hover:text-gray-600" />
-                                ) : (
                                   <FaEye className="h-4 w-4 text-black text-black hover:text-gray-600" />
+                                ) : (
+                                  <FaEyeSlash className="h-4 w-4 text-black text-black hover:text-gray-600" />
                                 )}
                               </button>
                             </div>
@@ -718,8 +727,8 @@ function UserAccounts() {
                     </div>
                     
                     <div className="bg-amber-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-amber-100">
-                      <h3 className="font-medium text-amber-800 mb-2 flex items-center text-sm sm:text-base">
-                        <FaMapMarkerAlt className="mr-2" /> Property Assignment
+                      <h3 className="font-medium text-black mb-2 flex items-center text-sm sm:text-base" style={{ color: '#000' }}>
+                        <FaMapMarkerAlt className="mr-2 text-amber-500" style={{ color: '#000' }} /> Property Assignment
                       </h3>
                       <div className="space-y-3 sm:space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -727,12 +736,10 @@ function UserAccounts() {
                             <label className="block text-sm font-medium text-black text-black mb-1">
                               Select Available Lot *
                             </label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <FaMapMarkerAlt className="text-amber-600" />
-                              </div>
+                            <div className="flex items-center">
+                              <FaMapMarkerAlt className="text-amber-600 mr-2 flex-shrink-0" />
                               {loadingLots ? (
-                                <div className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
+                                <div className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 bg-gray-50">
                                   <FaSpinner className="animate-spin inline mr-2 text-black text-black" />
                                   Loading available lots...
                                 </div>
@@ -751,12 +758,13 @@ function UserAccounts() {
                                       });
                                     }
                                   }}
-                                  className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
+                                  className="flex-1 px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
+                                  style={{ color: '#000' }}
                                   required
                                 >
-                                  <option value="">-- Select a lot --</option>
+                                  <option value="" style={{ color: '#000' }}>-- Select a lot --</option>
                                   {availableLots.map(lot => (
-                                    <option key={lot.id} value={lot.id}>
+                                    <option key={lot.id} value={lot.id} style={{ color: '#000' }}>
                                       {lot.displayName}
                                     </option>
                                   ))}
@@ -772,20 +780,19 @@ function UserAccounts() {
                             <label className="block text-sm font-medium text-black text-black mb-1">
                               House Model
                             </label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i className="fas fa-home text-amber-600"></i>
-                              </div>
+                            <div className="flex items-center">
+                              <i className="fas fa-home text-amber-600 mr-2 flex-shrink-0"></i>
                               <select
                                 value={formData.houseModel}
                                 onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
-                                className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
+                                className="flex-1 px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
+                                style={{ color: '#000' }}
                               >
-                                <option value="Standard">Standard Model</option>
-                                <option value="Premium">Premium Model</option>
-                                <option value="Deluxe">Deluxe Model</option>
-                                <option value="Executive">Executive Model</option>
-                                <option value="Custom">Custom Build</option>
+                                <option value="Standard" style={{ color: '#000' }}>Standard Model</option>
+                                <option value="Premium" style={{ color: '#000' }}>Premium Model</option>
+                                <option value="Deluxe" style={{ color: '#000' }}>Deluxe Model</option>
+                                <option value="Executive" style={{ color: '#000' }}>Executive Model</option>
+                                <option value="Custom" style={{ color: '#000' }}>Custom Build</option>
                               </select>
                             </div>
                           </div>
@@ -810,15 +817,16 @@ function UserAccounts() {
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4 border border-gray-200">
+                    
                       <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                         <button
                           type="button"
                           disabled={formSubmitting}
                           onClick={() => setShowForm(false)}
                           className="px-4 py-2 border border-gray-300 rounded-md text-black text-black hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
+                          style={{ color: '#000' }}
                         >
-                          <i className="fas fa-times mr-2"></i>
+                          <i className="fas fa-times mr-2" style={{ color: '#ff0000ff' }}></i>
                           Cancel
                         </button>
                         <button
@@ -839,7 +847,7 @@ function UserAccounts() {
                           )}
                         </button>
                       </div>
-                    </div>
+                    
                   </form>
                 </div>
               </div>
@@ -860,12 +868,13 @@ function UserAccounts() {
             <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
               <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-base sm:text-lg font-semibold">
+                  <h2 className="text-base sm:text-lg font-semibold text-black flex items-center">
                     {isEditing ? 'Edit User' : 'User Details'}
                   </h2>
                   <button 
                     onClick={closeUserDetails}
                     className="text-black text-black hover:text-gray-700"
+                    style={{ color: '#000' }}
                   >
                     <FaTimes />
                   </button>
@@ -874,85 +883,85 @@ function UserAccounts() {
                 <div className="p-4 sm:p-6">
               {!isEditing ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-center mb-4 sm:mb-6">
-                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl sm:text-3xl">
-                      <FaUser />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <p className="text-sm text-black text-black">First Name</p>
-                      <p className="font-medium text-sm sm:text-base">{selectedUser.firstName || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-black text-black">Last Name</p>
-                      <p className="font-medium text-sm sm:text-base">{selectedUser.lastName || 'N/A'}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-black text-black">Username</p>
-                    <p className="font-medium text-sm sm:text-base">{selectedUser.username || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-black text-black">Email</p>
-                    <p className="font-medium text-sm sm:text-base">{selectedUser.email || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="p-2 bg-amber-50 rounded-md">
-                    <p className="text-sm text-black text-black">Property Details</p>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 gap-2">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm sm:text-base">House #{selectedUser.house_no || 'N/A'}</p>
-                        {selectedUser.block && selectedUser.lot && (
-                          <p className="text-xs sm:text-sm text-black">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
-                        )}
+                    <div className="flex items-center justify-center mb-4 sm:mb-6">
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl sm:text-3xl">
+                        <FaUser />
                       </div>
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
-                        {selectedUser.houseModel || 'Standard'}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div>
+                        <p className="text-sm text-black text-black">First Name</p>
+                        <p className="font-medium text-sm sm:text-base">{selectedUser.firstName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-black text-black">Last Name</p>
+                        <p className="font-medium text-sm sm:text-base">{selectedUser.lastName || 'N/A'}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-black text-black">Username</p>
+                      <p className="font-medium text-sm sm:text-base">{selectedUser.username || 'N/A'}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-black text-black">Email</p>
+                      <p className="font-medium text-sm sm:text-base">{selectedUser.email || 'N/A'}</p>
+                    </div>
+                    
+                    <div className="p-2 bg-amber-50 rounded-md">
+                      <p className="text-sm text-black text-black">Property Details</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 gap-2">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm sm:text-base">House #{selectedUser.house_no || 'N/A'}</p>
+                          {selectedUser.block && selectedUser.lot && (
+                            <p className="text-xs sm:text-sm text-black">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
+                          )}
+                        </div>
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
+                          {selectedUser.houseModel || 'Standard'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-black text-black">Role</p>
+                      <p className="font-medium text-sm sm:text-base">{selectedUser.role || 'Homeowner'}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-black text-black">Status</p>
+                      <p className={`font-medium text-sm sm:text-base ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedUser.status || 'N/A'}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-black text-black">Record Status</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
+                        selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedUser.recordStatus || 'Neutral'}
                       </span>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-black text-black">Role</p>
-                    <p className="font-medium text-sm sm:text-base">{selectedUser.role || 'Homeowner'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-black text-black">Status</p>
-                    <p className={`font-medium text-sm sm:text-base ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
-                      {selectedUser.status || 'N/A'}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-black text-black">Record Status</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
-                      selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedUser.recordStatus || 'Neutral'}
-                    </span>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-black text-black">Contact Number</p>
-                    <p className="font-medium text-sm sm:text-base">{selectedUser.contactNumber || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
-                    <button
-                      onClick={handleEditUser}
-                      className="px-3 sm:px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 flex items-center text-sm sm:text-base"
-                    >
-                      <FaEdit className="mr-2" />
-                      Edit User
-                    </button>
-                  </div>
+                    
+                    <div>
+                      <p className="text-sm text-black text-black">Contact Number</p>
+                      <p className="font-medium text-sm sm:text-base">{selectedUser.contactNumber || 'N/A'}</p>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
+                      <button
+                        onClick={handleEditUser}
+                        className="px-3 sm:px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 flex items-center text-sm sm:text-base"
+                      >
+                        <FaEdit className="mr-2" />
+                        Edit User
+                      </button>
+                    </div>
                 </div>
               ) : (
                 <form onSubmit={handleUpdateUser} className="space-y-3 sm:space-y-4">
@@ -1043,13 +1052,14 @@ function UserAccounts() {
           }
         }}
         className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 text-sm sm:text-base"
+        style={{ color: '#000' }}
       >
-        <option value="">-- Keep current assignment --</option>
+        <option value="" style={{ color: '#000' }}>-- Keep current assignment --</option>
         {loadingLots ? (
-          <option disabled>Loading available lots...</option>
+          <option disabled style={{ color: '#000' }}>Loading available lots...</option>
         ) : (
           availableLots.map(lot => (
-            <option key={lot.id} value={lot.id}>
+            <option key={lot.id} value={lot.id} style={{ color: '#000' }}>
               {lot.displayName}
             </option>
           ))
@@ -1070,9 +1080,10 @@ function UserAccounts() {
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value, isActive: e.target.value === 'Active'})}
                       className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                      style={{ color: '#000' }}
                     >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
+                      <option value="Active" style={{ color: '#000' }}>Active</option>
+                      <option value="Inactive" style={{ color: '#000' }}>Inactive</option>
                     </select>
                   </div>
                   
@@ -1084,10 +1095,11 @@ function UserAccounts() {
                       value={formData.recordStatus}
                       onChange={(e) => setFormData({...formData, recordStatus: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                      style={{ color: '#000' }}
                     >
-                      <option value="Neutral">Neutral</option>
-                      <option value="Good">Good</option>
-                      <option value="Bad">Bad</option>
+                      <option value="Neutral" style={{ color: '#000' }}>Neutral</option>
+                      <option value="Good" style={{ color: '#000' }}>Good</option>
+                      <option value="Bad" style={{ color: '#000' }}>Bad</option>
                     </select>
                     <p className="text-xs text-black text-black mt-1">
                       Bad record status will restrict access to some facilities and services
@@ -1113,6 +1125,7 @@ function UserAccounts() {
                       disabled={formSubmitting}
                       onClick={() => setIsEditing(false)}
                       className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-black text-black hover:bg-gray-50 disabled:opacity-50 text-sm sm:text-base"
+                      style={{ color: '#000' }}
                     >
                       Cancel
                     </button>
@@ -1142,7 +1155,7 @@ function UserAccounts() {
         {/* Users table */}
         <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-100">
           <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50  border-b border-gray-100 ">
-            <h2 className="text-base sm:text-lg font-semibold text-black flex items-center">
+            <h2 className="!text-base !sm:text-lg !font-bold !text-black flex items-center" style={{ color: '#000', fontWeight: 'semi-bold' }} ref={headerRef}>
               <i className="fas fa-users text-blue-500 mr-2"></i>
               Homeowner Accounts
               <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600 bg-blue-100 text-blue-700">
@@ -1150,6 +1163,7 @@ function UserAccounts() {
               </span>
             </h2>
           </div>
+
 
           {loading ? (
             <div className="p-8 sm:p-12 text-center">

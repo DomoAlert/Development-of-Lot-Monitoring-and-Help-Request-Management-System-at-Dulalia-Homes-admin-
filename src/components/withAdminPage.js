@@ -9,6 +9,7 @@ import ResponsiveLayout from './ResponsiveLayout';
  * @param {React.Component} options.icon - Page icon component
  * @param {Boolean} options.showHeader - Whether to show the page header
  * @param {React.Component} options.headerActions - Additional header actions
+ * @param {String} options.description - Page description
  * @returns {Function} - HOC function
  */
 const withAdminPage = (options = {}) => {
@@ -16,7 +17,8 @@ const withAdminPage = (options = {}) => {
     title = '',
     icon = null,
     showHeader = true,
-    headerActions = null
+    headerActions = null,
+    description = ''
   } = options;
 
   return (Component) => {
@@ -39,8 +41,8 @@ const withAdminPage = (options = {}) => {
                       {icon && <span className="mr-3 text-blue-500">{icon}</span>}
                       {title}
                     </h1>
-                    <p className="text-gray-600 text-gray-700 mt-2">
-                      {title === 'Visitor Logs' && 'Track and manage all visitor entries and access logs'}
+                    <p className="text-black mt-2">
+                      {description}
                     </p>
                   </div>
                   {headerActions && (

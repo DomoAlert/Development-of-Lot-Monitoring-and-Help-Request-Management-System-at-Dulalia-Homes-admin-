@@ -760,5 +760,6 @@ function VisitorLogs() {
 export default withAdminPage({
   title: 'Visitor Logs',
   icon: <FaQrcode size={24} />,
-  fullWidth: true
+  fullWidth: true,
+  description: 'Track and manage all visitor entries and access logs'
 })(VisitorLogs);

@@ -939,10 +939,10 @@ function HeadStaffAccounts() {
               }
             }}
           >
-            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-3xl my-8">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-7xl my-8">
               <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 text-black">
-                  {isEditingDepartment ? 'Edit Department' : 'Manage Departments'}
+                  {isEditingDepartment ? 'Edit Department' : 'Manage Positions & Specializations'}
                 </h2>
                 <button 
                   onClick={closeDepartmentForm}
@@ -954,10 +954,10 @@ function HeadStaffAccounts() {
                 </button>
               </div>
               
-              <div className="p-6 max-h-96 overflow-y-auto">
+              <div className="p-6 max-h-[80vh] overflow-y-auto">
                 {isEditingDepartment ? (
                   // Edit Department Form
-                  <form onSubmit={handleUpdateDepartment} className="space-y-4">
+                  <form onSubmit={handleUpdateDepartment} className="space-y-4 max-w-md mx-auto">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Department Name <span className="text-red-500">*</span>
@@ -1002,68 +1002,95 @@ function HeadStaffAccounts() {
                     </div>
                   </form>
                 ) : (
-                  // Department List and Add New Department Form
-                  <div className="space-y-6">
-                    {/* Add New Department Form */}
-                    <form onSubmit={handleAddDepartment} className="bg-green-50 bg-green-100/20 rounded-lg p-4 border border-green-200 border-green-200">
-                      <h3 className="font-medium text-green-800 text-green-800 mb-3">Add New Department</h3>
-                      <div className="space-y-3">
-                        <div>
-                          <input
-                            type="text"
-                            required
-                            value={departmentFormData.name}
-                            onChange={(e) => setDepartmentFormData(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Department name (e.g., Electrician)"
-                          />
+                  // Department List and Add New Department Form - 2 Column Layout
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Add New Department Form */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-2">
+                        Add New Position/Specialization
+                      </h3>
+                      <form onSubmit={handleAddDepartment} className="bg-green-50 bg-green-100/20 rounded-lg p-4 border border-green-200 border-green-200">
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                              Position Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={departmentFormData.name}
+                              onChange={(e) => setDepartmentFormData(prev => ({ ...prev, name: e.target.value }))}
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="e.g., Electrician"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                              Description/Specialization
+                            </label>
+                            <textarea
+                              value={departmentFormData.description}
+                              onChange={(e) => setDepartmentFormData(prev => ({ ...prev, description: e.target.value }))}
+                              rows="3"
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Describe the role and responsibilities..."
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          >
+                            Add Position
+                          </button>
                         </div>
-                        <div>
-                          <textarea
-                            value={departmentFormData.description}
-                            onChange={(e) => setDepartmentFormData(prev => ({ ...prev, description: e.target.value }))}
-                            rows="2"
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Department description..."
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          Add Department
-                        </button>
-                      </div>
-                    </form>
+                      </form>
+                    </div>
 
-                    {/* Existing Departments List */}
-                    <div>
-                      <h3 className="font-medium text-gray-800 text-black mb-3">Existing Departments</h3>
-                      <div className="space-y-3">
-                        {staffRoles.map((department) => (
-                          <div key={department.id} className="bg-gray-50 bg-white rounded-lg p-4 border border-gray-200 border-gray-300">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 text-black">{department.name}</h4>
-                                <p className="text-sm text-gray-600 text-gray-600 mt-1">{department.description}</p>
-                              </div>
-                              <div className="flex space-x-2 ml-4">
-                                <button
-                                  onClick={() => handleEditDepartment(department)}
-                                  className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteDepartment(department.id)}
-                                  className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                >
-                                  Delete
-                                </button>
+                    {/* Right Column - Existing Departments List */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-2">
+                        Existing Positions & Specializations
+                        <span className="ml-2 text-sm font-normal text-gray-500 text-gray-600">
+                          ({staffRoles.length} total)
+                        </span>
+                      </h3>
+                      <div className="max-h-96 overflow-y-auto space-y-3">
+                        {staffRoles.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500 text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <p>No positions added yet</p>
+                            <p className="text-sm">Add your first position using the form on the left</p>
+                          </div>
+                        ) : (
+                          staffRoles.map((department) => (
+                            <div key={department.id} className="bg-gray-50 bg-white rounded-lg p-4 border border-gray-200 border-gray-300 hover:shadow-md transition-shadow">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900 text-black">{department.name}</h4>
+                                  <p className="text-sm text-gray-600 text-gray-600 mt-1">{department.description || 'No description provided'}</p>
+                                </div>
+                                <div className="flex space-x-2 ml-4">
+                                  <button
+                                    onClick={() => handleEditDepartment(department)}
+                                    className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                    title="Edit position"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteDepartment(department.id)}
+                                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                                    title="Delete position"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>

@@ -511,7 +511,7 @@ function Staff() {
               }
             }}
           >
-            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-7xl my-8">
               <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 text-black">
                   {isEditing ? 'Edit Staff Member' : 'Add New Staff Member'}
@@ -526,179 +526,203 @@ function Staff() {
                 </button>
               </div>
               
-              <form onSubmit={isEditing ? handleUpdateStaff : handleAddStaff} className="p-6 space-y-6">
-                {/* Personal Information Section */}
-                <div className="bg-blue-50 bg-blue-50 rounded-lg p-4 border border-blue-200 border-blue-200">
-                  <h3 className="font-medium text-blue-800 text-blue-800 mb-3 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Personal Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        First Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.firstName}
-                        onChange={(e) => {
-                          setFormData({...formData, firstName: e.target.value});
-                          setTimeout(handleNameChange, 0);
-                        }}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="John"
-                      />
+              <form onSubmit={isEditing ? handleUpdateStaff : handleAddStaff} className="p-6">
+                {/* 2-Column Layout Container */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-6">
+                    {/* Personal Information Section */}
+                    <div className="bg-blue-50 bg-blue-50 rounded-lg p-4 border border-blue-200 border-blue-200">
+                      <h3 className="font-medium text-blue-800 text-blue-800 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Personal Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                              First Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.firstName}
+                              onChange={(e) => {
+                                setFormData({...formData, firstName: e.target.value});
+                                setTimeout(handleNameChange, 0);
+                              }}
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="John"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                              Last Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.lastName}
+                              onChange={(e) => {
+                                setFormData({...formData, lastName: e.target.value});
+                                setTimeout(handleNameChange, 0);
+                              }}
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Doe"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            Full Name (Auto-generated)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.name}
+                            readOnly
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-gray-50 bg-gray-50 text-gray-700 text-gray-700"
+                            placeholder="Full name will appear here"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Last Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.lastName}
-                        onChange={(e) => {
-                          setFormData({...formData, lastName: e.target.value});
-                          setTimeout(handleNameChange, 0);
-                        }}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Doe"
-                      />
+
+                    {/* Job Information Section */}
+                    <div className="bg-green-50 bg-green-50 rounded-lg p-4 border border-green-200 border-green-200">
+                      <h3 className="font-medium text-green-800 text-green-800 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H8a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2" />
+                        </svg>
+                        Job Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            Position <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            required
+                            value={formData.position}
+                            onChange={(e) => setFormData({...formData, position: e.target.value, specialization: ''})}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Select Position</option>
+                            {availablePositions.map((position, index) => (
+                              <option key={`${position.id}-${index}`} value={position.id}>{position.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            Specialization
+                          </label>
+                          <select
+                            value={formData.specialization}
+                            onChange={(e) => setFormData({...formData, specialization: e.target.value})}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={!formData.position}
+                          >
+                            <option value="">Select Specialization</option>
+                            {formData.position && getSpecializationsForPosition(formData.position).map(spec => (
+                              <option key={spec} value={spec}>{spec}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                      Full Name (Auto-generated)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      readOnly
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-gray-50 bg-gray-50 text-gray-700 text-gray-700"
-                      placeholder="Full name will appear here"
-                    />
+
+                  {/* Right Column */}
+                  <div className="space-y-6">
+                    {/* Contact Information Section */}
+                    <div className="bg-purple-50 bg-purple-50 rounded-lg p-4 border border-purple-200 border-purple-200">
+                      <h3 className="font-medium text-purple-800 text-purple-800 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Contact Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            Email Address <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="john.doe@example.com"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            Contact Number <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            value={formData.contactNumber}
+                            onChange={(e) => {
+                              const formatted = formatPhoneNumber(e.target.value);
+                              setFormData({...formData, contactNumber: formatted});
+                            }}
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="0912 345 6789"
+                          />
+                          <p className="mt-1 text-xs text-gray-500 text-gray-600">Format: 09XX XXX XXXX</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Section */}
+                    <div className="bg-yellow-50 bg-yellow-50 rounded-lg p-4 border border-yellow-200 border-yellow-200">
+                      <h3 className="font-medium text-yellow-800 text-yellow-800 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Account Status
+                      </h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
+                          Status
+                        </label>
+                        <select
+                          value={formData.status}
+                          onChange={(e) => setFormData({...formData, status: e.target.value})}
+                          className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                        <p className="mt-2 text-xs text-gray-500 text-gray-600">
+                          Active staff members can access the system and receive assignments.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Form Actions */}
+                    
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          type="button"
+                          onClick={closeForm}
+                          className="px-6 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                          {isEditing ? 'Update Staff' : 'Add Staff'}
+                        </button>
+                      </div>
+                    
                   </div>
-                </div>
-
-                {/* Job Information Section */}
-                <div className="bg-green-50 bg-green-50 rounded-lg p-4 border border-green-200 border-green-200">
-                  <h3 className="font-medium text-green-800 text-green-800 mb-3 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H8a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2" />
-                    </svg>
-                    Job Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Position <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        required
-                        value={formData.position}
-                        onChange={(e) => setFormData({...formData, position: e.target.value, specialization: ''})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select Position</option>
-                        {availablePositions.map((position, index) => (
-                          <option key={`${position.id}-${index}`} value={position.id}>{position.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Specialization
-                      </label>
-                      <select
-                        value={formData.specialization}
-                        onChange={(e) => setFormData({...formData, specialization: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={!formData.position}
-                      >
-                        <option value="">Select Specialization</option>
-                        {formData.position && getSpecializationsForPosition(formData.position).map(spec => (
-                          <option key={spec} value={spec}>{spec}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contact Information Section */}
-                <div className="bg-purple-50 bg-purple-50 rounded-lg p-4 border border-purple-200 border-purple-200">
-                  <h3 className="font-medium text-purple-800 text-purple-800 mb-3 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Contact Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Email Address <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="john.doe@example.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Contact Number <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.contactNumber}
-                        onChange={(e) => {
-                          const formatted = formatPhoneNumber(e.target.value);
-                          setFormData({...formData, contactNumber: formatted});
-                        }}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0912 345 6789"
-                      />
-                      <p className="mt-1 text-xs text-gray-500 text-gray-600">Format: 09XX XXX XXXX</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status Section */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 border-gray-200">
-                  <button
-                    type="button"
-                    onClick={closeForm}
-                    className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  >
-                    {isEditing ? 'Update Staff' : 'Add Staff'}
-                  </button>
                 </div>
               </form>
             </div>
@@ -896,10 +920,10 @@ function Staff() {
               }
             }}
           >
-            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-3xl my-8">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-7xl my-8">
               <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 text-black">
-                  {isEditingPosition ? 'Edit Position' : 'Manage Positions & Specializations'}
+                  {isEditingPosition ? 'Edit Position & Specializations' : 'Manage Positions & Specializations'}
                 </h2>
                 <button 
                   onClick={closePositionForm}
@@ -911,178 +935,249 @@ function Staff() {
                 </button>
               </div>
               
-              <div className="p-6 max-h-96 overflow-y-auto">
+              <div className="p-6 max-h-[80vh] overflow-y-auto">
                 {isEditingPosition ? (
-                  // Edit Position Form
-                  <form onSubmit={handleUpdatePosition} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Position Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={positionFormData.name}
-                        onChange={(e) => setPositionFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Electrician"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Specializations
-                      </label>
-                      <div className="flex gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={newSpecialization}
-                          onChange={(e) => setNewSpecialization(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddSpecialization();
-                            }
-                          }}
-                          className="flex-1 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Add specialization"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddSpecialization}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          Add
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {(positionFormData.specializations || []).map((spec, index) => (
-                          <span key={`edit-spec-${index}-${spec}`} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
-                            {spec}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSpecialization(index)}
-                              className="ml-2 text-blue-600 text-blue-600 hover:text-blue-800 hover:text-blue-800"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 border-gray-200">
-                      <button
-                        type="button"
-                        onClick={closePositionForm}
-                        className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                      >
-                        Update Position
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  // Position List and Add New Position Form
-                  <div className="space-y-6">
-                    {/* Add New Position Form */}
-                    <form onSubmit={handleAddPosition} className="bg-green-50 bg-green-50 rounded-lg p-4 border border-green-200 border-green-200">
-                      <h3 className="font-medium text-green-800 text-green-800 mb-3">Add New Position</h3>
-                      <div className="space-y-3">
+                  // Edit Position Form - Centered for single column
+                  <div className="max-w-2xl mx-auto">
+                    <form onSubmit={handleUpdatePosition} className="space-y-6">
+                      {/* Position Details Section */}
+                      <div className="bg-blue-50 bg-blue-50 rounded-lg p-6 border border-blue-200 border-blue-200">
+                        <h3 className="font-medium text-blue-800 text-blue-800 mb-4 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          Position Details
+                        </h3>
                         <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
+                            Position Name <span className="text-red-500">*</span>
+                          </label>
                           <input
                             type="text"
                             required
                             value={positionFormData.name}
                             onChange={(e) => setPositionFormData(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Position name (e.g., Electrician)"
+                            className="w-full px-4 py-3 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                            placeholder="e.g., Electrician"
                           />
                         </div>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={newSpecialization}
-                            onChange={(e) => setNewSpecialization(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleAddSpecialization();
-                              }
-                            }}
-                            className="flex-1 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Add specialization"
-                          />
+                      </div>
+                      
+                      {/* Specializations Section */}
+                      <div className="bg-green-50 bg-green-50 rounded-lg p-6 border border-green-200 border-green-200">
+                        <h3 className="font-medium text-green-800 text-green-800 mb-4 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Specializations
+                        </h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
+                            Add Specializations
+                          </label>
+                          <div className="flex gap-3 mb-4">
+                            <input
+                              type="text"
+                              value={newSpecialization}
+                              onChange={(e) => setNewSpecialization(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddSpecialization();
+                                }
+                              }}
+                              className="flex-1 px-4 py-3 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                              placeholder="e.g., Electrical Wiring, Panel Installation"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAddSpecialization}
+                              className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 font-medium"
+                            >
+                              Add
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {(positionFormData.specializations || []).map((spec, index) => (
+                              <span key={`edit-spec-${index}-${spec}`} className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
+                                {spec}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSpecialization(index)}
+                                  className="ml-3 text-blue-600 text-blue-600 hover:text-blue-800 hover:text-blue-800 text-lg"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          {(positionFormData.specializations || []).length === 0 && (
+                            <p className="text-gray-500 text-gray-600 mt-3 text-sm">No specializations added yet. Add some above.</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Form Actions */}
+                      <div className="bg-gray-50 bg-gray-50 rounded-lg p-6 border border-gray-200 border-gray-200">
+                        <div className="flex justify-end space-x-4">
                           <button
                             type="button"
-                            onClick={handleAddSpecialization}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            onClick={closePositionForm}
+                            className="px-6 py-3 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors font-medium"
                           >
-                            Add
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors font-medium"
+                          >
+                            Update Position
                           </button>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(positionFormData.specializations || []).map((spec, index) => (
-                            <span key={`add-spec-${index}-${spec}`} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
-                              {spec}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSpecialization(index)}
-                                className="ml-2 text-blue-600 text-blue-600 hover:text-blue-800 hover:text-blue-800"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                        <button
-                          type="submit"
-                          className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          Add Position
-                        </button>
                       </div>
                     </form>
+                  </div>
+                ) : (
+                  // 2-Column Layout for Main View
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Left Column - Add New Position Form */}
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add New Position
+                      </h3>
+                      
+                      <form onSubmit={handleAddPosition} className="bg-green-50 bg-green-50 rounded-lg p-6 border border-green-200 border-green-200">
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
+                              Position Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={positionFormData.name}
+                              onChange={(e) => setPositionFormData(prev => ({ ...prev, name: e.target.value }))}
+                              className="w-full px-4 py-3 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                              placeholder="e.g., Electrician, Plumber, Street Sweeper"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
+                              Specializations
+                            </label>
+                            <div className="flex gap-3 mb-3">
+                              <input
+                                type="text"
+                                value={newSpecialization}
+                                onChange={(e) => setNewSpecialization(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddSpecialization();
+                                  }
+                                }}
+                                className="flex-1 px-4 py-3 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                                placeholder="e.g., Electrical Wiring, Pipe Installation"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddSpecialization}
+                                className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 font-medium"
+                              >
+                                Add
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                              {(positionFormData.specializations || []).map((spec, index) => (
+                                <span key={`add-spec-${index}-${spec}`} className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
+                                  {spec}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSpecialization(index)}
+                                    className="ml-3 text-blue-600 text-blue-600 hover:text-blue-800 hover:text-blue-800 text-lg"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                            {(positionFormData.specializations || []).length === 0 && (
+                              <p className="text-gray-500 text-gray-600 mt-3 text-sm">No specializations added yet. Add some above.</p>
+                            )}
+                          </div>
+                          
+                          <button
+                            type="submit"
+                            className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 font-medium text-lg"
+                          >
+                            Add Position
+                          </button>
+                        </div>
+                      </form>
+                    </div>
 
-                    {/* Existing Positions List */}
-                    <div>
-                      <h3 className="font-medium text-gray-800 text-black mb-3">Existing Positions</h3>
-                      <div className="space-y-3">
-                        {availablePositions.map((position, index) => (
-                          <div key={`${position.id}-${index}`} className="bg-gray-50 bg-white rounded-lg p-4 border border-gray-200 border-gray-300">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 text-black">{position.name}</h4>
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {position.specializations?.map((spec, specIndex) => (
-                                    <span key={`${position.id}-spec-${specIndex}`} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
-                                      {spec}
-                                    </span>
-                                  ))}
+                    {/* Right Column - Existing Positions List */}
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        Existing Positions
+                        <span className="ml-3 px-3 py-1 text-sm rounded-full bg-blue-100 bg-blue-100 text-blue-600 text-blue-700">
+                          {availablePositions.length} {availablePositions.length === 1 ? 'position' : 'positions'}
+                        </span>
+                      </h3>
+                      
+                      <div className="max-h-[60vh] overflow-y-auto space-y-4">
+                        {availablePositions.length === 0 ? (
+                          <div className="text-center py-12 bg-gray-50 bg-white rounded-lg border-2 border-dashed border-gray-300 border-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            <h3 className="text-lg font-medium text-gray-900 text-black mb-2">No positions created yet</h3>
+                            <p className="text-gray-500 text-gray-600 mb-4">Create your first position using the form on the left.</p>
+                          </div>
+                        ) : (
+                          availablePositions.map((position, index) => (
+                            <div key={`${position.id}-${index}`} className="bg-white bg-white rounded-lg p-5 border border-gray-200 border-gray-300 hover:shadow-lg transition-all duration-200">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 text-black text-lg mb-2">{position.name}</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {position.specializations?.map((spec, specIndex) => (
+                                      <span key={`${position.id}-spec-${specIndex}`} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
+                                        {spec}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {(!position.specializations || position.specializations.length === 0) && (
+                                    <p className="text-gray-500 text-gray-600 mt-2 text-sm italic">No specializations defined</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-3 ml-6">
+                                  <button
+                                    onClick={() => handleEditPosition(position)}
+                                    className="px-4 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors font-medium"
+                                    title="Edit position"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePosition(position.id)}
+                                    className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors font-medium"
+                                    title="Delete position"
+                                  >
+                                    Delete
+                                  </button>
                                 </div>
                               </div>
-                              <div className="flex space-x-2 ml-4">
-                                <button
-                                  onClick={() => handleEditPosition(position)}
-                                  className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeletePosition(position.id)}
-                                  className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                >
-                                  Delete
-                                </button>
-                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>

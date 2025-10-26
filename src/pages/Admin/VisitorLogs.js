@@ -18,7 +18,6 @@ function VisitorLogs() {
   const [dateFilter, setDateFilter] = useState('');
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [users, setUsers] = useState({});
-  const [guards, setGuards] = useState({});
   const [qrCodeKey, setQrCodeKey] = useState(Date.now());
   const [monthlyVisitors, setMonthlyVisitors] = useState(0);
   const [guardScannedCount, setGuardScannedCount] = useState(0);
@@ -78,31 +77,6 @@ function VisitorLogs() {
     }
   }, [users]);
   
-  // Fetch guard data
-  const fetchGuardData = useCallback(async (uid) => {
-    if (guards[uid]) return guards[uid];
-    
-    try {
-      const guardDoc = await getDoc(doc(db, 'guards', uid));
-      if (guardDoc.exists()) {
-        const guardData = guardDoc.data();
-        const displayName = guardData.name || guardData.username || 'Unknown Guard';
-        
-        setGuards(prev => ({
-          ...prev,
-          [uid]: { name: displayName, data: guardData }
-        }));
-        
-        return { name: displayName, data: guardData };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error fetching guard data:', error);
-      return null;
-    }
-  }, [guards]);
-  
   // Function to manually refresh data
   const refreshData = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -127,6 +101,7 @@ function VisitorLogs() {
         if (logData.qr_code_id) {
           logsMap[logData.qr_code_id] = {
             scanned_by_guard: logData.scanned_by_guard,
+            scanned_by_guard_name: logData.scanned_by_guard, // Store the name directly
             scan_timestamp: logData.scan_timestamp
           };
         }
@@ -141,6 +116,7 @@ function VisitorLogs() {
           id: doc.id,
           ...qrData,
           scanned_by: logData.scanned_by_guard || qrData.scanned_by,
+          scanned_by_guard_name: logData.scanned_by_guard_name || null, // Store guard name directly
           scanned_at: logData.scan_timestamp || qrData.scanned_at
         };
       });
@@ -150,12 +126,8 @@ function VisitorLogs() {
         .filter(visitor => visitor.created_by)
         .map(visitor => fetchUserData(visitor.created_by));
       
-      // Fetch guard data for each scanned visitor
-      const guardPromises = visitorsData
-        .filter(visitor => visitor.scanned_by)
-        .map(visitor => fetchGuardData(visitor.scanned_by));
-      
-      await Promise.all([...userPromises, ...guardPromises]);
+      // No need to fetch guard data since guard names are stored directly in visitor_logs
+      await Promise.all([...userPromises]);
       
       // Calculate visitor statistics
       const today = new Date();
@@ -369,9 +341,15 @@ function VisitorLogs() {
   };
   
   // Get the name of the guard who scanned the QR code
-  const getGuardName = (uid) => {
-    if (!uid) return 'Not scanned';
-    return guards[uid]?.name || 'Loading...';
+  const getGuardName = (visitor) => {
+    if (!visitor) return 'Not scanned';
+    
+    // Use the stored guard name from the visitor data directly
+    if (visitor.scanned_by_guard_name) {
+      return visitor.scanned_by_guard_name;
+    }
+    
+    return 'Not scanned';
   };
   
   // Apply filters
@@ -618,6 +596,7 @@ function VisitorLogs() {
                     <TableHeaderCell>Contact</TableHeaderCell>
                     <TableHeaderCell>Purpose</TableHeaderCell>
                     <TableHeaderCell>Created By</TableHeaderCell>
+                    <TableHeaderCell>Scanned By Guard</TableHeaderCell>
                     <TableHeaderCell>Visit Date</TableHeaderCell>
                     <TableHeaderCell>Status</TableHeaderCell>
                     <TableHeaderCell>Actions</TableHeaderCell>
@@ -626,7 +605,7 @@ function VisitorLogs() {
                 <TableBody>
                   {sortedVisitors.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6">
+                      <TableCell colSpan={8} className="text-center py-6">
                         No visitors found
                       </TableCell>
                     </TableRow>
@@ -639,6 +618,18 @@ function VisitorLogs() {
                         <TableCell>{visitor.contact || "N/A"}</TableCell>
                         <TableCell>{visitor.purpose || "N/A"}</TableCell>
                         <TableCell>{getCreatorName(visitor.created_by)}</TableCell>
+                        <TableCell>
+                          {visitor.scanned_by ? (
+                            <div className="flex items-center">
+                              <FaUserShield className="mr-2 text-green-500" size={14} />
+                              <span className="text-green-700 font-medium">
+                                {getGuardName(visitor)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 italic">Not scanned</span>
+                          )}
+                        </TableCell>
                         <TableCell>{formatDate(visitor.visit_date || visitor.created_at).date}</TableCell>
                         <TableCell>
                           <Badge variant={getBadgeVariant(visitor)}>
@@ -711,8 +702,12 @@ function VisitorLogs() {
                         ? selectedVisitor.visit_date 
                         : new Date(selectedVisitor.visit_date.seconds * 1000).toISOString())
                     : new Date().toISOString(),
-                  timestamp: new Date().toISOString(),
-                  key: qrCodeKey
+                  created_at: selectedVisitor.created_at 
+                    ? (selectedVisitor.created_at.seconds 
+                        ? new Date(selectedVisitor.created_at.seconds * 1000).toISOString()
+                        : selectedVisitor.created_at)
+                    : new Date().toISOString(),
+                  key: selectedVisitor.id // Use visitor ID as stable key instead of changing timestamp
                 })}
                 size={200}
                 level={"H"}
@@ -740,7 +735,7 @@ function VisitorLogs() {
                       Scanned at: {formatDate(selectedVisitor.scanned_at).date} {formatDate(selectedVisitor.scanned_at).time}
                     </p>
                     <p className="text-sm text-gray-600 text-gray-600">
-                      Scanned by: {getGuardName(selectedVisitor.scanned_by)}
+                      Scanned by: {getGuardName(selectedVisitor)}
                     </p>
                   </>
                 )}

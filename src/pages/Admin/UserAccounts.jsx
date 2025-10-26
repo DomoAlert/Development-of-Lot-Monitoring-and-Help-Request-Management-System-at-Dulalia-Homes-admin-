@@ -530,25 +530,25 @@ function UserAccounts() {
 
   return (
     <ResponsiveLayout>
-      <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="pt-16 md:pt-20 px-4 sm:px-6 lg:px-8 max-w-full xl:max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 sm:p-6 mb-6 lg:mb-8 border-l-4 border-blue-500">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             User Accounts
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage resident accounts and their access permissions</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2 text-sm sm:text-base">Manage resident accounts and their access permissions</p>
         </div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
           <button 
             onClick={() => {
               resetForm();
               setShowForm(true);
             }}
-            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm sm:text-base"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add New User
@@ -556,13 +556,13 @@ function UserAccounts() {
         </div>
 
         {/* Search and filter section */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <input
             type="text"
             placeholder="Search users by name, username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
           />
         </div>
 
@@ -577,10 +577,10 @@ function UserAccounts() {
               }
             }}
           >
-            <div className="flex min-h-full items-center justify-center p-4 py-8">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
+            <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
                   <button 
                     onClick={() => {
                       setShowForm(false);
@@ -592,13 +592,13 @@ function UserAccounts() {
                   </button>
                 </div>
                 
-                <div className="p-6">
-                  <form onSubmit={handleAddUser} className="space-y-5">
-                    <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
-                      <h3 className="font-medium text-blue-800 mb-2 flex items-center">
-                        <FaUser className="mr-2" /> Personal Information
+                <div className="p-4 sm:p-6">
+                  <form onSubmit={handleAddUser} className="space-y-4 sm:space-y-5">
+                    <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-blue-100">
+                      <h3 className="font-medium text-blue-800 mb-2 flex items-center text-sm sm:text-base">
+                        <FaUser className="mr-2 text-sm sm:text-base" /> Personal Information
                       </h3>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             First Name *
@@ -608,7 +608,7 @@ function UserAccounts() {
                             required
                             value={formData.firstName}
                             onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                             placeholder="John"
                           />
                         </div>
@@ -621,19 +621,19 @@ function UserAccounts() {
                             required
                             value={formData.lastName}
                             onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                             placeholder="Doe"
                           />
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-indigo-50 rounded-lg p-4 mb-6 border border-indigo-100">
-                      <h3 className="font-medium text-indigo-800 mb-2 flex items-center">
+                    <div className="bg-indigo-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-indigo-100">
+                      <h3 className="font-medium text-indigo-800 mb-2 flex items-center text-sm sm:text-base">
                         <i className="fas fa-user-lock mr-2"></i> Account Information
                       </h3>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Username *
@@ -647,7 +647,7 @@ function UserAccounts() {
                                 required
                                 value={formData.username}
                                 onChange={handleUsernameChange}
-                                className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                                 placeholder="johndoe"
                               />
                             </div>
@@ -660,13 +660,13 @@ function UserAccounts() {
                               type="tel"
                               value={formData.contactNumber}
                               onChange={handleContactNumberChange}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                              className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                               placeholder="e.g. 09123456789"
                             />
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Email
@@ -675,7 +675,7 @@ function UserAccounts() {
                               type="email"
                               value={formData.email}
                               onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                              className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                               placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
                             />
                             <p className="text-xs text-gray-500 mt-1">
@@ -692,7 +692,7 @@ function UserAccounts() {
                                 type={showPassword ? "text" : "password"}
                                 value={formData.password}
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                className="w-full px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                className="w-full px-3 sm:px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                                 placeholder="Leave blank to use username"
                               />
                               <button
@@ -715,12 +715,12 @@ function UserAccounts() {
                       </div>
                     </div>
                     
-                    <div className="bg-amber-50 rounded-lg p-4 mb-6 border border-amber-100">
-                      <h3 className="font-medium text-amber-800 mb-2 flex items-center">
+                    <div className="bg-amber-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-amber-100">
+                      <h3 className="font-medium text-amber-800 mb-2 flex items-center text-sm sm:text-base">
                         <FaMapMarkerAlt className="mr-2" /> Property Assignment
                       </h3>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Select Available Lot *
@@ -730,7 +730,7 @@ function UserAccounts() {
                                 <FaMapMarkerAlt className="text-amber-600" />
                               </div>
                               {loadingLots ? (
-                                <div className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
+                                <div className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
                                   <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
                                   Loading available lots...
                                 </div>
@@ -749,7 +749,7 @@ function UserAccounts() {
                                       });
                                     }
                                   }}
-                                  className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
+                                  className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
                                   required
                                 >
                                   <option value="">-- Select a lot --</option>
@@ -777,7 +777,7 @@ function UserAccounts() {
                               <select
                                 value={formData.houseModel}
                                 onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
-                                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
+                                className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
                               >
                                 <option value="Standard">Standard Model</option>
                                 <option value="Premium">Premium Model</option>
@@ -790,9 +790,9 @@ function UserAccounts() {
                         </div>
                         
                         {selectedLot && (
-                          <div className="col-span-2 mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                          <div className="col-span-1 sm:col-span-2 mt-3 p-3 bg-white rounded-lg border border-amber-200">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium text-amber-700">Selected Lot Details:</span>
+                              <span className="font-medium text-amber-700 text-sm">Selected Lot Details:</span>
                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
                                 #{selectedLot.house_no}
                               </span>
@@ -808,13 +808,13 @@ function UserAccounts() {
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-lg p-4 mt-4 border border-gray-200">
-                      <div className="flex justify-end space-x-3">
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4 border border-gray-200">
+                      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                         <button
                           type="button"
                           disabled={formSubmitting}
                           onClick={() => setShowForm(false)}
-                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm"
+                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
                         >
                           <i className="fas fa-times mr-2"></i>
                           Cancel
@@ -822,7 +822,7 @@ function UserAccounts() {
                         <button
                           type="submit"
                           disabled={formSubmitting}
-                          className="px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors duration-150 ease-in-out shadow-sm"
+                          className="px-4 sm:px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
                         >
                           {formSubmitting ? (
                             <>
@@ -855,10 +855,10 @@ function UserAccounts() {
               }
             }}
           >
-            <div className="flex min-h-full items-center justify-center p-4 py-8">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-lg font-semibold">
+            <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-base sm:text-lg font-semibold">
                     {isEditing ? 'Edit User' : 'User Details'}
                   </h2>
                   <button 
@@ -869,46 +869,46 @@ function UserAccounts() {
                   </button>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
               {!isEditing ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-center mb-6">
-                    <div className="h-20 w-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl">
+                  <div className="flex items-center justify-center mb-4 sm:mb-6">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl sm:text-3xl">
                       <FaUser />
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <p className="text-sm text-gray-500">First Name</p>
-                      <p className="font-medium">{selectedUser.firstName || 'N/A'}</p>
+                      <p className="font-medium text-sm sm:text-base">{selectedUser.firstName || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Last Name</p>
-                      <p className="font-medium">{selectedUser.lastName || 'N/A'}</p>
+                      <p className="font-medium text-sm sm:text-base">{selectedUser.lastName || 'N/A'}</p>
                     </div>
                   </div>
                   
                   <div>
                     <p className="text-sm text-gray-500">Username</p>
-                    <p className="font-medium">{selectedUser.username || 'N/A'}</p>
+                    <p className="font-medium text-sm sm:text-base">{selectedUser.username || 'N/A'}</p>
                   </div>
                   
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedUser.email || 'N/A'}</p>
+                    <p className="font-medium text-sm sm:text-base">{selectedUser.email || 'N/A'}</p>
                   </div>
                   
                   <div className="p-2 bg-amber-50 rounded-md">
                     <p className="text-sm text-gray-700">Property Details</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <div>
-                        <p className="font-medium">House #{selectedUser.house_no || 'N/A'}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 gap-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm sm:text-base">House #{selectedUser.house_no || 'N/A'}</p>
                         {selectedUser.block && selectedUser.lot && (
-                          <p className="text-sm text-gray-600">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
                         )}
                       </div>
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
                         {selectedUser.houseModel || 'Standard'}
                       </span>
                     </div>
@@ -916,12 +916,12 @@ function UserAccounts() {
                   
                   <div>
                     <p className="text-sm text-gray-500">Role</p>
-                    <p className="font-medium">{selectedUser.role || 'Homeowner'}</p>
+                    <p className="font-medium text-sm sm:text-base">{selectedUser.role || 'Homeowner'}</p>
                   </div>
                   
                   <div>
                     <p className="text-sm text-gray-500">Status</p>
-                    <p className={`font-medium ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`font-medium text-sm sm:text-base ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
                       {selectedUser.status || 'N/A'}
                     </p>
                   </div>
@@ -939,13 +939,13 @@ function UserAccounts() {
                   
                   <div>
                     <p className="text-sm text-gray-500">Contact Number</p>
-                    <p className="font-medium">{selectedUser.contactNumber || 'N/A'}</p>
+                    <p className="font-medium text-sm sm:text-base">{selectedUser.contactNumber || 'N/A'}</p>
                   </div>
                   
-                  <div className="flex justify-end space-x-2 mt-6">
+                  <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
                     <button
                       onClick={handleEditUser}
-                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 flex items-center"
+                      className="px-3 sm:px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 flex items-center text-sm sm:text-base"
                     >
                       <FaEdit className="mr-2" />
                       Edit User
@@ -953,8 +953,8 @@ function UserAccounts() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleUpdateUser} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleUpdateUser} className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         First Name
@@ -964,7 +964,7 @@ function UserAccounts() {
                         required
                         value={formData.firstName}
                         onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                       />
                     </div>
                     <div>
@@ -976,7 +976,7 @@ function UserAccounts() {
                         required
                         value={formData.lastName}
                         onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -990,7 +990,7 @@ function UserAccounts() {
                       required
                       value={formData.username}
                       onChange={handleUsernameChange}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                     />
                   </div>
                   
@@ -1002,7 +1002,7 @@ function UserAccounts() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                     />
                   </div>
                   
@@ -1010,16 +1010,16 @@ function UserAccounts() {
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Property Assignment
   </label>
-  <div className="p-3 bg-amber-50 rounded-md border border-amber-100">
-    <div className="flex items-center justify-between mb-1">
+  <div className="p-2 sm:p-3 bg-amber-50 rounded-md border border-amber-100">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-2">
       <span className="text-sm font-medium text-amber-700">
         Current House Number:
       </span>
-      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
         #{formData.house_no}
       </span>
     </div>
-    <div className="text-sm text-gray-600 mb-2">
+    <div className="text-xs sm:text-sm text-gray-600 mb-2">
       Block {formData.block}, Lot {formData.lot}
     </div>
     
@@ -1040,7 +1040,7 @@ function UserAccounts() {
             });
           }
         }}
-        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
+        className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 text-sm sm:text-base"
       >
         <option value="">-- Keep current assignment --</option>
         {loadingLots ? (
@@ -1067,7 +1067,7 @@ function UserAccounts() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value, isActive: e.target.value === 'Active'})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
@@ -1081,7 +1081,7 @@ function UserAccounts() {
                     <select
                       value={formData.recordStatus}
                       onChange={(e) => setFormData({...formData, recordStatus: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                     >
                       <option value="Neutral">Neutral</option>
                       <option value="Good">Good</option>
@@ -1100,24 +1100,24 @@ function UserAccounts() {
                       type="tel"
                       value={formData.contactNumber}
                       onChange={handleContactNumberChange}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                       placeholder="e.g. 09123456789"
                     />
                   </div>
                   
-                  <div className="flex justify-end space-x-2">
+                  <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4 sm:mt-6">
                     <button
                       type="button"
                       disabled={formSubmitting}
                       onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm sm:text-base"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={formSubmitting}
-                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+                      className="px-3 sm:px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center text-sm sm:text-base"
                     >
                       {formSubmitting ? (
                         <>
@@ -1139,252 +1139,249 @@ function UserAccounts() {
 
         {/* Users table */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+          <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
               <i className="fas fa-users text-blue-500 mr-2"></i>
               Homeowner Accounts
-              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
+              <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
                 {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
               </span>
             </h2>
           </div>
         
           {loading ? (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="text-gray-600">Loading homeowner accounts...</p>
+            <div className="p-8 sm:p-12 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-gray-600 text-sm sm:text-base">Loading homeowner accounts...</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200 border-collapse">
-              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <FaUser className="text-blue-500" />
-                      <span>User</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <FaHome className="text-amber-500" />
-                      <span>Property Details</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-envelope text-blue-500"></i>
-                      <span>Email</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-circle text-green-500"></i>
-                      <span>Status</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-shield-alt text-purple-500"></i>
-                      <span>Record</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-sliders-h text-gray-500"></i>
-                      <span>Actions</span>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {filteredUsers.length === 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 border-collapse">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                   <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <FaUser className="h-10 w-10 text-gray-200 mb-2" />
-                        <p className="text-gray-500 font-medium">No users found</p>
-                        <p className="text-gray-400 text-sm">Try adjusting your search criteria</p>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <FaUser className="text-blue-500 text-xs sm:text-sm" />
+                        <span className="hidden sm:inline">User</span>
+                        <span className="sm:hidden">Info</span>
                       </div>
-                    </td>
+                    </th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <FaHome className="text-amber-500 text-xs sm:text-sm" />
+                        <span className="hidden lg:inline">Property Details</span>
+                        <span className="lg:hidden">Property</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider hidden md:table-cell">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-envelope text-blue-500 text-xs sm:text-sm"></i>
+                        <span>Email</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-circle text-green-500 text-xs sm:text-sm"></i>
+                        <span>Status</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-shield-alt text-purple-500 text-xs sm:text-sm"></i>
+                        <span>Record Status</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-sliders-h text-gray-500 text-xs sm:text-sm"></i>
+                        <span>Actions</span>
+                      </div>
+                    </th>
                   </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr 
-                      key={user.id} 
-                      className={`${actionLoading === user.id ? "bg-gray-50" : ""} 
-                        hover:bg-blue-50/30 transition-colors duration-150
-                        ${user.status === 'Inactive' ? 'bg-red-50/20' : ''}`}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button 
-                          onClick={() => handleViewUser(user)}
-                          className="flex items-center hover:text-primary group"
-                        >
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200">
-                            {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                          </div>
-                          <div className="ml-0">
-                            <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                              @{user.username || 'N/A'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {getFullName(user)}
-                            </div>
-                            {user.contactNumber && (
-                              <div className="text-xs text-gray-400 flex items-center mt-1">
-                                <i className="fas fa-phone-alt mr-1 text-gray-300"></i>
-                                {user.contactNumber}
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {user.house_no ? (
-                          <div className="flex flex-col">
-                            <div className="flex items-center mb-1">
-                              <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-sm">
-                                #{user.house_no}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
-                                Block {user.block || Math.floor(user.house_no / 100)}
-                              </div>
-                              <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">
-                                Lot {user.lot || user.house_no % 100}
-                              </div>
-                            </div>
-                            {user.houseModel && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {user.houseModel} Model
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500 italic">No property assigned</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="bg-blue-50 rounded-full p-1 mr-2">
-                            <i className="fas fa-envelope text-blue-400 text-xs"></i>
-                          </div>
-                          <div>
-                            <div className="text-sm text-gray-700">{user.email || 'N/A'}</div>
-                            <div className="text-xs text-gray-400">Account ID: {user.id?.substring(0, 8)}...</div>
-                          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-3 sm:px-6 py-6 sm:py-8 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <FaUser className="h-8 w-8 sm:h-10 sm:w-10 text-gray-200 mb-2" />
+                          <p className="text-gray-500 font-medium text-sm sm:text-base">No users found</p>
+                          <p className="text-gray-400 text-xs sm:text-sm">Try adjusting your search criteria</p>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
-                          }`}>
-                            <span className={`mr-1 h-2 w-2 rounded-full ${
-                              user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
-                            }`}></span>
-                            {user.status || 'Active'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
-                          user.recordStatus === 'Good' ? 'bg-green-100 text-green-800 border border-green-200' : 
-                          user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800 border border-red-200' : 
-                          'bg-gray-100 text-gray-800 border border-gray-200'
-                        }`}>
-                          <i className={`fas ${
-                            user.recordStatus === 'Good' ? 'fa-thumbs-up mr-1 text-green-600' : 
-                            user.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1 text-red-600' : 
-                            'fa-minus mr-1 text-gray-500'
-                          }`}></i>
-                          {user.recordStatus || 'Neutral'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {actionLoading === user.id ? (
-                          <div className="flex items-center justify-center">
-                            <FaSpinner className="animate-spin text-primary" />
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-2">
-                            {/* Top Section: View, Deactivate/Activate, Delete */}
-                            <div className="flex flex-wrap gap-1">
-                              <button
-                                onClick={() => handleViewUser(user)}
-                                className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors flex items-center"
-                              >
-                                <i className="fas fa-eye mr-1"></i>
-                                View
-                              </button>
-                              
-                              <button 
-                                onClick={() => handleToggleStatus(user.id, user.status)}
-                                className={`px-2 py-1 text-xs rounded border flex items-center ${
-                                  user.status === 'Active' 
-                                  ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
-                                  : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                                }`}
-                              >
-                                <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
-                                {user.status === 'Active' ? 'Deactivate' : 'Activate'}
-                              </button>
-                              
-                              <button 
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
-                              >
-                                <i className="fas fa-trash-alt mr-1"></i>
-                                Delete
-                              </button>
-                            </div>
-                            
-                            {/* Bottom Section: Record Status Buttons */}
-                            <div className="flex flex-wrap gap-1">
-                              <button 
-                                onClick={() => handleSetRecordStatus(user.id, 'Good')}
-                                className="px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
-                                title="Mark Good Record"
-                              >
-                                <i className="fas fa-thumbs-up mr-1"></i>
-                                Good Record
-                              </button>
-                              
-                              <button 
-                                onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
-                                className="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
-                                title="Reset Record Status"
-                              >
-                                <i className="fas fa-minus mr-1"></i>
-                                Neutral
-                              </button>
-                              
-                              <button 
-                                onClick={() => handleSetRecordStatus(user.id, 'Bad')}
-                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
-                                title="Mark Bad Record"
-                              >
-                                <i className="fas fa-thumbs-down mr-1"></i>
-                                Bad Record
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <tr 
+                        key={user.id} 
+                        className={`${actionLoading === user.id ? "bg-gray-50" : ""} 
+                          hover:bg-blue-50/30 transition-colors duration-150
+                          ${user.status === 'Inactive' ? 'bg-red-50/20' : ''}`}
+                      >
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <button 
+                            onClick={() => handleViewUser(user)}
+                            className="flex items-center hover:text-primary group w-full text-left cursor-pointer"
+                          >
+                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-2 sm:mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200 flex-shrink-0">
+                              {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                                @{user.username || 'N/A'}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {getFullName(user)}
+                              </div>
+                              {user.contactNumber && (
+                                <div className="text-xs text-gray-400 flex items-center mt-1">
+                                  <i className="fas fa-phone-alt mr-1 text-gray-300"></i>
+                                  <span className="truncate">{user.contactNumber}</span>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          {user.house_no ? (
+                            <div className="flex flex-col">
+                              <div className="flex items-center mb-1">
+                                <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
+                                  #{user.house_no}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <div className="text-xs bg-blue-50 text-blue-700 px-1 sm:px-2 py-0.5 rounded">
+                                  Block {user.block || Math.floor(user.house_no / 100)}
+                                </div>
+                                <div className="text-xs bg-green-50 text-green-700 px-1 sm:px-2 py-0.5 rounded">
+                                  Lot {user.lot || user.house_no % 100}
+                                </div>
+                              </div>
+                              {user.houseModel && (
+                                <div className="text-xs text-gray-500 mt-1 truncate">
+                                  {user.houseModel} Model
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs sm:text-sm text-gray-500 italic">No property assigned</span>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden md:table-cell">
+                          <div className="flex items-center">
+                            <div className="bg-blue-50 rounded-full p-1 mr-2 flex-shrink-0">
+                              <i className="fas fa-envelope text-blue-400 text-xs"></i>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs sm:text-sm text-gray-700 truncate">{user.email || 'N/A'}</div>
+                              <div className="text-xs text-gray-400 truncate">ID: {user.id?.substring(0, 8)}...</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <span className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              user.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+                            }`}>
+                              <span className={`mr-1 h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${
+                                user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
+                              }`}></span>
+                              {user.status || 'Active'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className={`px-2 sm:px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
+                            user.recordStatus === 'Good' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                            user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                            'bg-gray-100 text-gray-800 border border-gray-200'
+                          }`}>
+                            <i className={`fas ${
+                              user.recordStatus === 'Good' ? 'fa-thumbs-up mr-1 text-green-600' : 
+                              user.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1 text-red-600' : 
+                              'fa-minus mr-1 text-gray-500'
+                            } text-xs sm:text-sm`}></i>
+                            {user.recordStatus || 'Neutral'}
+                          </span>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500">
+                          {actionLoading === user.id ? (
+                            <div className="flex items-center justify-center">
+                              <FaSpinner className="animate-spin text-primary" />
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1 sm:gap-2">
+                              {/* Status and Delete Actions */}
+                              <div className="flex flex-wrap gap-1">
+                                <button 
+                                  onClick={() => handleToggleStatus(user.id, user.status)}
+                                  className={`px-1.5 sm:px-2 py-1 text-xs rounded border flex items-center ${
+                                    user.status === 'Active' 
+                                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                                    : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                                  }`}
+                                >
+                                  <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
+                                  <span className="hidden sm:inline">{user.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
+                                  <span className="sm:hidden">{user.status === 'Active' ? 'Off' : 'On'}</span>
+                                </button>
+                                
+                                <button 
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="px-1.5 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                                >
+                                  <i className="fas fa-trash-alt mr-1"></i>
+                                  <span className="hidden sm:inline">Delete</span>
+                                </button>
+                              </div>
+                              
+                              {/* Record Status Change Actions */}
+                              <div className="flex flex-wrap gap-1">
+                                <button 
+                                  onClick={() => handleSetRecordStatus(user.id, 'Good')}
+                                  className="px-1.5 sm:px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
+                                  title="Mark Good Record"
+                                >
+                                  <i className="fas fa-thumbs-up mr-1"></i>
+                                  <span className="hidden sm:inline">Good</span>
+                                </button>
+                                
+                                <button 
+                                  onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
+                                  className="px-1.5 sm:px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
+                                  title="Reset Record Status"
+                                >
+                                  <i className="fas fa-minus mr-1"></i>
+                                  <span className="hidden sm:inline">Neutral</span>
+                                </button>
+                                
+                                <button 
+                                  onClick={() => handleSetRecordStatus(user.id, 'Bad')}
+                                  className="px-1.5 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                                  title="Mark Bad Record"
+                                >
+                                  <i className="fas fa-thumbs-down mr-1"></i>
+                                  <span className="hidden sm:inline">Bad</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
           
           {!loading && filteredUsers.length > 0 && (
-            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
-              <div className="text-sm text-gray-500">
+            <div className="bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div className="text-xs sm:text-sm text-gray-500">
                 Showing {filteredUsers.length} homeowner account{filteredUsers.length !== 1 ? 's' : ''}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 <span className="font-medium text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
               </div>
             </div>

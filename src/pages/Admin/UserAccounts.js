@@ -538,7 +538,9 @@ function UserAccounts() {
             </svg>
             User Accounts
           </h1>
-          <p className="text-black mt-2 text-sm sm:text-base">Manage resident accounts and their access permissions</p>
+              <p className="text-gray-600 text-gray-700 mt-2">
+                Manage resident accounts and their access permissions
+              </p>
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
           <button 
@@ -1148,7 +1150,7 @@ function UserAccounts() {
               </span>
             </h2>
           </div>
-        
+
           {loading ? (
             <div className="p-8 sm:p-12 text-center">
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-gray-100  border-t-blue-500 rounded-full animate-spin"></div>

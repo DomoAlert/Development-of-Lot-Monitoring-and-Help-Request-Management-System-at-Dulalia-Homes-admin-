@@ -1,23 +1,9 @@
 // components/AdminLayout.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Navbar from './Navbar';
-import { useTheme } from '../context/ThemeContext';
-import { usePageTitle } from '../context/PageTitleContext';
 
 function AdminLayout({ children }) {
-  const { darkMode } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  usePageTitle();
-
-  // Apply dark mode class to <html>
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-  }, [darkMode]);
 
   return (
     <div className="relative min-h-screen bg-gray-50 bg-gray-50">

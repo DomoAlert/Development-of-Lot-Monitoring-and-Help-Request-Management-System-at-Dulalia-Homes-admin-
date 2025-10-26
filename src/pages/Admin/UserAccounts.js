@@ -4,7 +4,7 @@ import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUser, FaEdit, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function UserAccounts() {
   const [users, setUsers] = useState([]);
@@ -538,7 +538,7 @@ function UserAccounts() {
             </svg>
             User Accounts
           </h1>
-          <p className="text-black text-black mt-2 text-sm sm:text-base">Manage resident accounts and their access permissions</p>
+          <p className="text-black mt-2 text-sm sm:text-base">Manage resident accounts and their access permissions</p>
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
           <button 
@@ -905,7 +905,7 @@ function UserAccounts() {
                       <div className="flex-1">
                         <p className="font-medium text-sm sm:text-base">House #{selectedUser.house_no || 'N/A'}</p>
                         {selectedUser.block && selectedUser.lot && (
-                          <p className="text-xs sm:text-sm text-white text-black">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
+                          <p className="text-xs sm:text-sm text-black">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
                         )}
                       </div>
                       <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
@@ -1140,7 +1140,7 @@ function UserAccounts() {
         {/* Users table */}
         <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-100">
           <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50  border-b border-gray-100 ">
-            <h2 className="text-base sm:text-lg font-semibold text-black text-black flex items-center">
+            <h2 className="text-base sm:text-lg font-semibold text-black flex items-center">
               <i className="fas fa-users text-blue-500 mr-2"></i>
               Homeowner Accounts
               <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600 bg-blue-100 text-blue-700">

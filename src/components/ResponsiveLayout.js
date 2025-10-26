@@ -1,7 +1,7 @@
 // components/ResponsiveLayout.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes, FaCog, FaSignOutAlt, FaSun, FaMoon } from 'react-icons/fa';
+import { FaBars, FaTimes, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import {
   MdDashboard,
   MdPeople,
@@ -14,14 +14,12 @@ import {
   MdWarning,
 } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../context/PageTitleContext';
 import logo from '../assets/images/logoo.png';
 
 function ResponsiveLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { darkMode, toggleDarkMode } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAccountsOpen, setIsAccountsOpen] = useState(false);
@@ -32,16 +30,6 @@ function ResponsiveLayout({ children }) {
   const settingsRef = useRef(null);
 
   usePageTitle();
-
-  // Apply dark mode class to <html>
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-  }, [darkMode]);
 
   // Close sidebar on mobile when clicking outside
   useEffect(() => {
@@ -360,26 +348,6 @@ function ResponsiveLayout({ children }) {
                   </button>
                   {showSettings && (
                     <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border bg-white bg-white border-gray-200 border-gray-200 z-50">
-                      <button
-                        onClick={() => {
-                          toggleDarkMode();
-                          setShowSettings(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 text-gray-700 hover:bg-gray-100  flex items-center space-x-2 transition-colors duration-200"
-                      >
-                        {darkMode ? (
-                          <>
-                            <FaSun className="text-yellow-500 text-lg" />
-                            <span>Light Mode</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaMoon className="text-blue-500 text-lg" />
-                            <span>Dark Mode</span>
-                          </>
-                        )}
-                      </button>
-                      <hr className="my-1 border-gray-200 border-gray-200" />
                       <button
                         onClick={() => {
                           setShowSettings(false);

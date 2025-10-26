@@ -3,7 +3,6 @@ import SplashScreen from './components/SplashScreen';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { ThemeProvider } from './context/ThemeContext';
 import { UserProvider } from './context/UserContext';
 import { PageTitleProvider } from './context/PageTitleContext';
 
@@ -102,53 +101,51 @@ function App() {
 
   return (
     <UserProvider>
-      <ThemeProvider>
-        <React.Fragment>
-          <ToastContainer 
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            closeOnClick
-            pauseOnHover
-            draggable
-            theme="light"
-          />
-          <SplashScreen 
-            background="#ffffff" 
-            minDuration={4000} 
-            showOncePerSession={false} 
-            ignoreAppReady={false} 
-          />
-          <OfflinePage />
-          <Router>
-            <PageTitleProvider>
-              <Suspense fallback={<div className="flex justify-center items-center h-screen">
-                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-              </div>}>
-                <RoutesErrorBoundary>
-                  <Routes>
-                    <Route path="/" element={<RootRedirect />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/admin/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-                    <Route path="/admin/head-staff-accounts" element={<ProtectedRoute><HeadStaffAccounts /></ProtectedRoute>} />
-                    <Route path="/admin/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
-                    <Route path="/admin/user-accounts" element={<ProtectedRoute><UserAccounts /></ProtectedRoute>} />
-                    <Route path="/admin/facility-requests" element={<ProtectedRoute><FacilityRequests /></ProtectedRoute>} />
-                    <Route path="/admin/service-requests" element={<ProtectedRoute><ServiceRequests /></ProtectedRoute>} />
-                    <Route path="/admin/announcements" element={<ProtectedRoute><Announcements /></ProtectedRoute>} />
-                    <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
-                    <Route path="/admin/guard-accounts" element={<ProtectedRoute><GuardAccounts /></ProtectedRoute>} />
-                    <Route path="/admin/visitor-logs" element={<ProtectedRoute><VisitorLogs /></ProtectedRoute>} />
-                    <Route path="/admin/lot-status" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </RoutesErrorBoundary>
-              </Suspense>
-            </PageTitleProvider>
-          </Router>
-        </React.Fragment>
-      </ThemeProvider>
+      <React.Fragment>
+        <ToastContainer 
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          theme="light"
+        />
+        <SplashScreen 
+          background="#ffffff" 
+          minDuration={4000} 
+          showOncePerSession={false} 
+          ignoreAppReady={false} 
+        />
+        <OfflinePage />
+        <Router>
+          <PageTitleProvider>
+            <Suspense fallback={<div className="flex justify-center items-center h-screen">
+              <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+            </div>}>
+              <RoutesErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<RootRedirect />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/admin/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                  <Route path="/admin/head-staff-accounts" element={<ProtectedRoute><HeadStaffAccounts /></ProtectedRoute>} />
+                  <Route path="/admin/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+                  <Route path="/admin/user-accounts" element={<ProtectedRoute><UserAccounts /></ProtectedRoute>} />
+                  <Route path="/admin/facility-requests" element={<ProtectedRoute><FacilityRequests /></ProtectedRoute>} />
+                  <Route path="/admin/service-requests" element={<ProtectedRoute><ServiceRequests /></ProtectedRoute>} />
+                  <Route path="/admin/announcements" element={<ProtectedRoute><Announcements /></ProtectedRoute>} />
+                  <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+                  <Route path="/admin/guard-accounts" element={<ProtectedRoute><GuardAccounts /></ProtectedRoute>} />
+                  <Route path="/admin/visitor-logs" element={<ProtectedRoute><VisitorLogs /></ProtectedRoute>} />
+                  <Route path="/admin/lot-status" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </RoutesErrorBoundary>
+            </Suspense>
+          </PageTitleProvider>
+        </Router>
+      </React.Fragment>
     </UserProvider>
   );
 }

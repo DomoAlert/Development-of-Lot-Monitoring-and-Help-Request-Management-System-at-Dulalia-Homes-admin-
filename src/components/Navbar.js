@@ -12,12 +12,9 @@ import {
   MdExpandMore,
   MdClose,
   MdWarning,
-  MdLightMode,
-  MdDarkMode,
 } from 'react-icons/md';
 import { Tooltip } from 'react-tooltip';
 import { toast } from 'react-toastify';
-import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/images/logoo.png';
 
 const Navbar = ({ onToggleCollapse }) => {
@@ -29,7 +26,6 @@ const Navbar = ({ onToggleCollapse }) => {
   const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const { darkMode, toggleDarkMode } = useTheme();
   const settingsRef = useRef(null);
   const DULALIA_PURPLE = '#04317aff';
   const LIGHT_PURPLE = '#9F7AEA';
@@ -307,36 +303,14 @@ const Navbar = ({ onToggleCollapse }) => {
           </button>
           {showSettings && (
             <div
-              className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border transition-all duration-200 ease-in-out ${
-                darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#9F7AEA]'
-              }`}
+              className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border bg-white border-[#9F7AEA] transition-all duration-200 ease-in-out"
             >
-              <button
-                onClick={() => {
-                  toggleDarkMode();
-                  setShowSettings(false);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 text-gray-700 hover:bg-[#9F7AEA]/20 hover:bg-[#9F7AEA]/20 flex items-center space-x-2 transition-colors duration-200"
-              >
-                {darkMode ? (
-                  <>
-                    <MdLightMode className="text-yellow-500 text-lg" />
-                    <span>Light Mode</span>
-                  </>
-                ) : (
-                  <>
-                    <MdDarkMode className="text-[#6B46C1] text-lg" />
-                    <span>Dark Mode</span>
-                  </>
-                )}
-              </button>
-              <hr className="my-1 border-gray-200 border-gray-200" />
               <button
                 onClick={() => {
                   setShowSettings(false);
                   handleLogout();
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 text-red-600 hover:bg-[#9F7AEA]/20 hover:bg-[#9F7AEA]/20 flex items-center space-x-2 transition-colors duration-200"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-[#9F7AEA]/20 flex items-center space-x-2 transition-colors duration-200"
               >
                 <MdLogout className="text-lg" />
                 <span>Logout</span>
@@ -351,35 +325,27 @@ const Navbar = ({ onToggleCollapse }) => {
           className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && setShowLogoutConfirm(false)}
         >
-          <div
-            className={`rounded-lg shadow-xl w-full max-w-md p-6 transition-all duration-200 ease-in-out ${
-              darkMode ? 'bg-gray-800' : 'bg-white'
-            }`}
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 transition-all duration-200 ease-in-out"
           >
             <div className="flex items-center justify-center mb-4">
-              <div
-                className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                  darkMode ? 'bg-red-900' : 'bg-red-100'
-                }`}
+              <div className="h-12 w-12 rounded-full flex items-center justify-center bg-red-100"
               >
                 <MdWarning
-                  className={darkMode ? 'text-red-400' : 'text-red-600'}
+                  className="text-red-600"
                   size={24}
                 />
               </div>
             </div>
-            <h3 className={`text-lg font-medium text-center mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <h3 className="text-lg font-medium text-center mb-2 text-gray-900">
               Confirm Logout
             </h3>
-            <p className={`text-sm text-center mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className="text-sm text-center mb-6 text-gray-500">
               Are you sure you want to log out?
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className={`px-4 py-2 rounded-md transition-colors duration-200 ${
-                  darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                }`}
+                className="px-4 py-2 rounded-md transition-colors duration-200 bg-gray-200 hover:bg-gray-300"
               >
                 Cancel
               </button>

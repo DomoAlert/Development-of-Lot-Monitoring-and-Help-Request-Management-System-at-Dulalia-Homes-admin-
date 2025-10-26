@@ -1,7 +1,6 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext';
 import ResponsiveLayout from './ResponsiveLayout';
-import { Card, CardHeader, CardBody } from './AdminUI';
+
 
 /**
  * Higher-order component to wrap admin pages with common UI elements
@@ -22,8 +21,6 @@ const withAdminPage = (options = {}) => {
 
   return (Component) => {
     const WrappedComponent = (props) => {
-      const { darkMode } = useTheme();
-      
       // Set document title
       React.useEffect(() => {
         if (title) {

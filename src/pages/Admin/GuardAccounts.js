@@ -29,6 +29,15 @@ function GuardAccounts() {
     shift_status: 'Off-duty',
     shift_start: '',
     shift_end: '',
+    shiftDays: {
+      monday: false,
+      tuesday: false,
+      wednesday: false,
+      thursday: false,
+      friday: false,
+      saturday: false,
+      sunday: false
+    },
     isActive: true,
     fcmToken: ''
   });
@@ -98,6 +107,15 @@ function GuardAccounts() {
         shift_status: 'Off-duty',
         shift_start: '',
         shift_end: '',
+        shiftDays: {
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+          sunday: false
+        },
         isActive: true,
         fcmToken: ''
       });
@@ -138,6 +156,15 @@ function GuardAccounts() {
       shift_status: guard.shift_status || 'Off-duty',
       shift_start: guard.shift_start || '',
       shift_end: guard.shift_end || '',
+      shiftDays: guard.shiftDays || {
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false
+      },
       isActive: guard.isActive !== undefined ? guard.isActive : true
     });
     setShowGuardDetails(true);
@@ -171,6 +198,7 @@ function GuardAccounts() {
         contactNumber: formData.contactNumber,
         shift_start: formData.shift_start,
         shift_end: formData.shift_end,
+        shiftDays: formData.shiftDays,
         updatedAt: serverTimestamp(),
       });
       
@@ -282,6 +310,22 @@ function GuardAccounts() {
     const hour12 = hourNum % 12 || 12;
     
     return `${hour12}:${minutes} ${period}`;
+  };
+
+  // Function to format shift days display
+  const formatShiftDays = (shiftDays) => {
+    if (!shiftDays) return 'Not set';
+    
+    const days = [];
+    if (shiftDays.monday) days.push('M');
+    if (shiftDays.tuesday) days.push('T');
+    if (shiftDays.wednesday) days.push('W');
+    if (shiftDays.thursday) days.push('TH');
+    if (shiftDays.friday) days.push('F');
+    if (shiftDays.saturday) days.push('SAT');
+    if (shiftDays.sunday) days.push('SUN');
+    
+    return days.length > 0 ? days.join(' ') : 'Not set';
   };
 
   // Filtered guards based on search
@@ -540,6 +584,104 @@ function GuardAccounts() {
                       </div>
                     </div>
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shift Days
+                    </label>
+                    <div className="grid grid-cols-7 gap-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.monday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, monday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Mon</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.tuesday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, tuesday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Tue</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.wednesday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, wednesday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Wed</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.thursday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, thursday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Thu</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.friday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, friday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Fri</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.saturday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, saturday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Sat</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.sunday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, sunday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Sun</span>
+                      </label>
+                    </div>
+                  </div>
                   <div className="pt-4 border-t border-gray-200">
                     <div className="flex justify-end space-x-3">
                       <button
@@ -637,6 +779,11 @@ function GuardAccounts() {
                         ? `${formatTime(selectedGuard?.shift_start)} - ${formatTime(selectedGuard?.shift_end)}`
                         : 'Not set'}
                     </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Shift Days</p>
+                    <p className="font-medium">{formatShiftDays(selectedGuard?.shiftDays)}</p>
                   </div>
                   
                   <div>
@@ -755,6 +902,104 @@ function GuardAccounts() {
                   </div>
                   
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shift Days
+                    </label>
+                    <div className="grid grid-cols-7 gap-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.monday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, monday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Mon</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.tuesday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, tuesday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Tue</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.wednesday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, wednesday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Wed</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.thursday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, thursday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Thu</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.friday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, friday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Fri</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.saturday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, saturday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Sat</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.shiftDays.sunday}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            shiftDays: { ...formData.shiftDays, sunday: e.target.checked }
+                          })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Sun</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Shift Status
                     </label>
@@ -834,6 +1079,9 @@ function GuardAccounts() {
                       Shift Time
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Shift Days
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -844,7 +1092,7 @@ function GuardAccounts() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredGuards.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
@@ -878,6 +1126,9 @@ function GuardAccounts() {
                           ) : (
                             <span className="text-sm text-gray-500">Not set</span>
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900">{formatShiftDays(guard.shiftDays)}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">

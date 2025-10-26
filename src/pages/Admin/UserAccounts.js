@@ -1155,7 +1155,7 @@ function UserAccounts() {
         {/* Users table */}
         <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-100">
           <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50  border-b border-gray-100 ">
-            <h2 className="!text-base !sm:text-lg !font-bold !text-black flex items-center" style={{ color: '#000', fontWeight: 'semi-bold' }} ref={headerRef}>
+            <h2 className="!text-base !sm:text-lg !font-bold !text-black flex items-center" style={{ color: '#001cbdff', fontWeight: 600 }} ref={headerRef}>
               <i className="fas fa-users text-blue-500 mr-2"></i>
               Homeowner Accounts
               <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600 bg-blue-100 text-blue-700">

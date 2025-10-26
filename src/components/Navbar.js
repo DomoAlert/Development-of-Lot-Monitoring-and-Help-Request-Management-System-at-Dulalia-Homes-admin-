@@ -94,7 +94,7 @@ const Navbar = ({ onToggleCollapse }) => {
             <div className="p-1 rounded-lg bg-white/10">
               <img src={logo} alt="Dulalia Logo" className="h-10 w-10 object-contain" />
             </div>
-            {!isCollapsed && <h2 className="text-white font-bold text-lg">Dulalia</h2>}
+            {!isCollapsed && <h2 className="text-white font-bold text-lg">Dulalia Homes Executives</h2>}
           </div>
           {!isCollapsed && (
             <button

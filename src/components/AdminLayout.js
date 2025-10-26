@@ -20,7 +20,7 @@ function AdminLayout({ children }) {
   }, [darkMode]);
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="relative min-h-screen bg-gray-50 bg-gray-50">
       {/* Background Image (subtle) */}
       <div
         className="absolute inset-0 z-0 opacity-10"
@@ -33,7 +33,7 @@ function AdminLayout({ children }) {
         aria-hidden="true"
       />
       {/* Readability overlay */}
-      <div className="absolute inset-0 z-10 bg-white/70 dark:bg-gray-900/70"></div>
+      <div className="absolute inset-0 z-10 bg-white/70 bg-gray-50/70"></div>
 
       {/* Main layout container */}
       <div className="relative z-20 flex min-h-screen">

@@ -542,12 +542,12 @@ const LotStatus = () => {
   return (
     <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+          <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
             <FaHome className="mr-3 text-blue-500 text-2xl" />
             Lot Monitoring
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">Monitor and manage residential lots in Dulalia Homes</p>
+          <p className="text-gray-600 text-gray-700 mt-2">Monitor and manage residential lots in Dulalia Homes</p>
         </div>
 
         {/* Statistics Cards */}

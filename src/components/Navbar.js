@@ -316,7 +316,7 @@ const Navbar = ({ onToggleCollapse }) => {
                   toggleDarkMode();
                   setShowSettings(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#9F7AEA]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 text-gray-700 hover:bg-[#9F7AEA]/20 hover:bg-[#9F7AEA]/20 flex items-center space-x-2 transition-colors duration-200"
               >
                 {darkMode ? (
                   <>
@@ -330,13 +330,13 @@ const Navbar = ({ onToggleCollapse }) => {
                   </>
                 )}
               </button>
-              <hr className="my-1 border-gray-200 dark:border-gray-700" />
+              <hr className="my-1 border-gray-200 border-gray-200" />
               <button
                 onClick={() => {
                   setShowSettings(false);
                   handleLogout();
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#9F7AEA]/20 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 text-red-600 hover:bg-[#9F7AEA]/20 hover:bg-[#9F7AEA]/20 flex items-center space-x-2 transition-colors duration-200"
               >
                 <MdLogout className="text-lg" />
                 <span>Logout</span>

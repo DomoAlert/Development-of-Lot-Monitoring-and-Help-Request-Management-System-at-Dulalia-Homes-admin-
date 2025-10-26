@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { UserProvider } from './context/UserContext';
 import { PageTitleProvider } from './context/PageTitleContext';
-import Navbar from './components/Navbar';
+
 import Login from './pages/Login';
 import Dashboard from './pages/Admin/Dashboard';
 import Inventory from './pages/Admin/Inventory';

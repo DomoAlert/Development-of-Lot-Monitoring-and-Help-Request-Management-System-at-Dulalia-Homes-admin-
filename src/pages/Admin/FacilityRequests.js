@@ -689,16 +689,16 @@ function FacilityRequests() {
   return (
     <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <div className="flex flex-wrap justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+              <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 Facility Requests Management
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-2">Manage community facilities and facility usage requests</p>
+              <p className="text-gray-600 text-gray-700 mt-2">Manage community facilities and facility usage requests</p>
             </div>
             <button
               onClick={refreshData}
@@ -1011,9 +1011,9 @@ function FacilityRequests() {
                 </div>
 
                 {selectedRequest.rejection_reason && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                    <h4 className="font-medium text-red-800 dark:text-red-300">Rejection Reason:</h4>
-                    <p className="text-red-700 dark:text-red-200">{selectedRequest.rejection_reason}</p>
+                    <div className="mt-4 p-3 bg-red-50 bg-red-50 border border-red-200 border-red-200 rounded-md">
+                    <h4 className="font-medium text-red-800 text-red-700">Rejection Reason:</h4>
+                    <p className="text-red-700 text-red-600">{selectedRequest.rejection_reason}</p>
                   </div>
                 )}
               </div>
@@ -1094,17 +1094,17 @@ function FacilityRequests() {
         }
       >
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
             Rejection Reason (Required)
           </label>
           <textarea
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary dark:focus:ring-secondary dark:bg-gray-700 dark:text-white"
+            className="w-full p-2 border border-gray-300 border-gray-300 rounded-md focus:ring-primary focus:ring-primary bg-white text-black"
             rows={4}
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             placeholder="Please provide a detailed reason for rejection. This will be visible to the homeowner."
           ></textarea>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500 text-gray-600">
             This comment will be stored in the database and sent as a notification to the homeowner.
           </p>
         </div>

@@ -181,12 +181,12 @@ const Feedback = () => {
     return (
         <ResponsiveLayout>
             <div className="pt-20 px-6 max-w-7xl mx-auto">
-                <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+                <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+                    <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
                         <FaCommentAlt className="mr-3 text-blue-500" />
                         User Feedbacks
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-300 mt-2">View and manage feedback from community members</p>
+                    <p className="text-gray-600 text-gray-700 mt-2">View and manage feedback from community members</p>
                 </div>
                 <div className="flex justify-between items-center mb-6">
                     <button 
@@ -204,10 +204,10 @@ const Feedback = () => {
                 {/* Filter section */}
                 {isFilterExpanded && (
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-100 transition-all">
-                        <h3 className="font-semibold text-gray-700 dark:text-white mb-4 border-b pb-2">Filter Options</h3>
+                        <h3 className="font-semibold text-gray-700 text-black mb-4 border-b pb-2">Filter Options</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-black-700 dark:text-black-300 mb-2">
+                                <label className="block text-sm font-medium text-black-700 text-gray-700 mb-2">
                                     Filter by Rating
                                 </label>
                                 <CustomSelect
@@ -227,7 +227,7 @@ const Feedback = () => {
                             </div>
                             
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
                                     Filter by Service
                                 </label>
                                 <CustomSelect
@@ -254,7 +254,7 @@ const Feedback = () => {
                             </div>
                         </div>
                         <div className="mt-6 pt-4 border-t border-gray-100">
-                            <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center justify-end">
+                            <p className="text-sm text-gray-600 text-gray-700 flex items-center justify-end">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -408,7 +408,7 @@ const Feedback = () => {
                     onClick={handleOutsideClick}
                 >
                     <div 
-                        className="bg-white dark:bg-gray-800 rounded-xl p-0 max-w-lg w-full mx-4 shadow-2xl transform transition-all animate-fadeIn overflow-hidden"
+                        className="bg-white bg-white rounded-xl p-0 max-w-lg w-full mx-4 shadow-2xl transform transition-all animate-fadeIn overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header with rating stars */}
@@ -439,14 +439,14 @@ const Feedback = () => {
                         <div className="p-6">
                             {/* User and service information */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                                    <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">From</h3>
+                                <div className="bg-gray-50 bg-gray-50 rounded-lg p-4">
+                                    <h3 className="text-sm text-gray-500 text-gray-600 mb-1">From</h3>
                                     <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300 font-semibold uppercase">
+                                        <div className="flex-shrink-0 h-10 w-10 bg-blue-100 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-blue-700 font-semibold uppercase">
                                             {selectedFeedback.userName.charAt(0)}
                                         </div>
                                         <div className="ml-3">
-                                            <p className="font-medium text-gray-800 dark:text-gray-200">{selectedFeedback.userName}</p>
+                                            <p className="font-medium text-gray-800 text-gray-800">{selectedFeedback.userName}</p>
                                             {selectedFeedback.houseNo && (
                                                 <p className="text-xs text-gray-500">House #{selectedFeedback.houseNo}</p>
                                             )}
@@ -454,10 +454,10 @@ const Feedback = () => {
                                     </div>
                                 </div>
                                 
-                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                                    <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Service</h3>
+                                <div className="bg-gray-50 bg-gray-50 rounded-lg p-4">
+                                    <h3 className="text-sm text-gray-500 text-gray-600 mb-1">Service</h3>
                                     <div>
-                                        <span className="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                        <span className="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
                                             {selectedFeedback.serviceName}
                                         </span>
                                         {selectedFeedback.type_of_request && selectedFeedback.type_of_request !== selectedFeedback.serviceName && (
@@ -468,27 +468,27 @@ const Feedback = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                                    <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Date</h3>
+                                <div className="bg-gray-50 bg-gray-50 rounded-lg p-4">
+                                    <h3 className="text-sm text-gray-500 text-gray-600 mb-1">Date</h3>
                                     <div className="flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <p className="ml-2 font-medium text-gray-800 dark:text-gray-200">{selectedFeedback.date}</p>
+                                        <p className="ml-2 font-medium text-gray-800 text-gray-800">{selectedFeedback.date}</p>
                                     </div>
                                 </div>
 
                                 {selectedFeedback.issue && (
-                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                                        <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Service Issue</h3>
-                                        <p className="text-gray-800 dark:text-gray-200 text-sm">{selectedFeedback.issue}</p>
+                                    <div className="bg-gray-50 bg-gray-50 rounded-lg p-4">
+                                        <h3 className="text-sm text-gray-500 text-gray-600 mb-1">Service Issue</h3>
+                                        <p className="text-gray-800 text-gray-800 text-sm">{selectedFeedback.issue}</p>
                                     </div>
                                 )}
                             </div>
                             
                             <div>
-                                <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Feedback Message</h3>
-                                <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                                <h3 className="text-sm text-gray-500 text-gray-600 mb-1">Feedback Message</h3>
+                                <div className="mt-2 p-4 bg-gray-50 bg-gray-50 rounded-lg border border-gray-100 border-gray-200 text-gray-700 text-gray-800">
                                     {selectedFeedback.feedback}
                                 </div>
                             </div>

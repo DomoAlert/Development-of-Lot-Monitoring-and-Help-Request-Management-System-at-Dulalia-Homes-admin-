@@ -437,14 +437,14 @@ function Staff() {
   return (
     <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+          <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             Staff Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage maintenance personnel and community staff members</p>
+          <p className="text-gray-600 text-gray-700 mt-2">Manage maintenance personnel and community staff members</p>
         </div>
         <div className="flex justify-between items-center mb-6">
           <div className="flex space-x-3">
@@ -486,12 +486,12 @@ function Staff() {
             placeholder="Search staff by name, email, or position..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select 
             value={positionFilter}
             onChange={(e) => setPositionFilter(e.target.value)}
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Positions</option>
             {availablePositions.map((position, index) => (
@@ -511,14 +511,14 @@ function Staff() {
               }
             }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl my-8">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
+              <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800 text-black">
                   {isEditing ? 'Edit Staff Member' : 'Add New Staff Member'}
                 </h2>
                 <button 
                   onClick={closeForm}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  className="text-gray-500 hover:text-gray-700 text-gray-600 hover:text-gray-700"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -528,8 +528,8 @@ function Staff() {
               
               <form onSubmit={isEditing ? handleUpdateStaff : handleAddStaff} className="p-6 space-y-6">
                 {/* Personal Information Section */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                  <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-3 flex items-center">
+                <div className="bg-blue-50 bg-blue-50 rounded-lg p-4 border border-blue-200 border-blue-200">
+                  <h3 className="font-medium text-blue-800 text-blue-800 mb-3 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
@@ -537,7 +537,7 @@ function Staff() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         First Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -548,12 +548,12 @@ function Staff() {
                           setFormData({...formData, firstName: e.target.value});
                           setTimeout(handleNameChange, 0);
                         }}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="John"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Last Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -564,28 +564,28 @@ function Staff() {
                           setFormData({...formData, lastName: e.target.value});
                           setTimeout(handleNameChange, 0);
                         }}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Doe"
                       />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                       Full Name (Auto-generated)
                     </label>
                     <input
                       type="text"
                       value={formData.name}
                       readOnly
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-gray-50 bg-gray-50 text-gray-700 text-gray-700"
                       placeholder="Full name will appear here"
                     />
                   </div>
                 </div>
 
                 {/* Job Information Section */}
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                  <h3 className="font-medium text-green-800 dark:text-green-200 mb-3 flex items-center">
+                <div className="bg-green-50 bg-green-50 rounded-lg p-4 border border-green-200 border-green-200">
+                  <h3 className="font-medium text-green-800 text-green-800 mb-3 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H8a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2" />
                     </svg>
@@ -593,14 +593,14 @@ function Staff() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Position <span className="text-red-500">*</span>
                       </label>
                       <select
                         required
                         value={formData.position}
                         onChange={(e) => setFormData({...formData, position: e.target.value, specialization: ''})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select Position</option>
                         {availablePositions.map((position, index) => (
@@ -609,13 +609,13 @@ function Staff() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Specialization
                       </label>
                       <select
                         value={formData.specialization}
                         onChange={(e) => setFormData({...formData, specialization: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={!formData.position}
                       >
                         <option value="">Select Specialization</option>
@@ -628,8 +628,8 @@ function Staff() {
                 </div>
 
                 {/* Contact Information Section */}
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                  <h3 className="font-medium text-purple-800 dark:text-purple-200 mb-3 flex items-center">
+                <div className="bg-purple-50 bg-purple-50 rounded-lg p-4 border border-purple-200 border-purple-200">
+                  <h3 className="font-medium text-purple-800 text-purple-800 mb-3 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
@@ -637,7 +637,7 @@ function Staff() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Email Address <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -645,12 +645,12 @@ function Staff() {
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="john.doe@example.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Contact Number <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -661,23 +661,23 @@ function Staff() {
                           const formatted = formatPhoneNumber(e.target.value);
                           setFormData({...formData, contactNumber: formatted});
                         }}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="0912 345 6789"
                       />
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: 09XX XXX XXXX</p>
+                      <p className="mt-1 text-xs text-gray-500 text-gray-600">Format: 09XX XXX XXXX</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Status Section */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                     Status
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -685,11 +685,11 @@ function Staff() {
                 </div>
 
                 {/* Form Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 border-gray-200">
                   <button
                     type="button"
                     onClick={closeForm}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
                     Cancel
                   </button>
@@ -706,14 +706,14 @@ function Staff() {
         )}
 
         {/* Staff table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 border-b border-gray-100 dark:border-gray-600">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+        <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-200">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 from-blue-50 to-indigo-50 border-b border-gray-100 border-gray-300">
+            <h2 className="text-lg font-semibold text-gray-800 text-black flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               Staff Members
-              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
+              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 bg-blue-100 text-blue-600 text-blue-700">
                 {filteredStaff.length} {filteredStaff.length === 1 ? 'member' : 'members'}
               </span>
             </h2>
@@ -722,14 +722,14 @@ function Staff() {
           {loading ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="text-gray-600 dark:text-gray-300">Loading staff members...</p>
+              <p className="text-gray-600 text-gray-700">Loading staff members...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700">
+              <table className="min-w-full divide-y divide-gray-200 divide-gray-200 border-collapse">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 from-blue-50 to-indigo-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -737,7 +737,7 @@ function Staff() {
                         <span>Staff Member</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H8a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2" />
@@ -745,7 +745,7 @@ function Staff() {
                         <span>Position & Specialization</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -753,7 +753,7 @@ function Staff() {
                         <span>Contact</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -761,12 +761,12 @@ function Staff() {
                         <span>Status</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <span>Actions</span>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white bg-white divide-y divide-gray-200 divide-gray-200">
                   {filteredStaff.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="px-6 py-12 text-center">
@@ -774,8 +774,8 @@ function Staff() {
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                           </svg>
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No staff members found</h3>
-                          <p className="text-gray-500 dark:text-gray-400 mb-4">Get started by adding your first staff member.</p>
+                          <h3 className="text-lg font-medium text-gray-900 text-black mb-2">No staff members found</h3>
+                          <p className="text-gray-500 text-gray-600 mb-4">Get started by adding your first staff member.</p>
                           <button
                             onClick={() => {
                               setIsEditing(false);
@@ -791,7 +791,7 @@ function Staff() {
                     </tr>
                   ) : (
                     filteredStaff.map((staff) => (
-                      <tr key={staff.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <tr key={staff.id} className="hover:bg-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -803,34 +803,34 @@ function Staff() {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              <div className="text-sm font-medium text-gray-900 text-black">
                                 {staff.name || `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown'}
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                              <div className="text-sm text-gray-500 text-gray-600">
                                 {staff.role || 'Staff'}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                          <div className="text-sm text-gray-900 text-black">
                             {availablePositions.find(p => p.id === staff.position)?.name || staff.position || 'No position assigned'}
                           </div>
                           {staff.specialization && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <div className="text-xs text-gray-500 text-gray-600 mt-1">
                               {staff.specialization}
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">{staff.email || 'No email'}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{staff.contactNumber || 'No phone'}</div>
+                          <div className="text-sm text-gray-900 text-black">{staff.email || 'No email'}</div>
+                          <div className="text-sm text-gray-500 text-gray-600">{staff.contactNumber || 'No phone'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             staff.status === 'Active' 
-                              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
-                              : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                              ? 'bg-green-100 bg-green-100 text-green-800 text-green-800' 
+                              : 'bg-red-100 bg-red-100 text-red-800 text-red-800'
                           }`}>
                             {staff.status || 'Active'}
                           </span>
@@ -896,14 +896,14 @@ function Staff() {
               }
             }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl my-8">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-3xl my-8">
+              <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800 text-black">
                   {isEditingPosition ? 'Edit Position' : 'Manage Positions & Specializations'}
                 </h2>
                 <button 
                   onClick={closePositionForm}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  className="text-gray-500 hover:text-gray-700 text-gray-600 hover:text-gray-700"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -916,7 +916,7 @@ function Staff() {
                   // Edit Position Form
                   <form onSubmit={handleUpdatePosition} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Position Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -924,13 +924,13 @@ function Staff() {
                         required
                         value={positionFormData.name}
                         onChange={(e) => setPositionFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., Electrician"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Specializations
                       </label>
                       <div className="flex gap-2 mb-2">
@@ -944,7 +944,7 @@ function Staff() {
                               handleAddSpecialization();
                             }
                           }}
-                          className="flex-1 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="Add specialization"
                         />
                         <button
@@ -957,12 +957,12 @@ function Staff() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {(positionFormData.specializations || []).map((spec, index) => (
-                          <span key={`edit-spec-${index}-${spec}`} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                          <span key={`edit-spec-${index}-${spec}`} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
                             {spec}
                             <button
                               type="button"
                               onClick={() => handleRemoveSpecialization(index)}
-                              className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                              className="ml-2 text-blue-600 text-blue-600 hover:text-blue-800 hover:text-blue-800"
                             >
                               ×
                             </button>
@@ -971,11 +971,11 @@ function Staff() {
                       </div>
                     </div>
                     
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 border-gray-200">
                       <button
                         type="button"
                         onClick={closePositionForm}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                       >
                         Cancel
                       </button>
@@ -991,8 +991,8 @@ function Staff() {
                   // Position List and Add New Position Form
                   <div className="space-y-6">
                     {/* Add New Position Form */}
-                    <form onSubmit={handleAddPosition} className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                      <h3 className="font-medium text-green-800 dark:text-green-200 mb-3">Add New Position</h3>
+                    <form onSubmit={handleAddPosition} className="bg-green-50 bg-green-50 rounded-lg p-4 border border-green-200 border-green-200">
+                      <h3 className="font-medium text-green-800 text-green-800 mb-3">Add New Position</h3>
                       <div className="space-y-3">
                         <div>
                           <input
@@ -1000,7 +1000,7 @@ function Staff() {
                             required
                             value={positionFormData.name}
                             onChange={(e) => setPositionFormData(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Position name (e.g., Electrician)"
                           />
                         </div>
@@ -1015,7 +1015,7 @@ function Staff() {
                                 handleAddSpecialization();
                               }
                             }}
-                            className="flex-1 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Add specialization"
                           />
                           <button
@@ -1028,12 +1028,12 @@ function Staff() {
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {(positionFormData.specializations || []).map((spec, index) => (
-                            <span key={`add-spec-${index}-${spec}`} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                            <span key={`add-spec-${index}-${spec}`} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
                               {spec}
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSpecialization(index)}
-                                className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                                className="ml-2 text-blue-600 text-blue-600 hover:text-blue-800 hover:text-blue-800"
                               >
                                 ×
                               </button>
@@ -1051,16 +1051,16 @@ function Staff() {
 
                     {/* Existing Positions List */}
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white mb-3">Existing Positions</h3>
+                      <h3 className="font-medium text-gray-800 text-black mb-3">Existing Positions</h3>
                       <div className="space-y-3">
                         {availablePositions.map((position, index) => (
-                          <div key={`${position.id}-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                          <div key={`${position.id}-${index}`} className="bg-gray-50 bg-white rounded-lg p-4 border border-gray-200 border-gray-300">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 dark:text-white">{position.name}</h4>
+                                <h4 className="font-medium text-gray-900 text-black">{position.name}</h4>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   {position.specializations?.map((spec, specIndex) => (
-                                    <span key={`${position.id}-spec-${specIndex}`} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                    <span key={`${position.id}-spec-${specIndex}`} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
                                       {spec}
                                     </span>
                                   ))}

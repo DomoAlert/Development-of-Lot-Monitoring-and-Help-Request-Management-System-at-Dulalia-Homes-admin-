@@ -124,7 +124,7 @@ function ResponsiveLayout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 bg-gray-50 flex flex-col">
       {/* Background Image (subtle) */}
       <div
         className="fixed inset-0 z-0 opacity-10"
@@ -137,7 +137,7 @@ function ResponsiveLayout({ children }) {
         aria-hidden="true"
       />
       {/* Readability overlay */}
-      <div className="fixed inset-0 z-10 bg-white/70 dark:bg-gray-900/70"></div>
+      <div className="fixed inset-0 z-10 bg-white/70 bg-gray-50/70"></div>
 
       {/* Main layout container */}
       <div className="relative z-20 flex min-h-screen">
@@ -330,21 +330,21 @@ function ResponsiveLayout({ children }) {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
-          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+          <header className="bg-white bg-white border-b border-gray-200 border-gray-200 shadow-sm">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 {/* Hamburger Menu for Mobile */}
                 <button
                   id="hamburger-button"
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:text-gray-700"
                 >
                   <FaBars className="h-6 w-6" />
                 </button>
 
                 {/* Welcome Message */}
                 <div className="flex-1 lg:ml-0">
-                  <h1 className="font-semibold text-lg text-gray-800 dark:text-white">
+                  <h1 className="font-semibold text-lg text-gray-800 text-black">
                     Welcome, Admin
                   </h1>
                 </div>
@@ -353,19 +353,19 @@ function ResponsiveLayout({ children }) {
                 <div className="relative" ref={settingsRef}>
                   <button
                     onClick={() => setShowSettings(!showSettings)}
-                    className="flex items-center space-x-2 focus:outline-none transform hover:scale-105 transition-transform duration-200 p-2 rounded-md text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    className="flex items-center space-x-2 focus:outline-none transform hover:scale-105 transition-transform duration-200 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:text-gray-700"
                   >
                     <FaCog className="h-5 w-5" />
                     <span className="hidden sm:block font-medium">Settings</span>
                   </button>
                   {showSettings && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
+                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border bg-white bg-white border-gray-200 border-gray-200 z-50">
                       <button
                         onClick={() => {
                           toggleDarkMode();
                           setShowSettings(false);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 text-gray-700 hover:bg-gray-100  flex items-center space-x-2 transition-colors duration-200"
                       >
                         {darkMode ? (
                           <>
@@ -379,13 +379,13 @@ function ResponsiveLayout({ children }) {
                           </>
                         )}
                       </button>
-                      <hr className="my-1 border-gray-200 dark:border-gray-700" />
+                      <hr className="my-1 border-gray-200 border-gray-200" />
                       <button
                         onClick={() => {
                           setShowSettings(false);
                           handleLogout();
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600  hover:bg-gray-100  flex items-center space-x-2 transition-colors duration-200"
                       >
                         <FaSignOutAlt className="text-lg" />
                         <span>Logout</span>
@@ -397,7 +397,7 @@ function ResponsiveLayout({ children }) {
                 {/* Collapse Toggle for Large Screens */}
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="hidden lg:block p-2 rounded-md text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 ml-2"
+                  className="hidden lg:block p-2 rounded-md text-gray-500 hover:text-gray-700 hover:text-gray-700 ml-2"
                 >
                   <svg
                     className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}
@@ -427,22 +427,22 @@ function ResponsiveLayout({ children }) {
           className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && setShowLogoutConfirm(false)}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-center mb-4">
-              <div className="h-12 w-12 rounded-full flex items-center justify-center bg-red-100 dark:bg-red-900">
-                <MdWarning className="text-red-600 dark:text-red-400" size={24} />
+              <div className="h-12 w-12 rounded-full flex items-center justify-center bg-red-100 ">
+                <MdWarning className="text-red-600 " size={24} />
               </div>
             </div>
-            <h3 className="text-lg font-medium text-center mb-2 text-gray-900 dark:text-white">
+            <h3 className="text-lg font-medium text-center mb-2 text-gray-900 text-black">
               Confirm Logout
             </h3>
-            <p className="text-sm text-center mb-6 text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-center mb-6 text-gray-500 text-gray-600">
               Are you sure you want to log out?
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="px-4 py-2 rounded-md transition-colors duration-200 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
+                className="px-4 py-2 rounded-md transition-colors duration-200 bg-gray-200 hover:bg-gray-300   text-gray-900 text-black"
               >
                 Cancel
               </button>

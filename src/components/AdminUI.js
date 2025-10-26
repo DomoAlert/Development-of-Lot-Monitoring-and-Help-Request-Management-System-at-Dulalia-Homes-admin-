@@ -185,12 +185,12 @@ export const StatCard = ({
   ...props 
 }) => {
   const colorVariants = {
-    primary: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300",
-    secondary: "bg-secondary/10 text-yellow-800 dark:bg-secondary/20 dark:text-yellow-300",
-    success: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    danger: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-    warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-    info: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    primary: "bg-primary/10 text-primary bg-primary/10 text-primary",
+    secondary: "bg-secondary/10 text-yellow-800 bg-secondary/10 text-yellow-800",
+    success: "bg-green-100 text-green-800 bg-green-100 text-green-800",
+    danger: "bg-red-100 text-red-800 bg-red-100 text-red-800",
+    warning: "bg-yellow-100 text-yellow-800 bg-yellow-100 text-yellow-800",
+    info: "bg-blue-100 text-blue-800 bg-blue-100 text-primary",
   };
 
   const iconColorClass = colorVariants[iconColor] || colorVariants.primary;
@@ -268,15 +268,15 @@ export const Modal = ({
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
         
         {/* Modal panel */}
-        <div className={`inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ${sizeClass} w-full ${className}`}>
+        <div className={`inline-block align-bottom bg-white bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ${sizeClass} w-full ${className}`}>
           {/* Header */}
-          <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-600">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white transition-colors duration-200" id="modal-title">
+          <div className="bg-gray-50 bg-gray-50 px-4 py-3 flex justify-between items-center border-b border-gray-200 border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900 text-black transition-colors duration-200" id="modal-title">
               {title}
             </h3>
             <button
               type="button"
-              className="text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200 transition-colors duration-200"
+              className="text-gray-400 hover:text-gray-500 text-gray-700 hover:text-gray-500 transition-colors duration-200"
               onClick={onClose}
             >
               <span className="sr-only">Close</span>
@@ -285,13 +285,13 @@ export const Modal = ({
           </div>
           
           {/* Body */}
-          <div className="px-4 py-3 sm:p-6 text-gray-900 dark:text-white transition-colors duration-200">
+          <div className="px-4 py-3 sm:p-6 text-gray-900 text-black transition-colors duration-200">
             {children}
           </div>
           
           {/* Footer */}
           {footer && (
-            <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 dark:border-gray-600 transition-colors duration-200">
+            <div className="bg-gray-50 bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 border-gray-200 transition-colors duration-200">
               {footer}
             </div>
           )}
@@ -316,7 +316,7 @@ export const DataSearch = ({
     <div className={`relative ${className}`}>
       <input
         type="text"
-        className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-secondary focus:border-primary dark:focus:border-secondary text-sm text-gray-900 dark:text-white transition-colors duration-200"
+        className="block w-full pl-10 pr-3 py-2 border border-gray-300 border-gray-200 rounded-md leading-5 bg-white bg-gray-50 placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary focus:ring-primary focus:border-primary focus:border-primary text-sm text-gray-900 text-black transition-colors duration-200"
         placeholder={placeholder}
         value={value}
         onChange={onChange}
@@ -324,7 +324,7 @@ export const DataSearch = ({
         {...props}
       />
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <svg className="h-5 w-5 text-gray-400 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <svg className="h-5 w-5 text-gray-400 text-gray-700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
         </svg>
       </div>

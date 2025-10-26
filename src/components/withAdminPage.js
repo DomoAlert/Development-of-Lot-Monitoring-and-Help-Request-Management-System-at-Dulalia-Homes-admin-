@@ -35,14 +35,14 @@ const withAdminPage = (options = {}) => {
         <ResponsiveLayout>
           {showHeader && (
             <div className="pt-20 px-6 max-w-7xl mx-auto">
-              <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+              <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+                    <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
                       {icon && <span className="mr-3 text-blue-500">{icon}</span>}
                       {title}
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-300 mt-2">
+                    <p className="text-gray-600 text-gray-700 mt-2">
                       {title === 'Visitor Logs' && 'Track and manage all visitor entries and access logs'}
                     </p>
                   </div>

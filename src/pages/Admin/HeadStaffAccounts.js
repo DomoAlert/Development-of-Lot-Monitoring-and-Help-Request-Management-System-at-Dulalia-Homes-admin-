@@ -457,14 +457,14 @@ function HeadStaffAccounts() {
     <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+          <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
             Head Staff Accounts
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage head staff accounts and their information</p>
+          <p className="text-gray-600 text-gray-700 mt-2">Manage head staff accounts and their information</p>
         </div>
 
         {/* Add Button Section */}
@@ -507,13 +507,13 @@ function HeadStaffAccounts() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Search by name or email..."
             />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-48 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-48 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -523,14 +523,14 @@ function HeadStaffAccounts() {
         </div>
 
         {/* Table Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 border-b border-gray-100 dark:border-gray-600">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+        <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-200">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 from-blue-50 to-indigo-50 border-b border-gray-100 border-gray-300">
+            <h2 className="text-lg font-semibold text-gray-800 text-black flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               Head Staff Accounts
-              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
+              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 bg-blue-100 text-blue-600 text-blue-700">
                 {filteredHeadStaff.length} {filteredHeadStaff.length === 1 ? 'staff' : 'staff'}
               </span>
             </h2>
@@ -539,14 +539,14 @@ function HeadStaffAccounts() {
           {loading ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="text-gray-600 dark:text-gray-300">Loading head staff accounts...</p>
+              <p className="text-gray-600 text-gray-700">Loading head staff accounts...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700">
+              <table className="min-w-full divide-y divide-gray-200 divide-gray-200 border-collapse">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 from-blue-50 to-indigo-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -554,7 +554,7 @@ function HeadStaffAccounts() {
                         <span>Staff Details</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -562,7 +562,7 @@ function HeadStaffAccounts() {
                         <span>Email</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -570,7 +570,7 @@ function HeadStaffAccounts() {
                         <span>Department</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -578,7 +578,7 @@ function HeadStaffAccounts() {
                         <span>Phone</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -586,12 +586,12 @@ function HeadStaffAccounts() {
                         <span>Status</span>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
                       <span>Actions</span>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white bg-white divide-y divide-gray-200 divide-gray-200">
                   {filteredHeadStaff.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="px-6 py-12 text-center">
@@ -599,8 +599,8 @@ function HeadStaffAccounts() {
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No head staff accounts found</h3>
-                          <p className="text-gray-500 dark:text-gray-400 mb-4">Get started by creating your first head staff account.</p>
+                          <h3 className="text-lg font-medium text-gray-900 text-black mb-2">No head staff accounts found</h3>
+                          <p className="text-gray-500 text-gray-600 mb-4">Get started by creating your first head staff account.</p>
                           <button
                             onClick={() => {
                               setIsEditing(false);
@@ -616,7 +616,7 @@ function HeadStaffAccounts() {
                     </tr>
                   ) : (
                     filteredHeadStaff.map((staff) => (
-                      <tr key={staff.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <tr key={staff.id} className="hover:bg-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -625,35 +625,35 @@ function HeadStaffAccounts() {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              <div className="text-sm font-medium text-gray-900 text-black">
                                 {staff.name}
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                              <div className="text-sm text-gray-500 text-gray-600">
                                 {staff.position}
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-black">
                           {staff.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                          <div className="text-sm text-gray-900 text-black">
                             {staff.position || 'Staff'}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-xs text-gray-500 text-gray-600">
                             {staff.department || staffRoles.find(r => r.id === staff.role)?.description || 'Community maintenance staff'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-black">
                           {staff.phone}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               staff.status === 'active'
-                                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                                ? 'bg-green-100 bg-green-100 text-green-800 text-green-800'
+                                : 'bg-red-100 bg-red-100 text-red-800 text-red-800'
                             }`}
                           >
                             {staff.status === 'active' ? 'Active' : 'Inactive'}
@@ -698,15 +698,15 @@ function HeadStaffAccounts() {
             <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={handleCancelForm}></div>
               <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-6 pt-5 pb-6 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="inline-block align-bottom bg-white bg-white rounded-lg px-6 pt-5 pb-6 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white" id="modal-title">
+                    <h3 className="text-lg font-medium text-gray-900 text-black" id="modal-title">
                       {isEditing ? 'Edit Head Staff Account' : 'Add New Head Staff Account'}
                     </h3>
                     <button
                       onClick={handleCancelForm}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="text-gray-400 hover:text-gray-600 hover:text-gray-600"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -715,7 +715,7 @@ function HeadStaffAccounts() {
                   </div>
                   <form onSubmit={isEditing ? handleUpdateHeadStaff : handleAddHeadStaff} className="space-y-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Full Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -724,19 +724,19 @@ function HeadStaffAccounts() {
                         id="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="John Doe"
                         required
                       />
                       {!isEditing && (
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <p className="mt-1 text-xs text-gray-500 text-gray-600">
                           Email will be auto-generated based on name
                         </p>
                       )}
                     </div>
 
                     <div>
-                      <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="role" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Role/Department <span className="text-red-500">*</span>
                       </label>
                       <select
@@ -744,7 +744,7 @@ function HeadStaffAccounts() {
                         id="role"
                         value={formData.role}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                       >
                         <option value="">Select a role...</option>
@@ -755,14 +755,14 @@ function HeadStaffAccounts() {
                         ))}
                       </select>
                       {formData.role && (
-                        <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                        <p className="mt-1 text-xs text-blue-600 text-blue-600">
                           {staffRoles.find(r => r.id === formData.role)?.description}
                         </p>
                       )}
                     </div>
                     
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Email Address <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
@@ -773,23 +773,23 @@ function HeadStaffAccounts() {
                           value={formData.email}
                           onChange={handleInputChange}
                           disabled={isEditing || !isEditing}
-                          className={`w-full px-3 py-2 pr-24 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          className={`w-full px-3 py-2 pr-24 border border-gray-300 border-gray-300 rounded-md text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                             isEditing 
-                              ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' 
-                              : 'bg-gray-50 dark:bg-gray-600'
+                              ? 'bg-gray-100 bg-gray-50 cursor-not-allowed' 
+                              : 'bg-gray-50 bg-gray-50'
                           }`}
                           placeholder="Auto-generated"
                           required
                           readOnly
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <span className="text-xs text-gray-500 bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">
+                          <span className="text-xs text-gray-500 bg-blue-100 bg-blue-100 px-2 py-1 rounded">
                             @headstaff.com
                           </span>
                         </div>
                       </div>
                       {isEditing && (
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <p className="mt-1 text-xs text-gray-500 text-gray-600">
                           Email cannot be changed after account creation
                         </p>
                       )}
@@ -797,7 +797,7 @@ function HeadStaffAccounts() {
                     
                     {!isEditing && (
                       <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                           Password <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -806,7 +806,7 @@ function HeadStaffAccounts() {
                           id="password"
                           value={formData.password}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Minimum 6 characters"
                           minLength="6"
                           required
@@ -815,7 +815,7 @@ function HeadStaffAccounts() {
                     )}
                     
                     <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Phone Number <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -824,7 +824,7 @@ function HeadStaffAccounts() {
                         id="phone"
                         value={formData.phone}
                         onChange={handlePhoneNumberChange}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="09XXXXXXXXX"
                         required
                       />
@@ -837,9 +837,9 @@ function HeadStaffAccounts() {
                         type="checkbox"
                         checked={formData.status === 'active'}
                         onChange={handleStatusToggle}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 border-gray-300 rounded bg-white bg-white"
                       />
-                      <label htmlFor="status" className="ml-2 block text-sm text-gray-900 dark:text-white">
+                      <label htmlFor="status" className="ml-2 block text-sm text-gray-900 text-black">
                         Active Account
                       </label>
                     </div>
@@ -847,7 +847,7 @@ function HeadStaffAccounts() {
                     <div className="flex justify-end space-x-3 pt-4">
                       <button
                         type="button"
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                         onClick={handleCancelForm}
                       >
                         Cancel
@@ -879,20 +879,20 @@ function HeadStaffAccounts() {
                 onClick={() => setConfirmDelete(false)}
               ></div>
               <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-6 pt-5 pb-6 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="inline-block align-bottom bg-white bg-white rounded-lg px-6 pt-5 pb-6 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <div>
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 mb-4">
-                    <svg className="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 bg-red-100 mb-4">
+                    <svg className="h-6 w-6 text-red-600 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
                   <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2" id="modal-title">
+                    <h3 className="text-lg font-medium text-gray-900 text-black mb-2" id="modal-title">
                       Delete Head Staff Account
                     </h3>
                     <div className="mb-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Are you sure you want to delete <strong className="text-gray-900 dark:text-white">{staffToDelete.name}'s</strong> account? 
+                      <p className="text-sm text-gray-500 text-gray-600">
+                        Are you sure you want to delete <strong className="text-gray-900 text-black">{staffToDelete.name}'s</strong> account? 
                         This action cannot be undone and will permanently remove their access to the system.
                       </p>
                     </div>
@@ -901,7 +901,7 @@ function HeadStaffAccounts() {
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                     onClick={() => {
                       setConfirmDelete(false);
                       setStaffToDelete(null);
@@ -939,14 +939,14 @@ function HeadStaffAccounts() {
               }
             }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl my-8">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-3xl my-8">
+              <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800 text-black">
                   {isEditingDepartment ? 'Edit Department' : 'Manage Departments'}
                 </h2>
                 <button 
                   onClick={closeDepartmentForm}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  className="text-gray-500 hover:text-gray-700 text-gray-600 hover:text-gray-600"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -959,7 +959,7 @@ function HeadStaffAccounts() {
                   // Edit Department Form
                   <form onSubmit={handleUpdateDepartment} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Department Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -967,29 +967,29 @@ function HeadStaffAccounts() {
                         required
                         value={departmentFormData.name}
                         onChange={(e) => setDepartmentFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., Electrician"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                         Description
                       </label>
                       <textarea
                         value={departmentFormData.description}
                         onChange={(e) => setDepartmentFormData(prev => ({ ...prev, description: e.target.value }))}
                         rows="3"
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Department description..."
                       />
                     </div>
                     
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 border-gray-200">
                       <button
                         type="button"
                         onClick={closeDepartmentForm}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                       >
                         Cancel
                       </button>
@@ -1005,8 +1005,8 @@ function HeadStaffAccounts() {
                   // Department List and Add New Department Form
                   <div className="space-y-6">
                     {/* Add New Department Form */}
-                    <form onSubmit={handleAddDepartment} className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                      <h3 className="font-medium text-green-800 dark:text-green-200 mb-3">Add New Department</h3>
+                    <form onSubmit={handleAddDepartment} className="bg-green-50 bg-green-100/20 rounded-lg p-4 border border-green-200 border-green-200">
+                      <h3 className="font-medium text-green-800 text-green-800 mb-3">Add New Department</h3>
                       <div className="space-y-3">
                         <div>
                           <input
@@ -1014,7 +1014,7 @@ function HeadStaffAccounts() {
                             required
                             value={departmentFormData.name}
                             onChange={(e) => setDepartmentFormData(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Department name (e.g., Electrician)"
                           />
                         </div>
@@ -1023,7 +1023,7 @@ function HeadStaffAccounts() {
                             value={departmentFormData.description}
                             onChange={(e) => setDepartmentFormData(prev => ({ ...prev, description: e.target.value }))}
                             rows="2"
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Department description..."
                           />
                         </div>
@@ -1038,14 +1038,14 @@ function HeadStaffAccounts() {
 
                     {/* Existing Departments List */}
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white mb-3">Existing Departments</h3>
+                      <h3 className="font-medium text-gray-800 text-black mb-3">Existing Departments</h3>
                       <div className="space-y-3">
                         {staffRoles.map((department) => (
-                          <div key={department.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                          <div key={department.id} className="bg-gray-50 bg-white rounded-lg p-4 border border-gray-200 border-gray-300">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 dark:text-white">{department.name}</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{department.description}</p>
+                                <h4 className="font-medium text-gray-900 text-black">{department.name}</h4>
+                                <p className="text-sm text-gray-600 text-gray-600 mt-1">{department.description}</p>
                               </div>
                               <div className="flex space-x-2 ml-4">
                                 <button

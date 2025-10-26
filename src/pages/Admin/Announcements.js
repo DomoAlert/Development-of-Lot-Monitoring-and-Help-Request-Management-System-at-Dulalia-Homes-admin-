@@ -159,14 +159,14 @@ function Announcements() {
   return (
     <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <div className="flex flex-wrap justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+              <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
                 <MegaphoneIcon className="h-8 w-8 mr-3 text-blue-500" />
                 Announcements
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-2">Create and manage community announcements</p>
+              <p className="text-gray-600 text-gray-700 mt-2">Create and manage community announcements</p>
             </div>
             <button
               onClick={fetchAnnouncements}
@@ -204,15 +204,15 @@ function Announcements() {
         {/* Create/Edit Announcement Form */}
         {showForm && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-lg border border-gray-100 dark:border-gray-700 animate-fadeIn">
+            <div className="bg-white bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg border border-gray-100 border-gray-200 animate-fadeIn">
               <div className="flex justify-between items-center mb-6 border-b pb-3">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                <h2 className="text-xl font-bold text-gray-800 text-black flex items-center">
                   <MegaphoneIcon className="h-5 w-5 mr-2 text-blue-500" />
                   {isEditing ? 'Edit Announcement' : 'New Announcement'}
                 </h2>
                 <button 
                   onClick={closeForm}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  className="p-2 hover:bg-gray-100 hover:bg-gray-50 rounded-full transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -221,7 +221,7 @@ function Announcements() {
               </div>
               <form onSubmit={isEditing ? handleUpdateSubmit : handleCreateSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                     Title
                   </label>
                   <input
@@ -229,20 +229,20 @@ function Announcements() {
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter announcement title"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                       Type
                     </label>
                     <select 
                       required
                       value={formData.type}
                       onChange={(e) => setFormData({...formData, type: e.target.value})}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Notice">Notice</option>
                       <option value="Update">Update</option>
@@ -250,14 +250,14 @@ function Announcements() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                       Status
                     </label>
                     <select 
                       required
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
@@ -265,7 +265,7 @@ function Announcements() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                     Content
                   </label>
                   <textarea
@@ -273,20 +273,20 @@ function Announcements() {
                     rows="4"
                     value={formData.content}
                     onChange={(e) => setFormData({...formData, content: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter announcement content"
                   ></textarea>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                       Visible To
                     </label>
                     <select 
                       required
                       value={formData.visibleTo}
                       onChange={(e) => setFormData({...formData, visibleTo: e.target.value})}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="both">Everyone</option>
                       <option value="homeowner">Homeowners Only</option>
@@ -294,14 +294,14 @@ function Announcements() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
                       Target Audience
                     </label>
                     <select 
                       required
                       value={formData.targetAudience}
                       onChange={(e) => setFormData({...formData, targetAudience: e.target.value})}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="all">All</option>
                       <option value="guard">For Guards</option>
@@ -310,17 +310,17 @@ function Announcements() {
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
-                  <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="bg-blue-50 bg-blue-50 rounded-lg p-4 border border-blue-100 border-blue-200">
+                  <label className="flex items-center text-sm font-medium text-gray-700 text-gray-700">
                     <input
                       type="checkbox"
                       checked={formData.isVisible}
                       onChange={(e) => setFormData({...formData, isVisible: e.target.checked})}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded mr-2"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 border-gray-300 rounded mr-2"
                     />
                     Visible in App
                   </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+                  <p className="text-xs text-gray-500 text-gray-600 mt-1 ml-6">
                     When unchecked, the announcement will be hidden from all users.
                   </p>
                 </div>
@@ -328,7 +328,7 @@ function Announcements() {
                   <button
                     type="button"
                     onClick={closeForm}
-                    className="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+                    className="px-5 py-2.5 rounded-lg border border-gray-300 border-gray-300 text-gray-700 text-gray-700 hover:bg-gray-50 hover:bg-gray-50 font-medium transition-colors"
                   >
                     Cancel
                   </button>

@@ -570,7 +570,7 @@ function VisitorLogs() {
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary dark:focus:border-secondary focus:ring focus:ring-primary/20 dark:focus:ring-secondary/20 dark:bg-gray-700 dark:text-white"
+            className="block w-full rounded-md border-gray-300 border-gray-300 shadow-sm focus:border-primary focus:border-primary focus:ring focus:ring-primary/20 focus:ring-primary/20 bg-white text-black"
           />
           
           <Button 
@@ -660,7 +660,7 @@ function VisitorLogs() {
                 </TableBody>
               </Table>
               
-              <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="mt-4 text-sm text-gray-500 text-gray-600">
                 Showing {sortedVisitors.length} of {visitors.length} visitors
               </div>
             </>
@@ -722,11 +722,11 @@ function VisitorLogs() {
             
             <div className="text-center">
               <h3 className="font-semibold text-lg">{selectedVisitor.first_name} {selectedVisitor.last_name}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Contact: {selectedVisitor.contact || 'N/A'}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Purpose: {selectedVisitor.purpose || 'N/A'}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Created: {formatDate(selectedVisitor.created_at).date} {formatDate(selectedVisitor.created_at).time}</p>
+              <p className="text-sm text-gray-600 text-gray-600">Contact: {selectedVisitor.contact || 'N/A'}</p>
+              <p className="text-sm text-gray-600 text-gray-600">Purpose: {selectedVisitor.purpose || 'N/A'}</p>
+              <p className="text-sm text-gray-600 text-gray-600">Created: {formatDate(selectedVisitor.created_at).date} {formatDate(selectedVisitor.created_at).time}</p>
               
-              <div className="mt-2 py-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-2 py-2 border-t border-gray-200 border-gray-200">
                 <p className="text-sm font-medium">
                   Status: {' '}
                   <Badge variant={getBadgeVariant(selectedVisitor)}>
@@ -736,15 +736,15 @@ function VisitorLogs() {
                 
                 {selectedVisitor.scanned_at && (
                   <>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 text-gray-600">
                       Scanned at: {formatDate(selectedVisitor.scanned_at).date} {formatDate(selectedVisitor.scanned_at).time}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 text-gray-600">
                       Scanned by: {getGuardName(selectedVisitor.scanned_by)}
                     </p>
                   </>
                 )}
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 text-gray-600">
                   Visit Date: {formatDate(selectedVisitor.visit_date || selectedVisitor.created_at).date}
                 </p>
               </div>

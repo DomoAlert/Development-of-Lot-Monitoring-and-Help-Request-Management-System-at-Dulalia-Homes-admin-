@@ -157,8 +157,8 @@ function Inventory() {
   return (
     <ResponsiveLayout>
       <div className="pt-20 px-6">
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Inventory Management</h1>
+        <div className="bg-white bg-white shadow-md rounded-lg p-4 mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 text-black">Inventory Management</h1>
         </div>
         <div className="flex justify-between items-center mb-6">
           <button 

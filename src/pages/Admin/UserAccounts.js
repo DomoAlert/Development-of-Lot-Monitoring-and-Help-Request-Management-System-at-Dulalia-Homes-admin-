@@ -531,14 +531,14 @@ function UserAccounts() {
   return (
     <ResponsiveLayout>
       <div className="pt-16 md:pt-20 px-4 sm:px-6 lg:px-8 max-w-full xl:max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 sm:p-6 mb-6 lg:mb-8 border-l-4 border-blue-500">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-4 sm:p-6 mb-6 lg:mb-8 border-l-4 border-blue-500">
+          <h1 className="text-2xl sm:text-3xl font-bold text-black text-black flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             User Accounts
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2 text-sm sm:text-base">Manage resident accounts and their access permissions</p>
+          <p className="text-black text-black mt-2 text-sm sm:text-base">Manage resident accounts and their access permissions</p>
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
           <button 
@@ -580,13 +580,13 @@ function UserAccounts() {
             <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
               <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold text-black text-black">Create New Homeowner Account</h2>
                   <button 
                     onClick={() => {
                       setShowForm(false);
                       setShowPassword(false);
                     }}
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                    className="text-black text-black hover:text-gray-700 focus:outline-none"
                   >
                     <FaTimes className="h-5 w-5" />
                   </button>
@@ -600,7 +600,7 @@ function UserAccounts() {
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-black text-black mb-1">
                             First Name *
                           </label>
                           <input
@@ -613,7 +613,7 @@ function UserAccounts() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-black text-black mb-1">
                             Last Name *
                           </label>
                           <input
@@ -640,7 +640,7 @@ function UserAccounts() {
                             </label>
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span className="text-gray-500 sm:text-sm">@</span>
+                                <span className="text-black text-black sm:text-sm">@</span>
                               </div>
                               <input
                                 type="text"
@@ -653,7 +653,7 @@ function UserAccounts() {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black text-black mb-1">
                               Contact Number
                             </label>
                             <input
@@ -668,7 +668,7 @@ function UserAccounts() {
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black text-black mb-1">
                               Email
                             </label>
                             <input
@@ -678,13 +678,13 @@ function UserAccounts() {
                               className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
                               placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-black text-black mt-1">
                               Auto-generated if left empty
                             </p>
                           </div>
                           
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black text-black mb-1">
                               Password
                             </label>
                             <div className="relative">
@@ -701,13 +701,13 @@ function UserAccounts() {
                                 onClick={() => setShowPassword(!showPassword)}
                               >
                                 {showPassword ? (
-                                  <FaEyeSlash className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                  <FaEyeSlash className="h-4 w-4 text-black text-black hover:text-gray-600" />
                                 ) : (
-                                  <FaEye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                  <FaEye className="h-4 w-4 text-black text-black hover:text-gray-600" />
                                 )}
                               </button>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-black text-black mt-1">
                               Default: same as username
                             </p>
                           </div>
@@ -722,7 +722,7 @@ function UserAccounts() {
                       <div className="space-y-3 sm:space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black text-black mb-1">
                               Select Available Lot *
                             </label>
                             <div className="relative">
@@ -731,7 +731,7 @@ function UserAccounts() {
                               </div>
                               {loadingLots ? (
                                 <div className="w-full px-3 sm:px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
-                                  <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
+                                  <FaSpinner className="animate-spin inline mr-2 text-black text-black" />
                                   Loading available lots...
                                 </div>
                               ) : (
@@ -761,13 +761,13 @@ function UserAccounts() {
                                 </select>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-black text-black mt-1">
                               Only showing vacant lots that are available for assignment
                             </p>
                           </div>
                           
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black text-black mb-1">
                               House Model
                             </label>
                             <div className="relative">
@@ -798,7 +798,7 @@ function UserAccounts() {
                               </span>
                             </div>
                             <div className="mt-2 text-sm">
-                              <div className="flex items-center text-gray-700">
+                              <div className="flex items-center text-black text-black">
                                 <FaHome className="mr-1 text-amber-500" />
                                 Block {selectedLot.block}, Lot {selectedLot.lot}
                               </div>
@@ -814,7 +814,7 @@ function UserAccounts() {
                           type="button"
                           disabled={formSubmitting}
                           onClick={() => setShowForm(false)}
-                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
+                          className="px-4 py-2 border border-gray-300 rounded-md text-black text-black hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
                         >
                           <i className="fas fa-times mr-2"></i>
                           Cancel
@@ -863,7 +863,7 @@ function UserAccounts() {
                   </h2>
                   <button 
                     onClick={closeUserDetails}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-black text-black hover:text-gray-700"
                   >
                     <FaTimes />
                   </button>
@@ -880,32 +880,32 @@ function UserAccounts() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">First Name</p>
+                      <p className="text-sm text-black text-black">First Name</p>
                       <p className="font-medium text-sm sm:text-base">{selectedUser.firstName || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Last Name</p>
+                      <p className="text-sm text-black text-black">Last Name</p>
                       <p className="font-medium text-sm sm:text-base">{selectedUser.lastName || 'N/A'}</p>
                     </div>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Username</p>
+                    <p className="text-sm text-black text-black">Username</p>
                     <p className="font-medium text-sm sm:text-base">{selectedUser.username || 'N/A'}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="text-sm text-black text-black">Email</p>
                     <p className="font-medium text-sm sm:text-base">{selectedUser.email || 'N/A'}</p>
                   </div>
                   
                   <div className="p-2 bg-amber-50 rounded-md">
-                    <p className="text-sm text-gray-700">Property Details</p>
+                    <p className="text-sm text-black text-black">Property Details</p>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 gap-2">
                       <div className="flex-1">
                         <p className="font-medium text-sm sm:text-base">House #{selectedUser.house_no || 'N/A'}</p>
                         {selectedUser.block && selectedUser.lot && (
-                          <p className="text-xs sm:text-sm text-gray-600">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
+                          <p className="text-xs sm:text-sm text-white text-black">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
                         )}
                       </div>
                       <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
@@ -915,19 +915,19 @@ function UserAccounts() {
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Role</p>
+                    <p className="text-sm text-black text-black">Role</p>
                     <p className="font-medium text-sm sm:text-base">{selectedUser.role || 'Homeowner'}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Status</p>
+                    <p className="text-sm text-black text-black">Status</p>
                     <p className={`font-medium text-sm sm:text-base ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
                       {selectedUser.status || 'N/A'}
                     </p>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Record Status</p>
+                    <p className="text-sm text-black text-black">Record Status</p>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
                       selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
@@ -938,7 +938,7 @@ function UserAccounts() {
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Contact Number</p>
+                    <p className="text-sm text-black text-black">Contact Number</p>
                     <p className="font-medium text-sm sm:text-base">{selectedUser.contactNumber || 'N/A'}</p>
                   </div>
                   
@@ -956,7 +956,7 @@ function UserAccounts() {
                 <form onSubmit={handleUpdateUser} className="space-y-3 sm:space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black text-black mb-1">
                         First Name
                       </label>
                       <input
@@ -968,7 +968,7 @@ function UserAccounts() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black text-black mb-1">
                         Last Name
                       </label>
                       <input
@@ -982,7 +982,7 @@ function UserAccounts() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black text-black mb-1">
                       Username
                     </label>
                     <input
@@ -995,7 +995,7 @@ function UserAccounts() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black text-black mb-1">
                       Email
                     </label>
                     <input
@@ -1007,7 +1007,7 @@ function UserAccounts() {
                   </div>
                   
                   <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
+  <label className="block text-sm font-medium text-black text-black mb-1">
     Property Assignment
   </label>
   <div className="p-2 sm:p-3 bg-amber-50 rounded-md border border-amber-100">
@@ -1019,12 +1019,12 @@ function UserAccounts() {
         #{formData.house_no}
       </span>
     </div>
-    <div className="text-xs sm:text-sm text-gray-600 mb-2">
+    <div className="text-xs sm:text-sm text-black text-black mb-2">
       Block {formData.block}, Lot {formData.lot}
     </div>
     
     <div className="mt-3">
-      <label className="block text-xs font-medium text-gray-700 mb-1">
+      <label className="block text-xs font-medium text-black text-black mb-1">
         Change Lot Assignment
       </label>
       <select
@@ -1053,7 +1053,7 @@ function UserAccounts() {
           ))
         )}
       </select>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-black text-black mt-1">
         Only vacant lots are available for reassignment
       </p>
     </div>
@@ -1061,7 +1061,7 @@ function UserAccounts() {
 </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black text-black mb-1">
                       Status
                     </label>
                     <select
@@ -1075,7 +1075,7 @@ function UserAccounts() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black text-black mb-1">
                       Record Status
                     </label>
                     <select
@@ -1087,13 +1087,13 @@ function UserAccounts() {
                       <option value="Good">Good</option>
                       <option value="Bad">Bad</option>
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-black text-black mt-1">
                       Bad record status will restrict access to some facilities and services
                     </p>
                   </div>
                 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black text-black mb-1">
                       Contact Number
                     </label>
                     <input
@@ -1110,7 +1110,7 @@ function UserAccounts() {
                       type="button"
                       disabled={formSubmitting}
                       onClick={() => setIsEditing(false)}
-                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm sm:text-base"
+                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-black text-black hover:bg-gray-50 disabled:opacity-50 text-sm sm:text-base"
                     >
                       Cancel
                     </button>
@@ -1138,12 +1138,12 @@ function UserAccounts() {
         )}
 
         {/* Users table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
-          <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
+        <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-100">
+          <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50  border-b border-gray-100 ">
+            <h2 className="text-base sm:text-lg font-semibold text-black text-black flex items-center">
               <i className="fas fa-users text-blue-500 mr-2"></i>
               Homeowner Accounts
-              <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
+              <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600 bg-blue-100 text-blue-700">
                 {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
               </span>
             </h2>
@@ -1151,62 +1151,62 @@ function UserAccounts() {
         
           {loading ? (
             <div className="p-8 sm:p-12 text-center">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="text-gray-600 text-sm sm:text-base">Loading homeowner accounts...</p>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-gray-100  border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-black text-black text-sm sm:text-base">Loading homeowner accounts...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 border-collapse">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+              <table className="min-w-full divide-y divide-gray-200 divide-gray-200 border-collapse">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 ">
                   <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-black text-black uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <FaUser className="text-blue-500 text-xs sm:text-sm" />
                         <span className="hidden sm:inline">User</span>
                         <span className="sm:hidden">Info</span>
                       </div>
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-black text-black uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <FaHome className="text-amber-500 text-xs sm:text-sm" />
                         <span className="hidden lg:inline">Property Details</span>
                         <span className="lg:hidden">Property</span>
                       </div>
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider hidden md:table-cell">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-black text-black uppercase tracking-wider hidden md:table-cell">
                       <div className="flex items-center space-x-1">
                         <i className="fas fa-envelope text-blue-500 text-xs sm:text-sm"></i>
                         <span>Email</span>
                       </div>
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-black text-black uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <i className="fas fa-circle text-green-500 text-xs sm:text-sm"></i>
                         <span>Status</span>
                       </div>
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-black text-black uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <i className="fas fa-shield-alt text-purple-500 text-xs sm:text-sm"></i>
                         <span>Record Status</span>
                       </div>
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-black text-black uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
-                        <i className="fas fa-sliders-h text-gray-500 text-xs sm:text-sm"></i>
+                        <i className="fas fa-sliders-h text-black text-black text-xs sm:text-sm"></i>
                         <span>Actions</span>
                       </div>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="bg-white bg-white divide-y divide-gray-100 divide-gray-200">
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="px-3 sm:px-6 py-6 sm:py-8 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <FaUser className="h-8 w-8 sm:h-10 sm:w-10 text-gray-200 mb-2" />
-                          <p className="text-gray-500 font-medium text-sm sm:text-base">No users found</p>
-                          <p className="text-gray-400 text-xs sm:text-sm">Try adjusting your search criteria</p>
+                          <FaUser className="h-8 w-8 sm:h-10 sm:w-10 text-gray-200 text-gray-200 mb-2" />
+                          <p className="text-black text-black font-medium text-sm sm:text-base">No users found</p>
+                          <p className="text-black text-black text-xs sm:text-sm">Try adjusting your search criteria</p>
                         </div>
                       </td>
                     </tr>
@@ -1214,9 +1214,9 @@ function UserAccounts() {
                     filteredUsers.map((user) => (
                       <tr 
                         key={user.id} 
-                        className={`${actionLoading === user.id ? "bg-gray-50" : ""} 
-                          hover:bg-blue-50/30 transition-colors duration-150
-                          ${user.status === 'Inactive' ? 'bg-red-50/20' : ''}`}
+                        className={`${actionLoading === user.id ? "bg-gray-50 bg-gray-50" : ""} 
+                          hover:bg-blue-50/30  transition-colors duration-150
+                          ${user.status === 'Inactive' ? 'bg-red-50/20 ' : ''}`}
                       >
                         <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                           <button 
@@ -1227,15 +1227,15 @@ function UserAccounts() {
                               {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900 text-black group-hover:text-blue-600  transition-colors truncate">
                                 @{user.username || 'N/A'}
                               </div>
-                              <div className="text-xs text-gray-500 truncate">
+                              <div className="text-xs text-black text-black truncate">
                                 {getFullName(user)}
                               </div>
                               {user.contactNumber && (
-                                <div className="text-xs text-gray-400 flex items-center mt-1">
-                                  <i className="fas fa-phone-alt mr-1 text-gray-300"></i>
+                                <div className="text-xs text-black text-black flex items-center mt-1">
+                                  <i className="fas fa-phone-alt mr-1 text-black text-black"></i>
                                   <span className="truncate">{user.contactNumber}</span>
                                 </div>
                               )}
@@ -1246,36 +1246,36 @@ function UserAccounts() {
                           {user.house_no ? (
                             <div className="flex flex-col">
                               <div className="flex items-center mb-1">
-                                <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
+                                <span className="font-medium text-amber-700 text-amber-700 bg-amber-50 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
                                   #{user.house_no}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 flex-wrap">
-                                <div className="text-xs bg-blue-50 text-blue-700 px-1 sm:px-2 py-0.5 rounded">
+                                <div className="text-xs bg-blue-50 bg-blue-50 text-blue-700 text-blue-700 px-1 sm:px-2 py-0.5 rounded">
                                   Block {user.block || Math.floor(user.house_no / 100)}
                                 </div>
-                                <div className="text-xs bg-green-50 text-green-700 px-1 sm:px-2 py-0.5 rounded">
+                                <div className="text-xs bg-green-50 bg-green-50 text-green-700 text-green-700 px-1 sm:px-2 py-0.5 rounded">
                                   Lot {user.lot || user.house_no % 100}
                                 </div>
                               </div>
                               {user.houseModel && (
-                                <div className="text-xs text-gray-500 mt-1 truncate">
+                                <div className="text-xs text-black text-black mt-1 truncate">
                                   {user.houseModel} Model
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs sm:text-sm text-gray-500 italic">No property assigned</span>
+                            <span className="text-xs sm:text-sm text-black text-black italic">No property assigned</span>
                           )}
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden md:table-cell">
                           <div className="flex items-center">
-                            <div className="bg-blue-50 rounded-full p-1 mr-2 flex-shrink-0">
-                              <i className="fas fa-envelope text-blue-400 text-xs"></i>
+                            <div className="bg-blue-50 bg-blue-50 rounded-full p-1 mr-2 flex-shrink-0">
+                              <i className="fas fa-envelope text-blue-400 text-blue-400 text-xs"></i>
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="text-xs sm:text-sm text-gray-700 truncate">{user.email || 'N/A'}</div>
-                              <div className="text-xs text-gray-400 truncate">ID: {user.id?.substring(0, 8)}...</div>
+                              <div className="text-xs sm:text-sm text-black text-black truncate">{user.email || 'N/A'}</div>
+                              <div className="text-xs text-black text-black truncate">ID: {user.id?.substring(0, 8)}...</div>
                             </div>
                           </div>
                         </td>
@@ -1300,12 +1300,12 @@ function UserAccounts() {
                             <i className={`fas ${
                               user.recordStatus === 'Good' ? 'fa-thumbs-up mr-1 text-green-600' : 
                               user.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1 text-red-600' : 
-                              'fa-minus mr-1 text-gray-500'
+                              'fa-minus mr-1 text-black text-black'
                             } text-xs sm:text-sm`}></i>
                             {user.recordStatus || 'Neutral'}
                           </span>
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500 text-gray-500">
                           {actionLoading === user.id ? (
                             <div className="flex items-center justify-center">
                               <FaSpinner className="animate-spin text-primary" />
@@ -1377,12 +1377,12 @@ function UserAccounts() {
           )}
           
           {!loading && filteredUsers.length > 0 && (
-            <div className="bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div className="text-xs sm:text-sm text-gray-500">
+            <div className="bg-gray-50 bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-100  flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div className="text-xs sm:text-sm text-black text-black">
                 Showing {filteredUsers.length} homeowner account{filteredUsers.length !== 1 ? 's' : ''}
               </div>
-              <div className="text-xs sm:text-sm text-gray-500">
-                <span className="font-medium text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
+              <div className="text-xs sm:text-sm text-black text-black">
+                <span className="font-medium text-blue-600 text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
               </div>
             </div>
           )}

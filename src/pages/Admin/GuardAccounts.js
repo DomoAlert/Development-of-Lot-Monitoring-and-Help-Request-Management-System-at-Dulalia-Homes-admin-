@@ -305,14 +305,14 @@ function GuardAccounts() {
   return (
     <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+        <div className="bg-white bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <div className="flex flex-wrap justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+              <h1 className="text-3xl font-bold text-gray-800 text-black flex items-center">
                 <FaUserShield className="mr-3 text-blue-500 h-8 w-8" />
                 Guard Accounts
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-2">
+              <p className="text-gray-600 text-gray-700 mt-2">
                 Manage security guard accounts and credentials
               </p>
             </div>
@@ -328,51 +328,51 @@ function GuardAccounts() {
               </button>
               <button 
                 onClick={refreshData}
-                className="ml-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-3 py-2 rounded-lg flex items-center shadow-sm transition-colors"
+                className="ml-3 bg-gray-100 bg-gray-100 hover:bg-gray-200 hover:bg-gray-200 text-gray-700 text-gray-700 px-3 py-2 rounded-lg flex items-center shadow-sm transition-colors"
                 disabled={isRefreshing}
               >
-                <FaSyncAlt className={`h-5 w-5 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-gray-500 dark:text-gray-400'}`} />
+                <FaSyncAlt className={`h-5 w-5 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-gray-500 text-gray-500'}`} />
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+            <div className="bg-blue-50 bg-blue-50 p-4 rounded-lg border border-blue-100 border-blue-200">
               <div className="flex items-center">
-                <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded-full">
-                  <FaUserShield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="bg-blue-100 bg-blue-100 p-3 rounded-full">
+                  <FaUserShield className="h-6 w-6 text-blue-600 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <h2 className="font-semibold text-gray-800 dark:text-white">Total Guards</h2>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{guards.length}</p>
+                  <h2 className="font-semibold text-gray-800 text-black">Total Guards</h2>
+                  <p className="text-2xl font-bold text-blue-600 text-blue-600">{guards.length}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border border-green-100 dark:border-green-800">
+            <div className="bg-green-50 bg-green-50 p-4 rounded-lg border border-green-100 border-green-200">
               <div className="flex items-center">
-                <div className="bg-green-100 dark:bg-green-800 p-3 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-green-100 bg-green-100 p-3 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <h2 className="font-semibold text-gray-800 dark:text-white">On Duty</h2>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{onDutyGuards}</p>
+                  <h2 className="font-semibold text-gray-800 text-black">On Duty</h2>
+                  <p className="text-2xl font-bold text-green-600 text-green-600">{onDutyGuards}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800">
+            <div className="bg-indigo-50 bg-indigo-50 p-4 rounded-lg border border-indigo-100 border-indigo-200">
               <div className="flex items-center">
-                <div className="bg-indigo-100 dark:bg-indigo-800 p-3 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-indigo-100 bg-indigo-100 p-3 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <h2 className="font-semibold text-gray-800 dark:text-white">Active Accounts</h2>
-                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{activeAccounts}</p>
+                  <h2 className="font-semibold text-gray-800 text-black">Active Accounts</h2>
+                  <p className="text-2xl font-bold text-indigo-600 text-indigo-600">{activeAccounts}</p>
                 </div>
               </div>
             </div>
@@ -406,16 +406,16 @@ function GuardAccounts() {
             }}
           >
             <div className="flex min-h-full items-center justify-center p-4 py-8">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
-                <div className="p-6 sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
+              <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="p-6 sticky top-0 bg-white bg-white border-b border-gray-200 border-gray-200 z-10">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Add New Guard</h2>
+                  <h2 className="text-2xl font-semibold text-gray-800 text-black">Add New Guard</h2>
                   <button 
                     onClick={() => {
                       setShowForm(false);
                       setShowPassword(false);
                     }}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="text-gray-500 hover:text-gray-700 text-gray-500 hover:text-gray-700"
                   >
                     <FaTimes className="h-5 w-5" />
                   </button>
@@ -423,7 +423,7 @@ function GuardAccounts() {
               
                 <form onSubmit={handleAddGuard} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1.5">
                       Full Name
                     </label>
                     <input
@@ -431,13 +431,13 @@ function GuardAccounts() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
                       placeholder="Enter guard's full name"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1.5">
                       Username
                     </label>
                     <input
@@ -445,7 +445,7 @@ function GuardAccounts() {
                       required
                       value={formData.username}
                       onChange={handleUsernameChange}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
                       placeholder="Enter username"
                     />
                   </div>

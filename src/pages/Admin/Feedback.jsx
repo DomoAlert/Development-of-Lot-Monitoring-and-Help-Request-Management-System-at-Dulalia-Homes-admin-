@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { FaStar, FaRegStar, FaCommentAlt, FaSpinner, FaFilter, FaExclamationTriangle } from 'react-icons/fa';
 import CustomSelect from '../../components/CustomSelect';
 import { toast } from 'react-toastify';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { Card, CardHeader, CardBody, Button, Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell, Badge, Modal, DataSearch } from '../../components/AdminUI';
 import withAdminPage from '../../components/withAdminPage';
 
@@ -179,7 +179,7 @@ const Feedback = () => {
     };
 
     return (
-        <AdminLayout>
+        <ResponsiveLayout>
             <div className="pt-20 px-6 max-w-7xl mx-auto">
                 <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
@@ -505,7 +505,7 @@ const Feedback = () => {
                     </div>
                 </div>
             )}
-        </AdminLayout>
+        </ResponsiveLayout>
     );
 };
 

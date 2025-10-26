@@ -14,7 +14,7 @@ import {
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
 import { Dialog, Transition } from '@headlessui/react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { 
   Card, CardHeader, CardBody, Button, Table, TableHead, 
   TableBody, TableRow, TableCell, TableHeaderCell, Badge, 
@@ -904,7 +904,7 @@ const formatTime = (timestamp) => {
 };
 
   return (
-    <AdminLayout>
+    <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -2005,7 +2005,7 @@ const formatTime = (timestamp) => {
           )}
         </Modal>
       </div>
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

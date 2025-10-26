@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { 
   ExclamationCircleIcon, 
   TrendingUpIcon as ArrowTrendingUpIcon, 
@@ -155,7 +155,7 @@ function Inventory() {
   });
 
   return (
-    <AdminLayout>
+    <ResponsiveLayout>
       <div className="pt-20 px-6">
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Inventory Management</h1>
@@ -410,7 +410,7 @@ function Inventory() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

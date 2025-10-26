@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, getDocs, query, doc, updateDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { FaHome, FaSearch, FaUserEdit, FaUserPlus, FaTimes, FaUser, FaTag, FaClock } from 'react-icons/fa';
 
 const LotStatus = () => {
@@ -540,7 +540,7 @@ const LotStatus = () => {
   };
 
   return (
-    <AdminLayout>
+    <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
@@ -1248,7 +1248,7 @@ const LotStatus = () => {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { UserCircleIcon } from '@heroicons/react/outline';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, writeBatch, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -435,7 +435,7 @@ function Staff() {
   };
 
   return (
-    <AdminLayout>
+    <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
@@ -1092,7 +1092,7 @@ function Staff() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

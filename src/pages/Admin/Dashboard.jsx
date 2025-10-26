@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { 
   UserCircleIcon, 
   CurrencyDollarIcon,
@@ -542,7 +542,7 @@ function Dashboard() {
   };
 
   return (
-   <AdminLayout>
+   <ResponsiveLayout>
   <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
     {/* Header Section */}
     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 mb-8 shadow-xl">
@@ -928,7 +928,7 @@ function Dashboard() {
       </>
     )}
   </div>
-</AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

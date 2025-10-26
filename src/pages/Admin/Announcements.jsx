@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { SpeakerphoneIcon as MegaphoneIcon, CalendarIcon, PencilIcon, TrashIcon } from '@heroicons/react/outline';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -157,7 +157,7 @@ function Announcements() {
   };
 
   return (
-    <AdminLayout>
+    <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <div className="flex flex-wrap justify-between items-start">
@@ -462,7 +462,7 @@ function Announcements() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { 
   CalendarIcon, 
   ClockIcon, 
@@ -687,7 +687,7 @@ function FacilityRequests() {
   }
 
   return (
-    <AdminLayout>
+    <ResponsiveLayout>
       <div className="pt-20 px-6 max-w-7xl mx-auto">
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
           <div className="flex flex-wrap justify-between items-start">
@@ -1462,7 +1462,7 @@ function FacilityRequests() {
       {/* Facility List Modal removed - functionality merged into the Facility Management Modal */}
       
       {/* Feedback Modal removed */}
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

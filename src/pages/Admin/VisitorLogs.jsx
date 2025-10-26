@@ -7,6 +7,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { Card, CardHeader, CardBody, Button, Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell, Badge, Modal, DataSearch, StatCard } from '../../components/AdminUI';
 import withAdminPage from '../../components/withAdminPage';
 
+
 function VisitorLogs() {
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
-import AdminLayout from './AdminLayout';
+import ResponsiveLayout from './ResponsiveLayout';
 import { Card, CardHeader, CardBody } from './AdminUI';
 
 /**
@@ -32,7 +32,7 @@ const withAdminPage = (options = {}) => {
       }, []);
 
       return (
-        <AdminLayout>
+        <ResponsiveLayout>
           {showHeader && (
             <div className="pt-20 px-6 max-w-7xl mx-auto">
               <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
@@ -60,7 +60,7 @@ const withAdminPage = (options = {}) => {
           <div className="px-6 max-w-7xl mx-auto">
             <Component {...props} />
           </div>
-        </AdminLayout>
+        </ResponsiveLayout>
       );
     };
 

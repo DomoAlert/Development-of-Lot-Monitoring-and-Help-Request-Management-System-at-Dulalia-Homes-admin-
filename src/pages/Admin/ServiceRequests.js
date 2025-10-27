@@ -81,6 +81,7 @@ function ServiceRequests() {
   const [currentServiceTypeId, setCurrentServiceTypeId] = useState(null);
   const [isConfirmDeleteServiceTypeModalOpen, setIsConfirmDeleteServiceTypeModalOpen] = useState(false);
   const [serviceTypePendingDelete, setServiceTypePendingDelete] = useState(null);
+  const [isServiceTypesManagementModalOpen, setIsServiceTypesManagementModalOpen] = useState(false);
   
   // New service request state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -423,7 +424,7 @@ function ServiceRequests() {
       fetchServiceTypes();
       
       if (isEditingServiceType) {
-        // If editing, close the modal
+        // If editing, just close the modal (management modal stays open)
         setIsServiceTypeModalOpen(false);
       }
     } catch (error) {
@@ -935,7 +936,7 @@ const formatTime = (timestamp) => {
             
             <Button 
               variant="secondary" 
-              onClick={() => setIsServiceTypeModalOpen(true)}
+              onClick={() => setIsServiceTypesManagementModalOpen(true)}
               className="flex items-center mt-4 md:mt-0 bg-blue-50 hover:bg-blue-100 text-blue-700"
               size="sm"
             >
@@ -1847,10 +1848,113 @@ const formatTime = (timestamp) => {
           </div>
         </Modal>
 
+        {/* Service Types Management Modal */}
+        <Modal
+          isOpen={isServiceTypesManagementModalOpen}
+          onClose={() => setIsServiceTypesManagementModalOpen(false)}
+          title="Manage Service Types"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Service Types</h3>
+                <p className="text-sm text-gray-500">Manage the types of services available for requests</p>
+              </div>
+              <Button
+                variant="primary"
+                onClick={() => setIsServiceTypeModalOpen(true)}
+                size="sm"
+              >
+                + Add Service Type
+              </Button>
+            </div>
+
+            {serviceTypes.length === 0 ? (
+              <div className="text-center py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-lg font-medium text-gray-500 mb-2">No service types found</p>
+                <p className="text-sm text-gray-400 mb-4">Get started by adding your first service type</p>
+                <Button
+                  variant="primary"
+                  onClick={() => setIsServiceTypeModalOpen(true)}
+                >
+                  Add First Service Type
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Service Type
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {serviceTypes.map((serviceType) => (
+                      <tr key={serviceType.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <div className="flex items-center mb-2">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{serviceType.name}</div>
+                                {serviceType.description && (
+                                  <div className="text-sm text-gray-500">{serviceType.description}</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => {
+                                  setIsServiceTypesManagementModalOpen(false);
+                                  handleEditServiceType(serviceType);
+                                }}
+                                className="text-xs px-2 py-1 h-7"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="xs"
+                                onClick={() => handleDeleteServiceType(serviceType.id)}
+                                className="text-xs px-2 py-1 h-7"
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                            serviceType.active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {serviceType.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </Modal>
+
         {/* Service Type Management Modal */}
         <Modal
           isOpen={isServiceTypeModalOpen}
-          size="xl"
+          size="lg"
           onClose={() => {
             setIsServiceTypeModalOpen(false);
             setServiceTypeFormData({
@@ -1864,173 +1968,145 @@ const formatTime = (timestamp) => {
           }}
           title={isEditingServiceType ? "Edit Service Type" : "Add New Service Type"}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Create/Edit Form */}
-            <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-medium text-blue-900 mb-3">
-                  {isEditingServiceType ? "Edit Service Type" : "Create New Service Type"}
-                </h3>
-                <form onSubmit={handleServiceTypeFormSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                      Service Type Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      id="name"
-                      value={serviceTypeFormData.name}
-                      onChange={handleServiceTypeFormChange}
-                      className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
-                        serviceTypeFormErrors.name ? 'border-red-300' : ''
-                      }`}
-                      placeholder="Plumbing, Electrical, etc."
-                    />
-                    {serviceTypeFormErrors.name && (
-                      <p className="mt-1 text-sm text-red-600">{serviceTypeFormErrors.name}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      id="description"
-                      rows={3}
-                      value={serviceTypeFormData.description}
-                      onChange={handleServiceTypeFormChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="Optional description of this service type"
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="active"
-                        id="active"
-                        checked={serviceTypeFormData.active}
-                        onChange={(e) => setServiceTypeFormData({
-                          ...serviceTypeFormData,
-                          active: e.target.checked
-                        })}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="active" className="ml-2 block text-sm text-gray-900">
-                        Active
-                      </label>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Active service types can be selected when creating new requests
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsServiceTypeModalOpen(false);
-                        setServiceTypeFormData({
-                          name: '',
-                          description: '',
-                          active: true
-                        });
-                        setIsEditingServiceType(false);
-                        setCurrentServiceTypeId(null);
-                        setServiceTypeFormErrors({});
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" variant="primary">
-                      {isEditingServiceType ? "Update" : "Add"} Service Type
-                    </Button>
-                  </div>
-                </form>
-              </div>
+          <form onSubmit={handleServiceTypeFormSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Service Type Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={serviceTypeFormData.name}
+                onChange={handleServiceTypeFormChange}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+                  serviceTypeFormErrors.name ? 'border-red-300' : ''
+                }`}
+                placeholder="Plumbing, Electrical, etc."
+              />
+              {serviceTypeFormErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{serviceTypeFormErrors.name}</p>
+              )}
             </div>
 
-            {/* Right Column - List of Existing Service Types */}
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Existing Service Types</h3>
-                {serviceTypes.length > 0 ? (
-                  <div className="overflow-auto max-h-96 border rounded-md">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-100 sticky top-0">
-                        <tr>
-                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                          </th>
-                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {serviceTypes.map((serviceType) => (
-                          <tr key={serviceType.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                              <div>
-                                <div className="font-medium">{serviceType.name}</div>
-                                {serviceType.description && (
-                                  <div className="text-xs text-gray-500 mt-1">{serviceType.description}</div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
-                                  serviceType.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}
-                                onClick={() => handleToggleServiceTypeStatus(serviceType)}
-                              >
-                                {serviceType.active ? 'Active' : 'Inactive'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleEditServiceType(serviceType)}
-                                  className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                                  title="Edit"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteServiceType(serviceType.id)}
-                                  className="text-red-600 hover:text-red-900 text-sm font-medium"
-                                  title="Delete"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No service types</h3>
-                    <p className="mt-1 text-sm text-gray-500">Get started by creating your first service type.</p>
-                  </div>
-                )}
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                name="description"
+                id="description"
+                rows={3}
+                value={serviceTypeFormData.description}
+                onChange={handleServiceTypeFormChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Optional description of this service type"
+              />
+            </div>
+            
+            <div className="mt-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="active"
+                  id="active"
+                  checked={serviceTypeFormData.active}
+                  onChange={(e) => setServiceTypeFormData({
+                    ...serviceTypeFormData,
+                    active: e.target.checked
+                  })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="active" className="ml-2 block text-sm text-gray-900">
+                  Active
+                </label>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Active service types can be selected when creating new requests
+              </p>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsServiceTypeModalOpen(false);
+                  setServiceTypeFormData({
+                    name: '',
+                    description: '',
+                    active: true
+                  });
+                  setIsEditingServiceType(false);
+                  setCurrentServiceTypeId(null);
+                  setServiceTypeFormErrors({});
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                {isEditingServiceType ? "Update" : "Add"} Service Type
+              </Button>
+            </div>
+          </form>
+          
+          {/* List of existing service types */}
+          {serviceTypes.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Existing Service Types</h3>
+              <div className="overflow-auto max-h-64 border rounded-md">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                     
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {serviceTypes.map((serviceType) => (
+                      <tr key={serviceType.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {serviceType.name}
+                          {serviceType.description && (
+                            <p className="text-xs text-gray-500 mt-1">{serviceType.description}</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span 
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              serviceType.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            } cursor-pointer`}
+                            onClick={() => handleToggleServiceTypeStatus(serviceType)}
+                          >
+                            {serviceType.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEditServiceType(serviceType)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteServiceType(serviceType.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
+          )}
         </Modal>
       </div>
     </ResponsiveLayout>

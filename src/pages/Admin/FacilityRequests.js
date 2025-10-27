@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { 
-  CalendarIcon, 
-  ClockIcon, 
   LocationMarkerIcon as MapPinIcon, 
   CheckIcon, 
   XIcon as XMarkIcon, 
   InformationCircleIcon,
-  PlusIcon,
   EyeIcon,
   ExclamationIcon
 } from '@heroicons/react/outline';
@@ -25,7 +22,7 @@ import {
   deleteDoc, 
   limit
 } from 'firebase/firestore';
-import { Card, CardHeader, CardBody, CardFooter, Button, Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell, Badge, Modal, DataSearch } from '../../components/AdminUI';
+import { Button,  Badge, Modal } from '../../components/AdminUI';
 import { db, auth } from '../../services/firebase';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -38,12 +35,12 @@ function FacilityRequests() {
   const [facilityFilter, setFacilityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [isFacilityManagementModalOpen, setIsFacilityManagementModalOpen] = useState(false);
-  const [activeFacilityTab, setActiveFacilityTab] = useState('list'); // 'list', 'add', 'edit'
+  const [isFacilityFormModalOpen, setIsFacilityFormModalOpen] = useState(false);
   const [facilityFormData, setFacilityFormData] = useState({
     name: '',
     description: '',
-    opening_time: '08:00',
-    closing_time: '20:00',
+    opening_time: '00:00',
+    closing_time: '00:00',
     status: 'active',
     location: '',
     purposes: ['', '', ''] // Array for 3 possible purposes
@@ -59,7 +56,6 @@ function FacilityRequests() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionUserId, setRejectionUserId] = useState(null);
-  const [isFacilityListModalOpen, setIsFacilityListModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Feedback functionality removed
 
@@ -231,6 +227,10 @@ function FacilityRequests() {
   };
   
   const openFacilityManagementModal = () => {
+    setIsFacilityManagementModalOpen(true);
+  };
+  
+  const openFacilityFormModal = () => {
     // Reset form data for adding a new facility
     setFacilityFormData({
       name: '',
@@ -243,7 +243,7 @@ function FacilityRequests() {
     });
     setCurrentFacility(null);
     setFacilityFormErrors({});
-    setIsFacilityManagementModalOpen(true);
+    setIsFacilityFormModalOpen(true);
   };
   
   const handleFacilityFormChange = (e) => {
@@ -350,6 +350,7 @@ function FacilityRequests() {
       
       // Reset and switch back to list tab after saving
       setCurrentFacility(null);
+      setIsFacilityFormModalOpen(false);
       fetchFacilities();
     } catch (error) {
       toast.error(`Error ${currentFacility ? 'updating' : 'adding'} facility: ${error.message}`);
@@ -407,9 +408,7 @@ function FacilityRequests() {
     });
     setCurrentFacility(facility);
     setFacilityFormErrors({});
-    if (!isFacilityManagementModalOpen) {
-      setIsFacilityManagementModalOpen(true);
-    }
+    setIsFacilityFormModalOpen(true);
   };
   
   // Handle deleting facility
@@ -1116,7 +1115,7 @@ function FacilityRequests() {
         </div>
       </Modal>
       
-      {/* Facility Management Modal with Two-Column Layout */}
+      {/* Facility Management Modal - List View */}
       <Modal
         isOpen={isFacilityManagementModalOpen}
         onClose={() => {
@@ -1124,271 +1123,94 @@ function FacilityRequests() {
           setCurrentFacility(null);
         }}
         title="Facility Management"
-        size="full"
+        size="lg"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Facility Form */}
-          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                {currentFacility ? 'Edit Facility' : 'Add New Facility'}
-              </h3>
-              <p className="text-sm text-blue-700">
-                {currentFacility ? 'Update the facility details below.' : 'Fill in the details to create a new facility.'}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Facility Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  id="name"
-                  value={facilityFormData.name}
-                  onChange={handleFacilityFormChange}
-                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
-                    facilityFormErrors.name ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g., Swimming Pool, Basketball Court, etc."
-                />
-                {facilityFormErrors.name && (
-                  <p className="mt-1 text-sm text-red-600">{facilityFormErrors.name}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  id="description"
-                  rows={3}
-                  value={facilityFormData.description}
-                  onChange={handleFacilityFormChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Describe the facility, its features, capacity, etc."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="opening_time" className="block text-sm font-medium text-gray-700">
-                    Opening Time <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Current: {formatTime(facilityFormData.opening_time)})</span>
-                  </label>
-                  <input
-                    type="time"
-                    name="opening_time"
-                    id="opening_time"
-                    value={facilityFormData.opening_time}
-                    onChange={handleFacilityFormChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
-                      facilityFormErrors.opening_time ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  />
-                  {facilityFormErrors.opening_time && (
-                    <p className="mt-1 text-sm text-red-600">{facilityFormErrors.opening_time}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="closing_time" className="block text-sm font-medium text-gray-700">
-                    Closing Time <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Current: {formatTime(facilityFormData.closing_time)})</span>
-                  </label>
-                  <input
-                    type="time"
-                    name="closing_time"
-                    id="closing_time"
-                    value={facilityFormData.closing_time}
-                    onChange={handleFacilityFormChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
-                      facilityFormErrors.closing_time ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  />
-                  {facilityFormErrors.closing_time && (
-                    <p className="mt-1 text-sm text-red-600">{facilityFormErrors.closing_time}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  id="location"
-                  value={facilityFormData.location}
-                  onChange={handleFacilityFormChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="e.g., Building B, Ground Floor, etc."
-                />
-              </div>
-
-              {/* Purposes Section */}
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Purposes (Up to 3)
-                </label>
-                <p className="text-xs text-gray-500 mb-3">
-                  List up to 3 specific purposes for which this facility can be used.
-                </p>
-
-                {[0, 1, 2].map((index) => (
-                  <div key={index} className="mb-2">
-                    <div className="flex items-center">
-                      <span className="mr-2 text-sm text-gray-500">{index + 1}.</span>
-                      <input
-                        type="text"
-                        name={`purpose-${index}`}
-                        value={(facilityFormData.purposes && facilityFormData.purposes[index]) || ''}
-                        onChange={handleFacilityFormChange}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        placeholder={`e.g., ${index === 0 ? 'Celebration' : index === 1 ? 'Meeting' : 'Exercise'}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  id="status"
-                  value={facilityFormData.status}
-                  onChange={handleFacilityFormChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="maintenance">Under Maintenance</option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500">
-                  Active facilities can be booked by homeowners, inactive facilities will not appear in their booking options.
-                </p>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setCurrentFacility(null);
-                    setFacilityFormData({
-                      name: '',
-                      description: '',
-                      opening_time: '08:00',
-                      closing_time: '20:00',
-                      status: 'active',
-                      location: '',
-                      purposes: ['', '', '']
-                    });
-                    setFacilityFormErrors({});
-                  }}
-                >
-                  Clear Form
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleSaveFacility}
-                >
-                  {currentFacility ? "Update Facility" : "Add Facility"}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Facilities List */}
-          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Facilities List</h3>
+        <div className="space-y-6">
+          {/* Header with Add Button */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Facilities List</h3>
               <p className="text-sm text-gray-600">
                 View and manage all facilities. Click edit to modify or change status.
               </p>
             </div>
+            <Button
+              variant="primary"
+              onClick={openFacilityFormModal}
+              className="flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add Facility
+            </Button>
+          </div>
 
-            <div className="flex flex-wrap gap-4 mb-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search facilities..."
-                  value={facilitySearchQuery}
-                  onChange={(e) => setFacilitySearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <select
-                value={facilityStatusFilter}
-                onChange={(e) => setFacilityStatusFilter(e.target.value)}
-                className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-                <option value="maintenance">Maintenance Only</option>
-              </select>
+          {/* Search and Filter */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search facilities..."
+                value={facilitySearchQuery}
+                onChange={(e) => setFacilitySearchQuery(e.target.value)}
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
+            <select
+              value={facilityStatusFilter}
+              onChange={(e) => setFacilityStatusFilter(e.target.value)}
+              className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+              <option value="maintenance">Maintenance Only</option>
+            </select>
+          </div>
 
-            <div className="overflow-x-auto max-h-96">
-              {facilities.length === 0 ? (
-                <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                  <p className="mt-2 text-gray-500 text-lg">No facilities available</p>
-                  <p className="mt-1 text-gray-400 text-sm">Add facilities first to manage them</p>
-                </div>
-              ) : filterFacilities().length === 0 ? (
-                <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <p className="mt-2 text-gray-500 text-lg">No matching facilities found</p>
-                  <p className="mt-1 text-gray-400 text-sm">Try adjusting your search or filter criteria</p>
-                </div>
-              ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filterFacilities().map((facility) => (
-                      <tr key={facility.id}>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
+          {/* Facilities Table */}
+          <div className="overflow-x-auto max-h-96">
+            {facilities.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+                <p className="mt-2 text-gray-500 text-lg">No facilities available</p>
+                <p className="mt-1 text-gray-400 text-sm">Click "Add Facility" to create your first facility</p>
+              </div>
+            ) : filterFacilities().length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p className="mt-2 text-gray-500 text-lg">No matching facilities found</p>
+                <p className="mt-1 text-gray-400 text-sm">Try adjusting your search or filter criteria</p>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filterFacilities().map((facility) => (
+                    <tr key={facility.id}>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="flex items-center mb-2">
                             <div>
                               <div className="text-sm font-medium text-gray-900">{facility.name}</div>
                               <div className="text-sm text-gray-500">{facility.location}</div>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                            facility.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : facility.status === 'inactive'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {facility.status.charAt(0).toUpperCase() + facility.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex space-x-2 justify-end">
+                          <div className="flex flex-wrap items-center gap-2">
                             <select
                               value={facility.status}
                               onChange={(e) => handleChangeFacilityStatus(facility.id, e.target.value)}
-                              className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
                             >
                               <option value="active">Set Active</option>
                               <option value="inactive">Set Inactive</option>
@@ -1396,26 +1218,226 @@ function FacilityRequests() {
                             </select>
                             <Button
                               variant="outline"
-                              size="sm"
+                              size="xs"
                               onClick={() => handleEditFacility(facility)}
+                              className="text-xs px-2 py-1 h-7"
                             >
                               Edit
                             </Button>
                             <Button
                               variant="danger"
-                              size="sm"
+                              size="xs"
                               onClick={() => handleDeleteFacility(facility.id)}
+                              className="text-xs px-2 py-1 h-7"
                             >
                               Delete
                             </Button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                          facility.status === 'active'
+                            ? 'bg-green-100 text-green-800'
+                            : facility.status === 'inactive'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {facility.status.charAt(0).toUpperCase() + facility.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Facility Form Modal - Add/Edit Form */}
+      <Modal
+        isOpen={isFacilityFormModalOpen}
+        onClose={() => {
+          setIsFacilityFormModalOpen(false);
+          setCurrentFacility(null);
+          setFacilityFormData({
+            name: '',
+            description: '',
+            opening_time: '00:00',
+            closing_time: '00:00',
+            status: 'active',
+            location: '',
+            purposes: ['', '', '']
+          });
+          setFacilityFormErrors({});
+        }}
+        title={currentFacility ? 'Edit Facility' : 'Add New Facility'}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Facility Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              id="name"
+              value={facilityFormData.name}
+              onChange={handleFacilityFormChange}
+              className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                facilityFormErrors.name ? 'border-red-300' : 'border-gray-300'
+              }`}
+              placeholder="e.g., Swimming Pool, Basketball Court, etc."
+            />
+            {facilityFormErrors.name && (
+              <p className="mt-1 text-sm text-red-600">{facilityFormErrors.name}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              Description
+            </label>
+            <textarea
+              name="description"
+              id="description"
+              rows={3}
+              value={facilityFormData.description}
+              onChange={handleFacilityFormChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              placeholder="Describe the facility, its features, capacity, etc."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="opening_time" className="block text-sm font-medium text-gray-700">
+                Opening Time <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Current: {formatTime(facilityFormData.opening_time)})</span>
+              </label>
+              <input
+                type="time"
+                name="opening_time"
+                id="opening_time"
+                value={facilityFormData.opening_time}
+                onChange={handleFacilityFormChange}
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  facilityFormErrors.opening_time ? 'border-red-300' : 'border-gray-300'
+                }`}
+              />
+              {facilityFormErrors.opening_time && (
+                <p className="mt-1 text-sm text-red-600">{facilityFormErrors.opening_time}</p>
               )}
             </div>
+
+            <div>
+              <label htmlFor="closing_time" className="block text-sm font-medium text-gray-700">
+                Closing Time <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Current: {formatTime(facilityFormData.closing_time)})</span>
+              </label>
+              <input
+                type="time"
+                name="closing_time"
+                id="closing_time"
+                value={facilityFormData.closing_time}
+                onChange={handleFacilityFormChange}
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  facilityFormErrors.closing_time ? 'border-red-300' : 'border-gray-300'
+                }`}
+              />
+              {facilityFormErrors.closing_time && (
+                <p className="mt-1 text-sm text-red-600">{facilityFormErrors.closing_time}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+              Location
+            </label>
+            <input
+              type="text"
+              name="location"
+              id="location"
+              value={facilityFormData.location}
+              onChange={handleFacilityFormChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              placeholder="e.g., Building B, Ground Floor, etc."
+            />
+          </div>
+
+          {/* Purposes Section */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Purposes (Up to 3)
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              List up to 3 specific purposes for which this facility can be used.
+            </p>
+
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="mb-2">
+                <div className="flex items-center">
+                  <span className="mr-2 text-sm text-gray-500">{index + 1}.</span>
+                  <input
+                    type="text"
+                    name={`purpose-${index}`}
+                    value={(facilityFormData.purposes && facilityFormData.purposes[index]) || ''}
+                    onChange={handleFacilityFormChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder={`e.g., ${index === 0 ? 'Celebration' : index === 1 ? 'Meeting' : 'Exercise'}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <select
+              name="status"
+              id="status"
+              value={facilityFormData.status}
+              onChange={handleFacilityFormChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="maintenance">Under Maintenance</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Active facilities can be booked by homeowners, inactive facilities will not appear in their booking options.
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsFacilityFormModalOpen(false);
+                setCurrentFacility(null);
+                setFacilityFormData({
+                  name: '',
+                  description: '',
+                  opening_time: '08:00',
+                  closing_time: '20:00',
+                  status: 'active',
+                  location: '',
+                  purposes: ['', '', '']
+                });
+                setFacilityFormErrors({});
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSaveFacility}
+            >
+              {currentFacility ? "Update Facility" : "Add Facility"}
+            </Button>
           </div>
         </div>
       </Modal>

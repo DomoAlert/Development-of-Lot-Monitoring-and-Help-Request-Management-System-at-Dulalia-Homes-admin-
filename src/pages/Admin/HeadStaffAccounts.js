@@ -5,6 +5,7 @@ import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, serverT
 import { createUserWithEmailAndPassword, deleteUser, getAuth } from 'firebase/auth';
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
+import { Modal, Button } from '../../components/AdminUI';
 
 function HeadStaffAccounts() {
   const [headStaff, setHeadStaff] = useState([]);
@@ -41,6 +42,9 @@ function HeadStaffAccounts() {
     name: '',
     description: ''
   });
+
+  // Positions Management Modal State
+  const [isPositionsManagementModalOpen, setIsPositionsManagementModalOpen] = useState(false);
 
   // Dynamic departments loaded from Firestore
   const [staffRoles, setStaffRoles] = useState([]);
@@ -91,6 +95,7 @@ function HeadStaffAccounts() {
       toast.success('Department added successfully');
       fetchDepartments();
       closeDepartmentForm();
+      setIsPositionsManagementModalOpen(true);
     } catch (error) {
       console.error('Error adding department:', error);
       toast.error('Failed to add department');
@@ -115,6 +120,7 @@ function HeadStaffAccounts() {
       toast.success('Department updated successfully');
       fetchDepartments();
       closeDepartmentForm();
+      setIsPositionsManagementModalOpen(true);
     } catch (error) {
       console.error('Error updating department:', error);
       toast.error('Failed to update department');
@@ -154,6 +160,7 @@ function HeadStaffAccounts() {
       name: '',
       description: ''
     });
+    setIsPositionsManagementModalOpen(true);
   };
 
   const fetchHeadStaff = async () => {
@@ -486,10 +493,7 @@ function HeadStaffAccounts() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setDepartmentFormData({ id: '', name: '', description: '' });
-                setShowDepartmentForm(true);
-              }}
+              onClick={() => setIsPositionsManagementModalOpen(true)}
               className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -922,6 +926,108 @@ function HeadStaffAccounts() {
           </div>
         )}
 
+        {/* Positions Management Modal */}
+        <Modal
+          isOpen={isPositionsManagementModalOpen}
+          onClose={() => setIsPositionsManagementModalOpen(false)}
+          title="Manage Positions & Specializations"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Positions & Specializations</h3>
+                <p className="text-sm text-gray-500">Manage the different positions and specializations for head staff</p>
+              </div>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsPositionsManagementModalOpen(false);
+                  setShowDepartmentForm(true);
+                }}
+                size="sm"
+              >
+                + Add Position
+              </Button>
+            </div>
+
+            {staffRoles.length === 0 ? (
+              <div className="text-center py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <p className="text-lg font-medium text-gray-500 mb-2">No positions added yet</p>
+                <p className="text-sm text-gray-400 mb-4">Get started by adding your first position</p>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setIsPositionsManagementModalOpen(false);
+                    setShowDepartmentForm(true);
+                  }}
+                >
+                  Add First Position
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Position/Specialization
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Description
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {staffRoles.map((department) => (
+                      <tr key={department.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <div className="flex items-center mb-2">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{department.name}</div>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => {
+                                  setIsPositionsManagementModalOpen(false);
+                                  handleEditDepartment(department);
+                                }}
+                                className="text-xs px-2 py-1 h-7"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="xs"
+                                onClick={() => handleDeleteDepartment(department.id)}
+                                className="text-xs px-2 py-1 h-7"
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {department.description || 'No description provided'}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </Modal>
+
         {/* Department Management Modal */}
         {showDepartmentForm && (
           <div 
@@ -939,7 +1045,7 @@ function HeadStaffAccounts() {
               }
             }}
           >
-            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-7xl my-8">
+            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-md my-8">
               <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 text-black">
                   {isEditingDepartment ? 'Edit Department' : 'Manage Positions & Specializations'}
@@ -1002,97 +1108,53 @@ function HeadStaffAccounts() {
                     </div>
                   </form>
                 ) : (
-                  // Department List and Add New Department Form - 2 Column Layout
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column - Add New Department Form */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-2">
-                        Add New Position/Specialization
-                      </h3>
-                      <form onSubmit={handleAddDepartment} className="bg-green-50 bg-green-100/20 rounded-lg p-4 border border-green-200 border-green-200">
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                              Position Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={departmentFormData.name}
-                              onChange={(e) => setDepartmentFormData(prev => ({ ...prev, name: e.target.value }))}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="e.g., Electrician"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                              Description/Specialization
-                            </label>
-                            <textarea
-                              value={departmentFormData.description}
-                              onChange={(e) => setDepartmentFormData(prev => ({ ...prev, description: e.target.value }))}
-                              rows="3"
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Describe the role and responsibilities..."
-                            />
-                          </div>
-                          <button
-                            type="submit"
-                            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                          >
-                            Add Position
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-
-                    {/* Right Column - Existing Departments List */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-2">
-                        Existing Positions & Specializations
-                        <span className="ml-2 text-sm font-normal text-gray-500 text-gray-600">
-                          ({staffRoles.length} total)
-                        </span>
-                      </h3>
-                      <div className="max-h-96 overflow-y-auto space-y-3">
-                        {staffRoles.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500 text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            <p>No positions added yet</p>
-                            <p className="text-sm">Add your first position using the form on the left</p>
-                          </div>
-                        ) : (
-                          staffRoles.map((department) => (
-                            <div key={department.id} className="bg-gray-50 bg-white rounded-lg p-4 border border-gray-200 border-gray-300 hover:shadow-md transition-shadow">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <h4 className="font-medium text-gray-900 text-black">{department.name}</h4>
-                                  <p className="text-sm text-gray-600 text-gray-600 mt-1">{department.description || 'No description provided'}</p>
-                                </div>
-                                <div className="flex space-x-2 ml-4">
-                                  <button
-                                    onClick={() => handleEditDepartment(department)}
-                                    className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                                    title="Edit position"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteDepartment(department.id)}
-                                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                                    title="Delete position"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
+                  // Add New Department Form - Single Column Layout
+                  <div className="max-w-md mx-auto">
+                    <h3 className="text-lg font-semibold text-gray-800 text-black border-b border-gray-200 border-gray-200 pb-2 mb-4">
+                      Add New Position/Specialization
+                    </h3>
+                    <form onSubmit={handleAddDepartment} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          Position Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={departmentFormData.name}
+                          onChange={(e) => setDepartmentFormData(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., Electrician"
+                        />
                       </div>
-                    </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          Description/Specialization
+                        </label>
+                        <textarea
+                          value={departmentFormData.description}
+                          onChange={(e) => setDepartmentFormData(prev => ({ ...prev, description: e.target.value }))}
+                          rows="3"
+                          className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Describe the role and responsibilities..."
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 border-gray-200">
+                        <button
+                          type="button"
+                          onClick={closeDepartmentForm}
+                          className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                        >
+                          Add Position
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 )}
               </div>

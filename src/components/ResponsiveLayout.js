@@ -140,7 +140,7 @@ function ResponsiveLayout({ children }) {
         {/* Sidebar */}
         <aside
           id="responsive-sidebar"
-          className={`fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out
+          className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             lg:translate-x-0
             ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
@@ -318,7 +318,7 @@ function ResponsiveLayout({ children }) {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
-          <header className="bg-white bg-white border-b border-gray-200 border-gray-200 shadow-sm">
+          <header className="fixed top-0 left-0 right-0 z-30 bg-white bg-white border-b border-gray-200 border-gray-200 shadow-sm">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 {/* Hamburger Menu for Mobile */}
@@ -381,7 +381,7 @@ function ResponsiveLayout({ children }) {
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className={`flex-1 overflow-y-auto pt-16 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
             <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
               {children}
             </div>

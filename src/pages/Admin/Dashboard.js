@@ -543,7 +543,7 @@ function Dashboard() {
 
   return (
    <ResponsiveLayout>
-  <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div className="pt-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
     {/* Header Section */}
     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 mb-8 shadow-xl">
       <div className="flex flex-wrap justify-between items-center">

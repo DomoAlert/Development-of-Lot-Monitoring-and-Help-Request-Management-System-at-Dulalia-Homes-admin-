@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
-import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where} from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { toast } from 'react-toastify';
-import { FaUserShield, FaEdit, FaTrash, FaTimes, FaSpinner, FaClock, FaToggleOn, FaToggleOff, FaSearch, FaFilter, FaSyncAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUserShield, FaEdit, FaTrash, FaTimes, FaSpinner, FaClock, FaSearch, FaSyncAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 function GuardAccounts() {
@@ -299,6 +299,30 @@ function GuardAccounts() {
     }
   };
 
+  // Function to calculate shift end time (12 hours after start time)
+  const calculateShiftEnd = (startTime) => {
+    if (!startTime) return '';
+    
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    const endTotalMinutes = (totalMinutes + 12 * 60) % (24 * 60); // Add 12 hours, wrap around if needed
+    
+    const endHours = Math.floor(endTotalMinutes / 60);
+    const endMinutes = endTotalMinutes % 60;
+    
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+  };
+
+  // Function to handle shift start time change
+  const handleShiftStartChange = (startTime) => {
+    const endTime = calculateShiftEnd(startTime);
+    setFormData({
+      ...formData,
+      shift_start: startTime,
+      shift_end: endTime
+    });
+  };
+
   // Function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (time) => {
     if (!time) return '';
@@ -561,7 +585,7 @@ function GuardAccounts() {
                         <input
                           type="time"
                           value={formData.shift_start}
-                          onChange={(e) => setFormData({...formData, shift_start: e.target.value})}
+                          onChange={(e) => handleShiftStartChange(e.target.value)}
                           className="pl-10 w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -575,12 +599,9 @@ function GuardAccounts() {
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <FaClock className="h-4 w-4 text-gray-400" />
                         </div>
-                        <input
-                          type="time"
-                          value={formData.shift_end}
-                          onChange={(e) => setFormData({...formData, shift_end: e.target.value})}
-                          className="pl-10 w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <div className="pl-10 w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-50 text-gray-700">
+                          {formData.shift_end ? formatTime(formData.shift_end) : 'Auto-calculated'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -884,7 +905,7 @@ function GuardAccounts() {
                     <input
                       type="time"
                       value={formData.shift_start}
-                      onChange={(e) => setFormData({...formData, shift_start: e.target.value})}
+                      onChange={(e) => handleShiftStartChange(e.target.value)}
                       className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -893,12 +914,9 @@ function GuardAccounts() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Shift End
                     </label>
-                    <input
-                      type="time"
-                      value={formData.shift_end}
-                      onChange={(e) => setFormData({...formData, shift_end: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-50 text-gray-700">
+                      {formData.shift_end ? formatTime(formData.shift_end) : 'Auto-calculated'}
+                    </div>
                   </div>
                   
                   <div>

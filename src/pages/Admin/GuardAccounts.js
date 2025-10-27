@@ -58,6 +58,106 @@ function GuardAccounts() {
     fetchGuards();
   }, [refreshTrigger]);
 
+  // Auto-update shift statuses based on real time
+  useEffect(() => {
+    const updateShiftStatuses = () => {
+      updateGuardsShiftStatus();
+    };
+
+    // Run immediately
+    updateShiftStatuses();
+
+    // Then run every minute
+    const interval = setInterval(updateShiftStatuses, 60000);
+
+    return () => clearInterval(interval);
+  }, [guards]);
+
+  // Function to check if a guard should be on duty based on current time and shift schedule
+  const shouldGuardBeOnDuty = (guard) => {
+    if (!guard.shift_start || !guard.shift_end || !guard.shiftDays) {
+      return false;
+    }
+
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+
+    // Map day numbers to shiftDays keys
+    const dayMapping = {
+      0: 'sunday',
+      1: 'monday',
+      2: 'tuesday',
+      3: 'wednesday',
+      4: 'thursday',
+      5: 'friday',
+      6: 'saturday'
+    };
+
+    const todayKey = dayMapping[currentDay];
+
+    // Check if today is a shift day for this guard
+    if (!guard.shiftDays[todayKey]) {
+      return false;
+    }
+
+    // Parse shift times
+    const [startHours, startMinutes] = guard.shift_start.split(':').map(Number);
+    const [endHours, endMinutes] = guard.shift_end.split(':').map(Number);
+
+    const shiftStartMinutes = startHours * 60 + startMinutes;
+    const shiftEndMinutes = endHours * 60 + endMinutes;
+
+    // Handle overnight shifts (e.g., 22:00 to 06:00)
+    if (shiftEndMinutes < shiftStartMinutes) {
+      // Shift spans midnight
+      return currentTime >= shiftStartMinutes || currentTime <= shiftEndMinutes;
+    } else {
+      // Normal shift within same day
+      return currentTime >= shiftStartMinutes && currentTime <= shiftEndMinutes;
+    }
+  };
+
+  // Function to update all guards' shift statuses based on current time
+  const updateGuardsShiftStatus = async () => {
+    if (guards.length === 0) return;
+
+    try {
+      const updates = [];
+
+      for (const guard of guards) {
+        const shouldBeOnDuty = shouldGuardBeOnDuty(guard);
+        const currentStatus = guard.shift_status || 'Off-duty';
+        const newStatus = shouldBeOnDuty ? 'On-duty' : 'Off-duty';
+
+        // Only update if status needs to change
+        if (currentStatus !== newStatus) {
+          const guardRef = doc(db, 'guards', guard.id);
+          updates.push(
+            updateDoc(guardRef, {
+              shift_status: newStatus,
+              updatedAt: serverTimestamp(),
+            })
+          );
+
+          // Update local state immediately
+          setGuards(prev => prev.map(g =>
+            g.id === guard.id ? { ...g, shift_status: newStatus } : g
+          ));
+        }
+      }
+
+      // Execute all updates
+      if (updates.length > 0) {
+        await Promise.all(updates);
+        console.log(`Updated ${updates.length} guard shift statuses`);
+      }
+
+    } catch (error) {
+      console.error("Error updating guard shift statuses:", error);
+    }
+  };
+
   const fetchGuards = async () => {
     setLoading(true);
     try {

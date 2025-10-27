@@ -599,9 +599,12 @@ function GuardAccounts() {
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <FaClock className="h-4 w-4 text-gray-400" />
                         </div>
-                        <div className="pl-10 w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-50 text-gray-700">
-                          {formData.shift_end ? formatTime(formData.shift_end) : 'Auto-calculated'}
-                        </div>
+                        <input
+                          type="time"
+                          value={formData.shift_end}
+                          onChange={(e) => setFormData({...formData, shift_end: e.target.value})}
+                          className="pl-10 w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        />
                       </div>
                     </div>
                   </div>
@@ -914,9 +917,12 @@ function GuardAccounts() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Shift End
                     </label>
-                    <div className="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-50 text-gray-700">
-                      {formData.shift_end ? formatTime(formData.shift_end) : 'Auto-calculated'}
-                    </div>
+                    <input
+                      type="time"
+                      value={formData.shift_end}
+                      onChange={(e) => setFormData({...formData, shift_end: e.target.value})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                   
                   <div>

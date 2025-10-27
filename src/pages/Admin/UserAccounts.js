@@ -567,6 +567,7 @@ function UserAccounts() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+            style={{ color: '#000' }}
           />
         </div>
 
@@ -868,7 +869,7 @@ function UserAccounts() {
             <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
               <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-base sm:text-lg font-semibold text-black flex items-center">
+                  <h2 className="text-base sm:text-lg font-semibold text-black flex items-center" style={{ color: '#000' }}>
                     {isEditing ? 'Edit User' : 'User Details'}
                   </h2>
                   <button 
@@ -892,31 +893,31 @@ function UserAccounts() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <p className="text-sm text-black text-black">First Name</p>
-                        <p className="font-medium text-sm sm:text-base">{selectedUser.firstName || 'N/A'}</p>
+                        <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>{selectedUser.firstName || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-black text-black">Last Name</p>
-                        <p className="font-medium text-sm sm:text-base">{selectedUser.lastName || 'N/A'}</p>
+                        <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>{selectedUser.lastName || 'N/A'}</p>
                       </div>
                     </div>
                     
                     <div>
                       <p className="text-sm text-black text-black">Username</p>
-                      <p className="font-medium text-sm sm:text-base">{selectedUser.username || 'N/A'}</p>
+                      <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>{selectedUser.username || 'N/A'}</p>
                     </div>
                     
                     <div>
                       <p className="text-sm text-black text-black">Email</p>
-                      <p className="font-medium text-sm sm:text-base">{selectedUser.email || 'N/A'}</p>
+                      <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>{selectedUser.email || 'N/A'}</p>
                     </div>
                     
                     <div className="p-2 bg-amber-50 rounded-md">
                       <p className="text-sm text-black text-black">Property Details</p>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 gap-2">
                         <div className="flex-1">
-                          <p className="font-medium text-sm sm:text-base">House #{selectedUser.house_no || 'N/A'}</p>
+                          <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>House #{selectedUser.house_no || 'N/A'}</p>
                           {selectedUser.block && selectedUser.lot && (
-                            <p className="text-xs sm:text-sm text-black">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
+                            <p className="text-xs sm:text-sm text-black" style={{ color: '#000' }}>Block {selectedUser.block}, Lot {selectedUser.lot}</p>
                           )}
                         </div>
                         <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 self-start">
@@ -927,12 +928,12 @@ function UserAccounts() {
                     
                     <div>
                       <p className="text-sm text-black text-black">Role</p>
-                      <p className="font-medium text-sm sm:text-base">{selectedUser.role || 'Homeowner'}</p>
+                      <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>{selectedUser.role || 'Homeowner'}</p>
                     </div>
                     
                     <div>
                       <p className="text-sm text-black text-black">Status</p>
-                      <p className={`font-medium text-sm sm:text-base ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`font-medium text-sm sm:text-base ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`} style={{ color: '#000' }}>
                         {selectedUser.status || 'N/A'}
                       </p>
                     </div>
@@ -950,7 +951,7 @@ function UserAccounts() {
                     
                     <div>
                       <p className="text-sm text-black text-black">Contact Number</p>
-                      <p className="font-medium text-sm sm:text-base">{selectedUser.contactNumber || 'N/A'}</p>
+                      <p className="font-medium text-sm sm:text-base" style={{ color: '#000' }}>{selectedUser.contactNumber || 'N/A'}</p>
                     </div>
                     
                     <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
@@ -976,6 +977,7 @@ function UserAccounts() {
                         value={formData.firstName}
                         onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                         className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                        style={{ color: '#000' }}
                       />
                     </div>
                     <div>
@@ -988,6 +990,7 @@ function UserAccounts() {
                         value={formData.lastName}
                         onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                         className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                        style={{ color: '#000' }}
                       />
                     </div>
                   </div>
@@ -1002,6 +1005,7 @@ function UserAccounts() {
                       value={formData.username}
                       onChange={handleUsernameChange}
                       className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                      style={{ color: '#000' }}
                     />
                   </div>
                   
@@ -1014,6 +1018,7 @@ function UserAccounts() {
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                      style={{ color: '#000' }}
                     />
                   </div>
                   
@@ -1116,6 +1121,7 @@ function UserAccounts() {
                       onChange={handleContactNumberChange}
                       className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
                       placeholder="e.g. 09123456789"
+                      style={{ color: '#000' }}
                     />
                   </div>
                   

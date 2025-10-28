@@ -812,9 +812,6 @@ function FacilityRequests() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        #
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Homeowner
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -847,9 +844,6 @@ function FacilityRequests() {
                   {facilityRequests.length > 0 ? (
                     facilityRequests.map((request, index) => (
                       <tr key={request.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {index + 1}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {request.homeowner_name || 'N/A'}
                         </td>
@@ -938,7 +932,7 @@ function FacilityRequests() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={10} className="px-6 py-10 text-center text-gray-500">
+                      <td colSpan={9} className="px-6 py-10 text-center text-gray-500">
                         No requests for this facility yet. Homeowners can submit requests using the mobile app.
                       </td>
                     </tr>

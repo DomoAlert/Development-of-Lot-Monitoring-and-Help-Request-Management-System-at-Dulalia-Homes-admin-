@@ -3,7 +3,7 @@ import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where} from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { toast } from 'react-toastify';
-import { FaUserShield, FaEdit, FaTrash, FaTimes, FaSpinner, FaClock, FaSearch, FaSyncAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUserShield, FaUser, FaTimes, FaSpinner, FaClock, FaSearch, FaSyncAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 function GuardAccounts() {
@@ -265,7 +265,8 @@ function GuardAccounts() {
         saturday: false,
         sunday: false
       },
-      isActive: guard.isActive !== undefined ? guard.isActive : true
+      isActive: guard.isActive !== undefined ? guard.isActive : true,
+      fcmToken: guard.fcmToken || ''
     });
     setShowGuardDetails(true);
     setIsEditing(false);
@@ -279,6 +280,29 @@ function GuardAccounts() {
 
   const handleEditGuard = () => {
     if (!selectedGuard) return;
+
+    setFormData({
+      name: selectedGuard.name || '',
+      username: selectedGuard.username || '',
+      email: selectedGuard.email || '',
+      contactNumber: selectedGuard.contactNumber || '',
+      role: selectedGuard.role || 'Guard',
+      shift_status: selectedGuard.shift_status || 'Off-duty',
+      shift_start: selectedGuard.shift_start || '',
+      shift_end: selectedGuard.shift_end || '',
+      shiftDays: selectedGuard.shiftDays || {
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false
+      },
+      isActive: selectedGuard.isActive !== undefined ? selectedGuard.isActive : true,
+      fcmToken: selectedGuard.fcmToken || ''
+    });
+
     setIsEditing(true);
   };
 
@@ -843,9 +867,9 @@ function GuardAccounts() {
           </div>
         )}
 
-        {/* Guard Details Modal */}
+        {/* Guard Details/Edit Modal */}
         {showGuardDetails && selectedGuard && (
-          <div 
+          <div
             className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -853,332 +877,367 @@ function GuardAccounts() {
               }
             }}
           >
-            <div className="flex min-h-full items-center justify-center p-4 py-8">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
-                <h2 className="text-lg font-semibold">
-                  {isEditing ? 'Edit Guard' : 'Guard Details'}
-                </h2>
-                <button 
-                  onClick={closeGuardDetails}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              
-              <div className="p-6">
-              {!isEditing ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="h-20 w-20 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-semibold">
-                      {selectedGuard?.name?.charAt(0).toUpperCase() || 'G'}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{selectedGuard?.name || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Username</p>
-                    <p className="font-medium">{selectedGuard?.username || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedGuard?.email || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Contact</p>
-                    <p className="font-medium">{selectedGuard?.contactNumber || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Shift</p>
-                    <p className="font-medium">
-                      {selectedGuard?.shift_start && selectedGuard?.shift_end
-                        ? `${formatTime(selectedGuard?.shift_start)} - ${formatTime(selectedGuard?.shift_end)}`
-                        : 'Not set'}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Shift Days</p>
-                    <p className="font-medium">{formatShiftDays(selectedGuard?.shiftDays)}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <div className="flex items-center mt-1">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full mr-2 ${
-                        selectedGuard?.shift_status === 'On-duty' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {selectedGuard?.shift_status || 'Off-duty'}
-                      </span>
-                      
-                      <span className={`inline-flex h-2 w-2 rounded-full ${
-                        selectedGuard?.isActive ? 'bg-green-500' : 'bg-gray-300'
-                      }`}></span>
-                      <span className="ml-1 text-xs text-gray-500">
-                        {selectedGuard?.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-3">
-                    <button 
-                      onClick={handleEditGuard}
-                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                    >
-                      <FaEdit className="inline mr-1" /> Edit
-                    </button>
-                    <button 
-                      onClick={() => {
-                        closeGuardDetails();
-                        handleDeleteGuard(selectedGuard.id);
-                      }}
-                      className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                    >
-                      <FaTrash className="inline mr-1" /> Delete
-                    </button>
-                  </div>
+            <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-base sm:text-lg font-semibold text-black flex items-center" style={{ color: '#000' }}>
+                    {isEditing ? 'Edit Guard' : 'Guard Details'}
+                  </h2>
+                  <button
+                    onClick={closeGuardDetails}
+                    className="!text-black hover:text-gray-700"
+                    style={{ color: '#000' }}
+                  >
+                    <FaTimes />
+                  </button>
                 </div>
-              ) : (
-                <form onSubmit={handleUpdateGuard} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.username}
-                      onChange={handleUsernameChange}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.contactNumber}
-                      onChange={handleContactNumberChange}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g. 09123456789"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Shift Start
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.shift_start}
-                      onChange={(e) => handleShiftStartChange(e.target.value)}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Shift End
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.shift_end}
-                      onChange={(e) => setFormData({...formData, shift_end: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Shift Days
-                    </label>
-                    <div className="grid grid-cols-7 gap-2">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.monday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, monday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Mon</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.tuesday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, tuesday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Tue</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.wednesday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, wednesday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Wed</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.thursday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, thursday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Thu</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.friday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, friday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Fri</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.saturday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, saturday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Sat</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.shiftDays.sunday}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            shiftDays: { ...formData.shiftDays, sunday: e.target.checked }
-                          })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Sun</span>
-                      </label>
+
+                <div className="p-4 sm:p-6">
+                  {/* Header with Edit Toggle */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
+                        {selectedGuard.name ? selectedGuard.name.charAt(0).toUpperCase() : 'G'}
+                      </div>
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold !text-black">
+                          {selectedGuard.name || 'Unknown Guard'}
+                        </h2>
+                        <p className="!text-black text-sm sm:text-base" style={{ color: '#000' }}>@{selectedGuard.username}</p>
+                        <div className="flex items-center mt-1">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            selectedGuard.shift_status === 'On-duty' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            <span className={`mr-1 h-1.5 w-1.5 rounded-full ${
+                              selectedGuard.shift_status === 'On-duty' ? 'bg-green-500' : 'bg-red-500'
+                            }`}></span>
+                            {selectedGuard.shift_status || 'Off-duty'}
+                          </span>
+                          <span className={`ml-2 px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
+                            selectedGuard.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            <i className={`fas ${selectedGuard.isActive ? 'fa-check-circle mr-1' : 'fa-pause-circle mr-1'} text-xs`}></i>
+                            {selectedGuard.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          if (isEditing) {
+                            setIsEditing(false);
+                          } else {
+                            handleEditGuard();
+                          }
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                          isEditing
+                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                      >
+                        <i className={`fas ${isEditing ? 'fa-times' : 'fa-edit'} mr-2`}></i>
+                        {isEditing ? 'Cancel' : 'Edit Guard'}
+                      </button>
                     </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Shift Status
-                    </label>
-                    <select
-                      value={formData.shift_status}
-                      onChange={(e) => setFormData({...formData, shift_status: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Off-duty">Off-duty</option>
-                      <option value="On-duty">On-duty</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account Status
-                    </label>
-                    <select
-                      value={formData.isActive}
-                      onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="true">Active</option>
-                      <option value="false">Inactive</option>
-                    </select>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditing(false);
-                      }}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      disabled={formSubmitting}
-                    >
-                      {formSubmitting ? (
-                        <div className="flex items-center">
-                          <FaSpinner className="animate-spin mr-2" />
-                          Updating...
+
+                  {isEditing ? (
+                    /* Edit Mode */
+                    <form onSubmit={handleUpdateGuard} className="space-y-6">
+                      {/* Personal Information Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <FaUser className="mr-2 text-blue-500" />
+                          Personal Information
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Full Name *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.name}
+                              onChange={(e) => setFormData({...formData, name: e.target.value})}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                              placeholder="Enter guard's full name"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Contact Number
+                            </label>
+                            <input
+                              type="tel"
+                              value={formData.contactNumber}
+                              onChange={handleContactNumberChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                              placeholder="e.g. 09123456789"
+                            />
+                          </div>
                         </div>
-                      ) : (
-                        'Update Guard'
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-              </div>
+                      </div>
+
+                      {/* Account Information Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <i className="fas fa-user-lock mr-2 text-indigo-500"></i>
+                          Account Information
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Username *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.username}
+                              onChange={handleUsernameChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                              placeholder="Enter username"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Email
+                            </label>
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({...formData, email: e.target.value})}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                              placeholder="guard@guard.com"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Role
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.role}
+                              onChange={(e) => setFormData({...formData, role: e.target.value})}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                              placeholder="Guard"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Shift Information Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <FaClock className="mr-2 text-amber-500" />
+                          Shift Information
+                        </h3>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium !text-black mb-2">
+                                Shift Start Time
+                              </label>
+                              <input
+                                type="time"
+                                value={formData.shift_start}
+                                onChange={(e) => handleShiftStartChange(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium !text-black mb-2">
+                                Shift End Time
+                              </label>
+                              <input
+                                type="time"
+                                value={formData.shift_end}
+                                onChange={(e) => setFormData({...formData, shift_end: e.target.value})}
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-3">
+                              Shift Days
+                            </label>
+                            <div className="grid grid-cols-7 gap-2">
+                              {[
+                                { key: 'monday', label: 'Mon' },
+                                { key: 'tuesday', label: 'Tue' },
+                                { key: 'wednesday', label: 'Wed' },
+                                { key: 'thursday', label: 'Thu' },
+                                { key: 'friday', label: 'Fri' },
+                                { key: 'saturday', label: 'Sat' },
+                                { key: 'sunday', label: 'Sun' }
+                              ].map(({ key, label }) => (
+                                <label key={key} className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.shiftDays[key]}
+                                    onChange={(e) => setFormData({
+                                      ...formData,
+                                      shiftDays: { ...formData.shiftDays, [key]: e.target.checked }
+                                    })}
+                                    className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                                  />
+                                  <span className="ml-2 text-sm !text-black">{label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Status & Settings Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <i className="fas fa-cog mr-2 text-gray-500"></i>
+                          Status & Settings
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Shift Status
+                            </label>
+                            <select
+                              value={formData.shift_status}
+                              onChange={(e) => setFormData({...formData, shift_status: e.target.value})}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            >
+                              <option value="Off-duty">Off-duty</option>
+                              <option value="On-duty">On-duty</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium !text-black mb-2">
+                              Account Status
+                            </label>
+                            <select
+                              value={formData.isActive}
+                              onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            >
+                              <option value={true}>Active</option>
+                              <option value={false}>Inactive</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-6 border-t border-gray-200">
+                        <button
+                          type="button"
+                          disabled={formSubmitting}
+                          onClick={() => setIsEditing(false)}
+                          className="px-6 py-3 border border-gray-300 rounded-lg !text-black hover:bg-gray-50 disabled:opacity-50 transition-all font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={formSubmitting}
+                          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-all font-medium"
+                        >
+                          {formSubmitting ? (
+                            <>
+                              <FaSpinner className="animate-spin mr-2" />
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-save mr-2"></i>
+                              Update Guard
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    /* View Mode */
+                    <div className="space-y-6">
+                      {/* Personal Information Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <FaUser className="mr-2 text-blue-500" />
+                          Personal Information
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <p className="text-sm !text-black font-medium mb-1">Full Name</p>
+                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-blue-500" style={{ color: '#000' }}>{selectedGuard.name || 'N/A'}</p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <p className="text-sm !text-black font-medium mb-1">Contact Number</p>
+                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-green-500 flex items-center" style={{ color: '#000' }}>
+                              <i className="fas fa-phone-alt mr-2 text-green-600"></i>
+                              {selectedGuard.contactNumber || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Account Information Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <i className="fas fa-user-lock mr-2 text-indigo-500"></i>
+                          Account Information
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm !text-black font-medium mb-1">Username</p>
+                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-purple-500 flex items-center" style={{ color: '#000' }}>
+                              <span className="text-purple-600 font-bold mr-1">@</span>
+                              {selectedGuard.username || 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm !text-black font-medium mb-1">Email</p>
+                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-indigo-500 flex items-center" style={{ color: '#000' }}>
+                              <i className="fas fa-envelope mr-2 text-indigo-600"></i>
+                              {selectedGuard.email || 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm !text-black font-medium mb-1">Role</p>
+                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-orange-500 flex items-center" style={{ color: '#000' }}>
+                              <i className="fas fa-user-shield mr-2 text-orange-600"></i>
+                              {selectedGuard.role || 'Guard'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Shift Information Card */}
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
+                          <FaClock className="mr-2 text-amber-500" />
+                          Shift Information
+                        </h3>
+                        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="!text-black font-medium mb-1">Shift Time</p>
+                              <p className="!text-black">
+                                {selectedGuard.shift_start && selectedGuard.shift_end
+                                  ? `${formatTime(selectedGuard.shift_start)} - ${formatTime(selectedGuard.shift_end)}`
+                                  : 'Not set'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="!text-black font-medium mb-1">Shift Days</p>
+                              <p className="!text-black">{formatShiftDays(selectedGuard.shiftDays)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

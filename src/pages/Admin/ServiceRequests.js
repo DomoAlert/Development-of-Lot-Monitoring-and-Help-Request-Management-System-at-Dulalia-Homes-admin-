@@ -20,7 +20,7 @@ import {
   TableBody, TableRow, TableCell, TableHeaderCell, Badge, 
   Modal, DataSearch 
 } from '../../components/AdminUI';
-import withAdminPage from '../../components/withAdminPage';
+
 
 function ServiceRequests() {
   const [requests, setRequests] = useState([]);
@@ -88,7 +88,7 @@ function ServiceRequests() {
   const [requestFormData, setRequestFormData] = useState({
     house_no: '',
     resident_name: '',
-    type_of_request: '',
+    service_provider: '',
     issue: '',
     additional_notes: '',
     scheduled_date: '',
@@ -576,8 +576,8 @@ function ServiceRequests() {
       errors.house_no = 'House number is required';
     }
     
-    if (!requestFormData.type_of_request) {
-      errors.type_of_request = 'Please select a request type';
+    if (!requestFormData.service_provider) {
+      errors.service_provider = 'Please select a service provider';
     }
     
     if (!requestFormData.issue.trim()) {
@@ -611,7 +611,7 @@ function ServiceRequests() {
         fullName: selectedHomeowner ? selectedHomeowner.fullName : 'Unknown',
         resident_name: selectedHomeowner ? selectedHomeowner.fullName : 'Unknown', // Keep for backward compatibility
         resident_id: requestFormData.resident_name,
-        type_of_request: requestFormData.type_of_request,
+        service_provider: requestFormData.service_provider,
         issue: requestFormData.issue,
         additional_notes: requestFormData.additional_notes || null,
         scheduled_date: requestFormData.scheduled_date || null,
@@ -628,7 +628,7 @@ function ServiceRequests() {
       setRequestFormData({
         house_no: '',
         resident_name: '',
-        type_of_request: '',
+        service_provider: '',
         issue: '',
         additional_notes: '',
         scheduled_date: '',
@@ -763,76 +763,6 @@ function ServiceRequests() {
       setIsNoCommentModalOpen(true);
     }
   };
-  
-  // REMOVED FOR WEB ADMIN VIEW: These functions are commented out as they're not needed in the view-only version
-  /*
-  const sendNotification = async ({ residentName, residentUid, staffName, issue }) => {
-    try {
-      const staff = getStaffDetails(staffName);
-      const position = staff?.position || 'staff';
-      
-      const message = `${staffName} (${position}) is on the way to fix the issue: ${issue}`;
-      
-      await addDoc(collection(db, 'notifications'), {
-        to: residentName,
-        user_id: residentUid,
-        message: message,
-        timestamp: serverTimestamp()
-      });
-      
-      toast.success(`Notification sent to ${residentName}`);
-      setIsNotifyModalOpen(false);
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      toast.error('Error sending notification: ' + error.message);
-    }
-  };
-  
-  const handleAssignStaff = async (requestId, staffName) => {
-    try {
-      await updateDoc(doc(db, 'services', requestId), {
-        staff: staffName,
-        updatedAt: new Date()
-      });
-      toast.success(`Staff assigned successfully`);
-      fetchRequests();
-    } catch (error) {
-      console.error('Error assigning staff:', error);
-      toast.error('Error assigning staff: ' + error.message);
-    }
-  };
-  
-  const handleNotifyButtonClick = (request) => {
-    if (!request.staff) {
-      toast.warning('Please assign a staff member first');
-      return;
-    }
-    
-    setCurrentNotifyDetails({
-      residentName: request.fullName || request.resident_name || `${request.first_name || ''} ${request.last_name || ''}`.trim(),
-      residentUid: request.uid || request.user_id || '',
-      staffName: request.staff,
-      issue: request.issue || ''
-    });
-    
-    setIsNotifyModalOpen(true);
-    setIsNotifyResidentModalOpen(true);
-  };
-
-  const handleUpdateStatus = async (id, newStatus) => {
-    try {
-      await updateDoc(doc(db, 'services', id), {
-        status: newStatus,
-        updatedAt: new Date()
-      });
-      toast.success(`Request ${newStatus.toLowerCase()} successfully`);
-      fetchRequests();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Error updating request: ' + error.message);
-    }
-  };
-  */
 
   const getStatusVariant = (status) => {
     if (!status) return 'warning';
@@ -860,7 +790,7 @@ function ServiceRequests() {
       (request.house_no || '').toString().includes(searchQuery);
     
     const matchesRequestType = !requestTypeFilter || 
-      request.type_of_request === requestTypeFilter || 
+      request.service_provider === requestTypeFilter || 
       request.request_type === requestTypeFilter;
     
     const matchesStatus = !statusFilter || request.status === statusFilter;
@@ -1061,7 +991,7 @@ const formatTime = (timestamp) => {
                       
                       {/* Request Details Column */}
                       <TableCell className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{request.type_of_request || request.request_type || 'N/A'}</div>
+                        <div className="text-sm font-medium text-gray-900">{request.service_provider || request.request_type || 'N/A'}</div>
                         {request.scheduled_date && (
                           <div className="text-xs text-gray-500 mt-1">
                             Scheduled: {request.scheduled_date} {request.scheduled_time && `at ${request.scheduled_time}`}
@@ -1669,13 +1599,13 @@ const formatTime = (timestamp) => {
             </div>
             
             <div>
-              <label htmlFor="type_of_request" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="service_provider" className="block text-sm font-medium text-gray-700">
                 Request Type <span className="text-red-500">*</span>
               </label>
               <select
-                id="type_of_request"
-                name="type_of_request"
-                value={requestFormData.type_of_request}
+                id="service_provider"
+                name="service_provider"
+                value={requestFormData.service_provider}
                 onChange={handleRequestFormChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 required
@@ -1687,8 +1617,8 @@ const formatTime = (timestamp) => {
                   </option>
                 ))}
               </select>
-              {requestFormErrors.type_of_request && (
-                <p className="mt-1 text-sm text-red-500">{requestFormErrors.type_of_request}</p>
+              {requestFormErrors.service_provider && (
+                <p className="mt-1 text-sm text-red-500">{requestFormErrors.service_provider}</p>
               )}
             </div>
             
@@ -2049,64 +1979,6 @@ const formatTime = (timestamp) => {
               </Button>
             </div>
           </form>
-          
-          {/* List of existing service types */}
-          {serviceTypes.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Existing Service Types</h3>
-              <div className="overflow-auto max-h-64 border rounded-md">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                     
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {serviceTypes.map((serviceType) => (
-                      <tr key={serviceType.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {serviceType.name}
-                          {serviceType.description && (
-                            <p className="text-xs text-gray-500 mt-1">{serviceType.description}</p>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span 
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              serviceType.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            } cursor-pointer`}
-                            onClick={() => handleToggleServiceTypeStatus(serviceType)}
-                          >
-                            {serviceType.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEditServiceType(serviceType)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteServiceType(serviceType.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </Modal>
       </div>
     </ResponsiveLayout>

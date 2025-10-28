@@ -73,7 +73,7 @@ function ServiceRequests() {
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTypeFormData, setServiceTypeFormData] = useState({
     name: '',
-    description: '',
+    category: [],
     active: true
   });
   const [serviceTypeFormErrors, setServiceTypeFormErrors] = useState({});
@@ -82,6 +82,9 @@ function ServiceRequests() {
   const [isConfirmDeleteServiceTypeModalOpen, setIsConfirmDeleteServiceTypeModalOpen] = useState(false);
   const [serviceTypePendingDelete, setServiceTypePendingDelete] = useState(null);
   const [isServiceTypesManagementModalOpen, setIsServiceTypesManagementModalOpen] = useState(false);
+  
+  // category input state
+  const [currentcategory, setCurrentcategory] = useState('');
   
   // New service request state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -317,8 +320,10 @@ function ServiceRequests() {
   const handleAddServiceType = () => {
     setServiceTypeFormData({
       name: '',
-      description: ''
+      category: [],
+      active: true
     });
+    setCurrentcategory('');
     setServiceTypeFormErrors({});
     setIsEditingServiceType(false);
     setCurrentServiceTypeId(null);
@@ -328,9 +333,10 @@ function ServiceRequests() {
   const handleEditServiceType = (serviceType) => {
     setServiceTypeFormData({
       name: serviceType.name,
-      description: serviceType.description || '',
+      category: serviceType.category || [],
       active: serviceType.active !== undefined ? serviceType.active : true
     });
+    setCurrentcategory('');
     setServiceTypeFormErrors({});
     setIsEditingServiceType(true);
     setCurrentServiceTypeId(serviceType.id);
@@ -357,6 +363,22 @@ function ServiceRequests() {
     // Clear inline errors for the field being edited
     setServiceTypeFormErrors(prev => ({ ...prev, [name]: undefined }));
   };
+
+  const handleAddcategory = (category) => {
+    if (category.trim() && !serviceTypeFormData.category.includes(category.trim())) {
+      setServiceTypeFormData(prev => ({
+        ...prev,
+        category: [...prev.category, category.trim()]
+      }));
+    }
+  };
+
+  const handleRemovecategory = (index) => {
+    setServiceTypeFormData(prev => ({
+      ...prev,
+      category: prev.category.filter((_, i) => i !== index)
+    }));
+  };
   
   const handleServiceTypeFormSubmit = async (e) => {
     e.preventDefault();
@@ -366,26 +388,21 @@ function ServiceRequests() {
     }
     
     try {
-      // Duplicate check: name OR description matching existing service types
+      // Duplicate check: name matching existing service types
       const newName = serviceTypeFormData.name.trim().toLowerCase();
-      const newDesc = (serviceTypeFormData.description || '').trim().toLowerCase();
 
-      // Identify which field(s) conflict, and set inline errors accordingly
+      // Identify which field(s) conflict
       let conflictName = false;
-      let conflictDesc = false;
 
       serviceTypes.forEach(st => {
         if (isEditingServiceType && st.id === currentServiceTypeId) return; // ignore self
         const existingName = (st.name || '').trim().toLowerCase();
-        const existingDesc = (st.description || '').trim().toLowerCase();
         if (existingName === newName) conflictName = true;
-        if (newDesc && existingDesc === newDesc) conflictDesc = true;
       });
 
-      if (conflictName || conflictDesc) {
+      if (conflictName) {
         const errors = {};
         if (conflictName) errors.name = 'A service type with this name already exists.';
-        if (conflictDesc) errors.description = 'A service type with this description already exists.';
         setServiceTypeFormErrors(prev => ({ ...prev, ...errors }));
         return;
       }
@@ -393,7 +410,7 @@ function ServiceRequests() {
         // Update existing service type
         await updateDoc(doc(db, 'service_types', currentServiceTypeId), {
           name: serviceTypeFormData.name.trim(),
-          description: serviceTypeFormData.description.trim(),
+          category: serviceTypeFormData.category,
           active: serviceTypeFormData.active,
           updatedAt: serverTimestamp()
         });
@@ -403,7 +420,7 @@ function ServiceRequests() {
         // Add new service type
         await addDoc(collection(db, 'service_types'), {
           name: serviceTypeFormData.name.trim(),
-          description: serviceTypeFormData.description.trim(),
+          category: serviceTypeFormData.category,
           active: serviceTypeFormData.active,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -414,9 +431,10 @@ function ServiceRequests() {
       // Reset form data
       setServiceTypeFormData({
         name: '',
-        description: '',
+        category: [],
         active: true
       });
+      setCurrentcategory('');
       setIsEditingServiceType(false);
       setCurrentServiceTypeId(null);
       setServiceTypeFormErrors({});
@@ -1835,8 +1853,11 @@ const formatTime = (timestamp) => {
                             <div className="flex items-center mb-2">
                               <div>
                                 <div className="text-sm font-medium text-gray-900">{serviceType.name}</div>
-                                {serviceType.description && (
-                                  <div className="text-sm text-gray-500">{serviceType.description}</div>
+                                {serviceType.category && serviceType.category.length > 0 && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {serviceType.category.length} category{serviceType.category.length !== 1 ? 's' : ''}: {serviceType.category.slice(0, 2).join(', ')}
+                                    {serviceType.category.length > 2 && ` +${serviceType.category.length - 2} more`}
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -1889,9 +1910,10 @@ const formatTime = (timestamp) => {
             setIsServiceTypeModalOpen(false);
             setServiceTypeFormData({
               name: '',
-              description: '',
+              category: [],
               active: true
             });
+            setCurrentcategory('');
             setIsEditingServiceType(false);
             setCurrentServiceTypeId(null);
             setServiceTypeFormErrors({});
@@ -1920,18 +1942,60 @@ const formatTime = (timestamp) => {
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                Category
               </label>
-              <textarea
-                name="description"
-                id="description"
-                rows={3}
-                value={serviceTypeFormData.description}
-                onChange={handleServiceTypeFormChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Optional description of this service type"
-              />
+              <div className="mt-1 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentcategory}
+                    onChange={(e) => setCurrentcategory(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddcategory(currentcategory);
+                        setCurrentcategory('');
+                      }
+                    }}
+                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Add an Category..."
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleAddcategory(currentcategory);
+                      setCurrentcategory('');
+                    }}
+                    disabled={!currentcategory.trim()}
+                  >
+                    Add
+                  </Button>
+                </div>
+                {serviceTypeFormData.category && serviceTypeFormData.category.length > 0 && (
+                  <div className="space-y-1">
+                    {serviceTypeFormData.category.map((category, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                        <span className="text-sm text-gray-700">{category}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovecategory(index)}
+                          className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Add category of services that fall under this type
+              </p>
             </div>
             
             <div className="mt-4">
@@ -1964,9 +2028,10 @@ const formatTime = (timestamp) => {
                   setIsServiceTypeModalOpen(false);
                   setServiceTypeFormData({
                     name: '',
-                    description: '',
+                    category: [],
                     active: true
                   });
+                  setCurrentcategory('');
                   setIsEditingServiceType(false);
                   setCurrentServiceTypeId(null);
                   setServiceTypeFormErrors({});

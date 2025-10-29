@@ -219,8 +219,18 @@ function UserAccounts() {
       return;
     }
     
-    // Generate email from username if not provided
-    const userEmail = formData.email || `${formData.username}@example.com`;
+    // Generate email: enforce @example.com domain for Homeowner accounts.
+    // If the role is Homeowner, always use username@example.com regardless of the email input.
+    // For other roles, use the provided email (if any) or fall back to username@example.com.
+    let userEmail;
+    if ((formData.role || 'Homeowner') === 'Homeowner') {
+      userEmail = `${formData.username}@example.com`;
+    } else {
+      userEmail = formData.email && formData.email.trim()
+        ? formData.email.trim()
+        : `${formData.username}@example.com`;
+    }
+
     const userPassword = formData.password || formData.username; // Default password is username
     
     try {

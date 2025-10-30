@@ -4,7 +4,7 @@ import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash, FaExclamationTriangle } from 'react-icons/fa';
+import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash, FaExclamationTriangle, FaSave } from 'react-icons/fa';
 import { UserService } from '../../services/UserService';
 
 function UserAccounts() {
@@ -15,6 +15,7 @@ function UserAccounts() {
   const [showForm, setShowForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
@@ -446,6 +447,95 @@ function UserAccounts() {
     });
     
     setIsEditing(true);
+  };
+
+  const handleUpdateProperty = async (userId, newLotId, newHouseModel) => {
+    setFormSubmitting(true);
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (!userDoc.exists()) {
+        toast.error('User not found');
+        return;
+      }
+
+      const userData = userDoc.data();
+      const batch = db.batch();
+      let finalLot = null;
+
+      // Handle lot reassignment if a new lot is selected
+      if (newLotId) {
+        const lotDoc = await getDoc(doc(db, 'lots', newLotId));
+        if (!lotDoc.exists()) {
+          toast.error('Selected lot not found');
+          return;
+        }
+
+        finalLot = { id: lotDoc.id, ...lotDoc.data() };
+
+        // Mark old lot as vacant if user had one
+        if (userData.house_no) {
+          const oldBlockNum = Math.floor(userData.house_no / 100);
+          const oldLotNum = userData.house_no % 100;
+          const oldLotId = `B${oldBlockNum}-L${oldLotNum.toString().padStart(2, '0')}`;
+
+          batch.set(doc(db, 'lots', oldLotId), {
+            house_no: userData.house_no,
+            block: oldBlockNum,
+            lot: oldLotNum,
+            status: 'Vacant',
+            owner_id: null,
+            house_owner: null,
+            last_updated: serverTimestamp()
+          }, { merge: true });
+        }
+
+        // Mark new lot as occupied
+        batch.set(doc(db, 'lots', newLotId), {
+          house_no: finalLot.house_no,
+          block: finalLot.block,
+          lot: finalLot.lot,
+          status: 'Occupied',
+          owner_id: userId,
+          house_owner: userData.username || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Unknown',
+          houseModel: newHouseModel,
+          last_updated: serverTimestamp()
+        }, { merge: true });
+      }
+
+      // Update user document
+      const updateData = {
+        houseModel: newHouseModel,
+        last_updated: serverTimestamp()
+      };
+
+      if (finalLot) {
+        updateData.house_no = finalLot.house_no;
+        updateData.block = finalLot.block;
+        updateData.lot = finalLot.lot;
+      }
+
+      batch.update(doc(db, 'users', userId), updateData);
+
+      await batch.commit();
+
+      toast.success('Property assignment updated successfully');
+      
+      // Refresh data
+      fetchUsers();
+      fetchAvailableLots();
+      
+      // Reset form data
+      setPropertyFormData({
+        selectedLotId: '',
+        houseModel: newHouseModel
+      });
+      
+    } catch (error) {
+      console.error('Error updating property:', error);
+      toast.error('Error updating property assignment: ' + error.message);
+    } finally {
+      setFormSubmitting(false);
+    }
   };
 
   const handleUsernameChange = (e) => {

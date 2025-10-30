@@ -4,7 +4,8 @@ import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash, FaExclamationTriangle } from 'react-icons/fa';
+import { UserService } from '../../services/UserService';
 
 function UserAccounts() {
   const [users, setUsers] = useState([]);
@@ -19,6 +20,8 @@ function UserAccounts() {
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -49,7 +52,7 @@ function UserAccounts() {
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (showForm || showUserDetails) {
+    if (showForm || showUserDetails || showDeleteModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -59,7 +62,7 @@ function UserAccounts() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showForm, showUserDetails]);
+  }, [showForm, showUserDetails, showDeleteModal]);
 
   // Blocks configuration - how many lots are in each block (same as in LotStatus.jsx)
   const blockConfig = {
@@ -424,11 +427,22 @@ function UserAccounts() {
     }
   };
 
-  const handleDeleteUser = async (id) => {
+  const handleDeleteUser = async (userId) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    // Check if user has a lot assigned
+    if (user.house_no) {
+      setUserToDelete(user);
+      setShowDeleteModal(true);
+      return;
+    }
+
+    // If no lot assigned, proceed with normal deletion
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setActionLoading(id);
+      setActionLoading(userId);
       try {
-        await deleteDoc(doc(db, 'users', id));
+        await deleteDoc(doc(db, 'users', userId));
         toast.success('User deleted successfully');
         fetchUsers();
       } catch (error) {
@@ -436,6 +450,43 @@ function UserAccounts() {
       } finally {
         setActionLoading(null);
       }
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    setActionLoading(userToDelete.id);
+    try {
+      // Delete user from Firestore
+      await deleteDoc(doc(db, 'users', userToDelete.id));
+
+      // Mark the lot as available
+      if (userToDelete.house_no) {
+        const blockNum = Math.floor(userToDelete.house_no / 100);
+        const lotNum = userToDelete.house_no % 100;
+        const lotId = `B${blockNum}-L${lotNum.toString().padStart(2, '0')}`;
+
+        await setDoc(doc(db, 'lots', lotId), {
+          house_no: userToDelete.house_no,
+          block: blockNum,
+          lot: lotNum,
+          status: 'Vacant',
+          owner_id: null,
+          house_owner: null,
+          last_updated: serverTimestamp()
+        }, { merge: true });
+      }
+
+      toast.success('User deleted successfully and lot marked as available');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      fetchUsers();
+      fetchAvailableLots(); // Refresh available lots
+    } catch (error) {
+      toast.error('Error deleting user: ' + error.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -1137,6 +1188,63 @@ function UserAccounts() {
           </div>
         )}
 
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && userToDelete && (
+          <div
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"
+            onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}
+          >
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+              <div className="flex items-center justify-center mb-4">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-red-100">
+                  <FaExclamationTriangle className="text-red-600" size={24} />
+                </div>
+              </div>
+              <h3 className="text-lg font-medium text-center mb-2 text-gray-900">
+                Confirm Account Deletion
+              </h3>
+              <p className="text-sm text-center mb-4 text-gray-600">
+                Are you sure you want to delete <strong>{userToDelete.username || getFullName(userToDelete)}</strong>?
+              </p>
+
+              {userToDelete.house_no && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center mb-2">
+                    <FaHome className="text-amber-600 mr-2" />
+                    <span className="font-medium text-amber-800">Property Impact</span>
+                  </div>
+                  <p className="text-sm text-amber-700">
+                    This user has House #{userToDelete.house_no} assigned. Deleting this account will make the lot available for reassignment.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 rounded-md transition-colors duration-200 bg-gray-200 hover:bg-gray-300 text-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteUser}
+                  disabled={actionLoading === userToDelete.id}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors duration-200 flex items-center justify-center"
+                >
+                  {actionLoading === userToDelete.id ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Account'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Users table */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
@@ -1311,20 +1419,20 @@ function UserAccounts() {
                         ) : (
                           <div className="flex flex-col gap-1 sm:gap-2">
                             {/* Top Section: View, Deactivate/Activate, Delete */}
-                            <div className="flex flex-wrap gap-1">
-                              <button 
+                            <div className="flex flex-wrap gap-1">              
+                              <button
                                 onClick={() => handleToggleStatus(user.id, user.status)}
                                 className={`px-1 sm:px-2 py-1 text-xs rounded border flex items-center ${
-                                  user.status === 'Active' 
-                                  ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                                  user.status === 'Active'
+                                  ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
                                   : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
                                 }`}
                               >
                                 <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
                                 <span className="hidden sm:inline">{user.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
                               </button>
-                              
-                              <button 
+
+                              <button
                                 onClick={() => handleDeleteUser(user.id)}
                                 className="px-1 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
                               >

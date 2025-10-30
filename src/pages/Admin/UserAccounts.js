@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ResponsiveLayout from '../../components/ResponsiveLayout';
+import React, { useState, useEffect } from 'react';
+import AdminLayout from '../../components/AdminLayout';
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, getDoc, where } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { FaUser, FaEdit, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUser, FaEdit, FaTrash, FaTimes, FaSpinner, FaHome, FaMapMarkerAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function UserAccounts() {
   const [users, setUsers] = useState([]);
@@ -39,8 +39,6 @@ function UserAccounts() {
   });
   
   const [searchQuery, setSearchQuery] = useState('');
-  const headerRef = useRef(null);
-  const personalInfoRef = useRef(null);
 
   // Fetch users and available lots
   useEffect(() => {
@@ -219,18 +217,8 @@ function UserAccounts() {
       return;
     }
     
-    // Generate email: enforce @example.com domain for Homeowner accounts.
-    // If the role is Homeowner, always use username@example.com regardless of the email input.
-    // For other roles, use the provided email (if any) or fall back to username@example.com.
-    let userEmail;
-    if ((formData.role || 'Homeowner') === 'Homeowner') {
-      userEmail = `${formData.username}@example.com`;
-    } else {
-      userEmail = formData.email && formData.email.trim()
-        ? formData.email.trim()
-        : `${formData.username}@example.com`;
-    }
-
+    // Generate email from username if not provided
+    const userEmail = formData.email || `${formData.username}@example.com`;
     const userPassword = formData.password || formData.username; // Default password is username
     
     try {
@@ -475,7 +463,6 @@ function UserAccounts() {
       role: selectedUser.role || 'Homeowner',
       status: selectedUser.status || 'Active',
       isActive: selectedUser.isActive !== undefined ? selectedUser.isActive : true,
-      recordStatus: selectedUser.recordStatus || 'Neutral',
       password: selectedUser.password || '',
       fcmToken: selectedUser.fcmToken || '',
       houseModel: selectedUser.houseModel || 'Standard'
@@ -489,7 +476,7 @@ function UserAccounts() {
     setFormData({
       ...formData,
       username,
-      email: `${username}@dulalia.com`
+      email: `${username}@example.com`
     });
   };
 
@@ -542,28 +529,26 @@ function UserAccounts() {
   };
 
   return (
-    <ResponsiveLayout>
-      <div className="pt-16 md:pt-20 px-4 sm:px-6 lg:px-8 max-w-full xl:max-w-7xl mx-auto">
-        <div className="bg-white bg-white shadow-lg rounded-lg p-4 sm:p-6 mb-6 lg:mb-8 border-l-4 border-blue-500">
-          <h1 className="text-2xl sm:text-3xl font-bold !text-black flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <AdminLayout>
+      <div className="pt-20 px-6 max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             User Accounts
           </h1>
-              <p className="text-black mt-2">
-                Manage resident accounts and their access permissions
-              </p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage resident accounts and their access permissions</p>
         </div>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
+        <div className="flex justify-between items-center mb-6">
           <button 
             onClick={() => {
               resetForm();
               setShowForm(true);
             }}
-            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm sm:text-base"
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add New User
@@ -571,13 +556,13 @@ function UserAccounts() {
         </div>
 
         {/* Search and filter section */}
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-6">
           <input
             type="text"
             placeholder="Search users by name, username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -592,30 +577,30 @@ function UserAccounts() {
               }
             }}
           >
-            <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-lg sm:text-xl font-semibold !text-black">Create New Homeowner Account</h2>
+            <div className="flex min-h-full items-center justify-center p-4 py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-xl font-semibold text-gray-800">Create New Homeowner Account</h2>
                   <button 
                     onClick={() => {
                       setShowForm(false);
                       setShowPassword(false);
                     }}
-                    className="!text-black hover:text-gray-700 focus:outline-none"
+                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
                   >
                     <FaTimes className="h-5 w-5" />
                   </button>
                 </div>
                 
-                <div className="p-4 sm:p-6">
-                  <form onSubmit={handleAddUser} className="space-y-4 sm:space-y-5">
-                    <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-blue-100">
-                      <h3 className="font-medium text-black mb-1 flex items-center text-sm sm:text-base" ref={personalInfoRef} style={{ color: '#000' }}>
-                        <FaUser className="mr-2 text-blue-500" /> Personal Information
+                <div className="p-6">
+                  <form onSubmit={handleAddUser} className="space-y-5">
+                    <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
+                      <h3 className="font-medium text-blue-800 mb-2 flex items-center">
+                        <FaUser className="mr-2" /> Personal Information
                       </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium !text-black mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             First Name *
                           </label>
                           <input
@@ -623,12 +608,12 @@ function UserAccounts() {
                             required
                             value={formData.firstName}
                             onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                            className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                             placeholder="John"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium !text-black mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Last Name *
                           </label>
                           <input
@@ -636,70 +621,70 @@ function UserAccounts() {
                             required
                             value={formData.lastName}
                             onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                            className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
+                            className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                             placeholder="Doe"
                           />
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-indigo-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-indigo-100">
-                      <h3 className="font-medium text-black mb-2 flex items-center text-sm sm:text-base" style={{ color: '#000' }}>
-                        <i className="fas fa-user-lock mr-2 text-indigo-500" ></i> Account Information
+                    <div className="bg-indigo-50 rounded-lg p-4 mb-6 border border-indigo-100">
+                      <h3 className="font-medium text-indigo-800 mb-2 flex items-center">
+                        <i className="fas fa-user-lock mr-2"></i> Account Information
                       </h3>
-                      <div className="space-y-3 sm:space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-black mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Username *
                             </label>
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span className="!text-black sm:text-sm">@</span>
+                                <span className="text-gray-500 sm:text-sm">@</span>
                               </div>
                               <input
                                 type="text"
                                 required
                                 value={formData.username}
                                 onChange={handleUsernameChange}
-                                className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
+                                className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                                 placeholder="johndoe"
                               />
                             </div>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium !text-black mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Contact Number
                             </label>
                             <input
                               type="tel"
                               value={formData.contactNumber}
                               onChange={handleContactNumberChange}
-                              className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                               placeholder="e.g. 09123456789"
                             />
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium !text-black mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Email
                             </label>
                             <input
                               type="email"
                               value={formData.email}
                               onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
+                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                               placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
                             />
-                            <p className="text-xs !text-black mt-1">
+                            <p className="text-xs text-gray-500 mt-1">
                               Auto-generated if left empty
                             </p>
                           </div>
                           
                           <div>
-                            <label className="block text-sm font-medium !text-black mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Password
                             </label>
                             <div className="relative">
@@ -707,7 +692,7 @@ function UserAccounts() {
                                 type={showPassword ? "text" : "password"}
                                 value={formData.password}
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                className="w-full px-3 sm:px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm sm:text-base"
+                                className="w-full px-4 py-2 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                                 placeholder="Leave blank to use username"
                               />
                               <button
@@ -716,13 +701,13 @@ function UserAccounts() {
                                 onClick={() => setShowPassword(!showPassword)}
                               >
                                 {showPassword ? (
-                                  <FaEye className="h-4 w-4 !text-black hover:text-gray-600" />
+                                  <FaEyeSlash className="h-4 w-4 text-gray-400 hover:text-gray-600" />
                                 ) : (
-                                  <FaEyeSlash className="h-4 w-4 !text-black hover:text-gray-600" />
+                                  <FaEye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
                                 )}
                               </button>
                             </div>
-                            <p className="text-xs !text-black mt-1">
+                            <p className="text-xs text-gray-500 mt-1">
                               Default: same as username
                             </p>
                           </div>
@@ -730,21 +715,23 @@ function UserAccounts() {
                       </div>
                     </div>
                     
-                    <div className="bg-amber-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-amber-100">
-                      <h3 className="font-medium text-black mb-2 flex items-center text-sm sm:text-base" style={{ color: '#000' }}>
-                        <FaMapMarkerAlt className="mr-2 text-amber-500" /> Property Assignment
+                    <div className="bg-amber-50 rounded-lg p-4 mb-6 border border-amber-100">
+                      <h3 className="font-medium text-amber-800 mb-2 flex items-center">
+                        <FaMapMarkerAlt className="mr-2" /> Property Assignment
                       </h3>
-                      <div className="space-y-3 sm:space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium !text-black mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Select Available Lot *
                             </label>
-                            <div className="flex items-center">
-                              <FaMapMarkerAlt className="text-amber-600 mr-2 flex-shrink-0" />
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FaMapMarkerAlt className="text-amber-600" />
+                              </div>
                               {loadingLots ? (
-                                <div className="w-full px-3 sm:px-4 py-2 rounded-md border border-gray-300 bg-gray-50">
-                                  <FaSpinner className="animate-spin inline mr-2 !text-black" />
+                                <div className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
+                                  <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
                                   Loading available lots...
                                 </div>
                               ) : (
@@ -762,56 +749,56 @@ function UserAccounts() {
                                       });
                                     }
                                   }}
-                                  className="flex-1 px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
-                                  style={{ color: '#000' }}
+                                  className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
                                   required
                                 >
-                                  <option value="" style={{ color: '#000' }}>-- Select a lot --</option>
+                                  <option value="">-- Select a lot --</option>
                                   {availableLots.map(lot => (
-                                    <option key={lot.id} value={lot.id} style={{ color: '#000' }}>
+                                    <option key={lot.id} value={lot.id}>
                                       {lot.displayName}
                                     </option>
                                   ))}
                                 </select>
                               )}
                             </div>
-                            <p className="text-xs !text-black mt-1">
+                            <p className="text-xs text-gray-500 mt-1">
                               Only showing vacant lots that are available for assignment
                             </p>
                           </div>
                           
                           <div>
-                            <label className="block text-sm font-medium !text-black mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               House Model
                             </label>
-                            <div className="flex items-center">
-                              <i className="fas fa-home text-amber-600 mr-2 flex-shrink-0"></i>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i className="fas fa-home text-amber-600"></i>
+                              </div>
                               <select
                                 value={formData.houseModel}
                                 onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
-                                className="flex-1 px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm sm:text-base"
-                                style={{ color: '#000' }}
+                                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
                               >
-                                <option value="Standard" style={{ color: '#000' }}>Standard Model</option>
-                                <option value="Premium" style={{ color: '#000' }}>Premium Model</option>
-                                <option value="Deluxe" style={{ color: '#000' }}>Deluxe Model</option>
-                                <option value="Executive" style={{ color: '#000' }}>Executive Model</option>
-                                <option value="Custom" style={{ color: '#000' }}>Custom Build</option>
+                                <option value="Standard">Standard Model</option>
+                                <option value="Premium">Premium Model</option>
+                                <option value="Deluxe">Deluxe Model</option>
+                                <option value="Executive">Executive Model</option>
+                                <option value="Custom">Custom Build</option>
                               </select>
                             </div>
                           </div>
                         </div>
                         
                         {selectedLot && (
-                          <div className="col-span-1 sm:col-span-2 mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                          <div className="col-span-2 mt-3 p-3 bg-white rounded-lg border border-amber-200">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium text-amber-700 text-sm">Selected Lot Details:</span>
+                              <span className="font-medium text-amber-700">Selected Lot Details:</span>
                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
                                 #{selectedLot.house_no}
                               </span>
                             </div>
                             <div className="mt-2 text-sm">
-                              <div className="flex items-center !text-black">
+                              <div className="flex items-center text-gray-700">
                                 <FaHome className="mr-1 text-amber-500" />
                                 Block {selectedLot.block}, Lot {selectedLot.lot}
                               </div>
@@ -821,22 +808,21 @@ function UserAccounts() {
                       </div>
                     </div>
                     
-                    
-                      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                    <div className="bg-gray-50 rounded-lg p-4 mt-4 border border-gray-200">
+                      <div className="flex justify-end space-x-3">
                         <button
                           type="button"
                           disabled={formSubmitting}
                           onClick={() => setShowForm(false)}
-                          className="px-4 py-2 border border-gray-300 rounded-md !text-black hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
-                          style={{ color: '#000' }}
+                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors duration-150 ease-in-out shadow-sm"
                         >
-                          <i className="fas fa-times mr-2" style={{ color: '#ff0000ff' }}></i>
+                          <i className="fas fa-times mr-2"></i>
                           Cancel
                         </button>
                         <button
                           type="submit"
                           disabled={formSubmitting}
-                          className="px-4 sm:px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors duration-150 ease-in-out shadow-sm text-sm sm:text-base"
+                          className="px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors duration-150 ease-in-out shadow-sm"
                         >
                           {formSubmitting ? (
                             <>
@@ -851,7 +837,7 @@ function UserAccounts() {
                           )}
                         </button>
                       </div>
-                    
+                    </div>
                   </form>
                 </div>
               </div>
@@ -869,381 +855,282 @@ function UserAccounts() {
               }
             }}
           >
-            <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-base sm:text-lg font-semibold text-black flex items-center" style={{ color: '#000' }}>
+            <div className="flex min-h-full items-center justify-center p-4 py-8">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
+                  <h2 className="text-lg font-semibold">
                     {isEditing ? 'Edit User' : 'User Details'}
                   </h2>
                   <button 
                     onClick={closeUserDetails}
-                    className="!text-black hover:text-gray-700"
-                    style={{ color: '#000' }}
+                    className="text-gray-500 hover:text-gray-700"
                   >
                     <FaTimes />
                   </button>
                 </div>
                 
-                <div className="p-4 sm:p-6">
-                  {/* Header with Edit Toggle */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
-                        {selectedUser.username ? selectedUser.username.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                      <div>
-                        <h2 className="text-xl sm:text-2xl font-bold !text-black">
-                          {getFullName(selectedUser)}
-                        </h2>
-                        <p className="!text-black text-sm sm:text-base" style={{ color: '#000' }}>@{selectedUser.username}</p>
-                        <div className="flex items-center mt-1">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            selectedUser.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            <span className={`mr-1 h-1.5 w-1.5 rounded-full ${
-                              selectedUser.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
-                            }`}></span>
-                            {selectedUser.status || 'Active'}
-                          </span>
-                          <span className={`ml-2 px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
-                            selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
-                            selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            <i className={`fas ${
-                              selectedUser.recordStatus === 'Good' ? 'fa-thumbs-up mr-1' : 
-                              selectedUser.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1' : 
-                              'fa-minus mr-1'
-                            } text-xs`}></i>
-                            {selectedUser.recordStatus || 'Neutral'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {
-                          if (isEditing) {
-                            setIsEditing(false);
-                          } else {
-                            handleEditUser();
-                          }
-                        }}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                          isEditing 
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                      >
-                        <i className={`fas ${isEditing ? 'fa-times' : 'fa-edit'} mr-2`}></i>
-                        {isEditing ? 'Cancel' : 'Edit User'}
-                      </button>
+                <div className="p-6">
+              {!isEditing ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="h-20 w-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl">
+                      <FaUser />
                     </div>
                   </div>
-
-                  {isEditing ? (
-                    /* Edit Mode */
-                    <form onSubmit={handleUpdateUser} className="space-y-6">
-                      {/* Personal Information Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <FaUser className="mr-2 text-blue-500" />
-                          Personal Information
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              First Name *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={formData.firstName}
-                              onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              Last Name *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={formData.lastName}
-                              onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Account Information Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <i className="fas fa-user-lock mr-2 text-indigo-500"></i>
-                          Account Information
-                        </h3>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              Username *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={formData.username}
-                              onChange={handleUsernameChange}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              Email
-                            </label>
-                            <input
-                              type="email"
-                              value={formData.email}
-                              onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              Contact Number
-                            </label>
-                            <input
-                              type="tel"
-                              value={formData.contactNumber}
-                              onChange={handleContactNumberChange}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                              placeholder="e.g. 09123456789"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Property Assignment Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <FaMapMarkerAlt className="mr-2 text-amber-500" />
-                          Property Assignment
-                        </h3>
-                        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 mb-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-amber-700">Current Assignment:</span>
-                            <span className="px-3 py-1 text-sm font-medium rounded-full bg-amber-100 text-amber-800">
-                              House #{formData.house_no || 'None'}
-                            </span>
-                          </div>
-                          {formData.house_no && (
-                            <div className="!text-black text-sm">
-                              Block {formData.block}, Lot {formData.lot} • {formData.houseModel || 'Standard'} Model
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium !text-black mb-2">
-                            Change Lot Assignment
-                          </label>
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              const selected = availableLots.find(lot => lot.id === e.target.value);
-                              if (selected) {
-                                setFormData({
-                                  ...formData,
-                                  house_no: selected.house_no,
-                                  block: selected.block,
-                                  lot: selected.lot
-                                });
-                              }
-                            }}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                          >
-                            <option value="">-- Keep current assignment --</option>
-                            {loadingLots ? (
-                              <option disabled>Loading available lots...</option>
-                            ) : (
-                              availableLots.map(lot => (
-                                <option key={lot.id} value={lot.id}>
-                                  {lot.displayName}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                          <p className="text-xs !text-black mt-1">
-                            Only vacant lots are available for reassignment
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Status & Settings Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <i className="fas fa-cog mr-2 text-gray-500"></i>
-                          Status & Settings
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              Account Status
-                            </label>
-                            <select
-                              value={formData.status}
-                              onChange={(e) => setFormData({...formData, status: e.target.value, isActive: e.target.value === 'Active'})}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            >
-                              <option value="Active">Active</option>
-                              <option value="Inactive">Inactive</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium !text-black mb-2">
-                              Record Status
-                            </label>
-                            <select
-                              value={formData.recordStatus}
-                              onChange={(e) => setFormData({...formData, recordStatus: e.target.value})}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            >
-                              <option value="Neutral">Neutral</option>
-                              <option value="Good">Good</option>
-                              <option value="Bad">Bad</option>
-                            </select>
-                            <p className="text-xs !text-black mt-1">
-                              Bad record status will restrict access to some facilities
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-6 border-t border-gray-200">
-                        <button
-                          type="button"
-                          disabled={formSubmitting}
-                          onClick={() => setIsEditing(false)}
-                          className="px-6 py-3 border border-gray-300 rounded-lg !text-black hover:bg-gray-50 disabled:opacity-50 transition-all font-medium"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={formSubmitting}
-                          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-all font-medium"
-                        >
-                          {formSubmitting ? (
-                            <>
-                              <FaSpinner className="animate-spin mr-2" />
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <i className="fas fa-save mr-2"></i>
-                              Update User
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    /* View Mode */
-                    <div className="space-y-6">
-                      {/* Personal Information Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <FaUser className="mr-2 text-blue-500" />
-                          Personal Information
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div>
-                            <p className="text-sm !text-black font-medium mb-1">First Name</p>
-                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-blue-500" style={{ color: '#000' }}>{selectedUser.firstName || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm !text-black font-medium mb-1" >Last Name</p>
-                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-blue-500" style={{ color: '#000' }}>{selectedUser.lastName || 'N/A'}</p>
-                          </div>
-                          <div className="sm:col-span-2">
-                            <p className="text-sm !text-black font-medium mb-1">Contact Number</p>
-                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-green-500 flex items-center" style={{ color: '#000' }}>
-                              <i className="fas fa-phone-alt mr-2 text-green-600"></i>
-                              {selectedUser.contactNumber || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Account Information Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <i className="fas fa-user-lock mr-2 text-indigo-500"></i>
-                          Account Information
-                        </h3>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm !text-black font-medium mb-1">Username</p>
-                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-purple-500 flex items-center" style={{ color: '#000' }}>
-                              <span className="text-purple-600 font-bold mr-1" >@</span>
-                              {selectedUser.username || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm !text-black font-medium mb-1">Email</p>
-                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-indigo-500 flex items-center" style={{ color: '#000' }}>
-                              <i className="fas fa-envelope mr-2 text-indigo-600"></i>
-                              {selectedUser.email || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm !text-black font-medium mb-1">Role</p>
-                            <p className="text-base !text-black font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border-l-4 border-orange-500 flex items-center" style={{ color: '#000' }}>
-                              <i className="fas fa-user-tag mr-2 text-orange-600" style={{ color: '#ff3c00ff' }}> </i>
-                              {selectedUser.role || 'Homeowner'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Property Information Card */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold !text-black mb-4 flex items-center">
-                          <FaMapMarkerAlt className="mr-2 text-amber-500" style={{ color: '#ff0000ff' }}/>
-                          Property Information
-                        </h3>
-                        {selectedUser.house_no ? (
-                          <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-lg font-bold text-amber-700">
-                                House #{selectedUser.house_no}
-                              </span>
-                              <span className="px-3 py-1 text-sm font-medium rounded-full bg-amber-100 text-amber-800">
-                                {selectedUser.houseModel || 'Standard'} Model
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <p className="!text-black font-medium mb-1">Block</p>
-                                <p className="!text-black">{selectedUser.block || Math.floor(selectedUser.house_no / 100)}</p>
-                              </div>
-                              <div>
-                                <p className="!text-black font-medium mb-1">Lot</p>
-                                <p className="!text-black">{selectedUser.lot || selectedUser.house_no % 100}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8">
-                            <FaMapMarkerAlt className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                            <p className="!text-black font-medium">No Property Assigned</p>
-                            <p className="!text-black text-sm text-gray-500">This user hasn't been assigned a property yet.</p>
-                          </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">First Name</p>
+                      <p className="font-medium">{selectedUser.firstName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Last Name</p>
+                      <p className="font-medium">{selectedUser.lastName || 'N/A'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Username</p>
+                    <p className="font-medium">{selectedUser.username || 'N/A'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{selectedUser.email || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="p-2 bg-amber-50 rounded-md">
+                    <p className="text-sm text-gray-700">Property Details</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <div>
+                        <p className="font-medium">House #{selectedUser.house_no || 'N/A'}</p>
+                        {selectedUser.block && selectedUser.lot && (
+                          <p className="text-sm text-gray-600">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
                         )}
                       </div>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                        {selectedUser.houseModel || 'Standard'}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Role</p>
+                    <p className="font-medium">{selectedUser.role || 'Homeowner'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <p className={`font-medium ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedUser.status || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Record Status</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
+                      selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedUser.recordStatus || 'Neutral'}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Contact Number</p>
+                    <p className="font-medium">{selectedUser.contactNumber || 'N/A'}</p>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2 mt-6">
+                    <button
+                      onClick={handleEditUser}
+                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 flex items-center"
+                    >
+                      <FaEdit className="mr-2" />
+                      Edit User
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleUpdateUser} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={handleUsernameChange}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  
+                  <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Property Assignment
+  </label>
+  <div className="p-3 bg-amber-50 rounded-md border border-amber-100">
+    <div className="flex items-center justify-between mb-1">
+      <span className="text-sm font-medium text-amber-700">
+        Current House Number:
+      </span>
+      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+        #{formData.house_no}
+      </span>
+    </div>
+    <div className="text-sm text-gray-600 mb-2">
+      Block {formData.block}, Lot {formData.lot}
+    </div>
+    
+    <div className="mt-3">
+      <label className="block text-xs font-medium text-gray-700 mb-1">
+        Change Lot Assignment
+      </label>
+      <select
+        value=""
+        onChange={(e) => {
+          const selected = availableLots.find(lot => lot.id === e.target.value);
+          if (selected) {
+            setFormData({
+              ...formData,
+              house_no: selected.house_no,
+              block: selected.block,
+              lot: selected.lot
+            });
+          }
+        }}
+        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
+      >
+        <option value="">-- Keep current assignment --</option>
+        {loadingLots ? (
+          <option disabled>Loading available lots...</option>
+        ) : (
+          availableLots.map(lot => (
+            <option key={lot.id} value={lot.id}>
+              {lot.displayName}
+            </option>
+          ))
+        )}
+      </select>
+      <p className="text-xs text-gray-500 mt-1">
+        Only vacant lots are available for reassignment
+      </p>
+    </div>
+  </div>
+</div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value, isActive: e.target.value === 'Active'})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Record Status
+                    </label>
+                    <select
+                      value={formData.recordStatus}
+                      onChange={(e) => setFormData({...formData, recordStatus: e.target.value})}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="Neutral">Neutral</option>
+                      <option value="Good">Good</option>
+                      <option value="Bad">Bad</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Bad record status will restrict access to some facilities and services
+                    </p>
+                  </div>
+                
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contact Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.contactNumber}
+                      onChange={handleContactNumberChange}
+                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="e.g. 09123456789"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      disabled={formSubmitting}
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={formSubmitting}
+                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {formSubmitting ? (
+                        <>
+                          <FaSpinner className="animate-spin mr-2" />
+                          Updating...
+                        </>
+                      ) : (
+                        'Update User'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
                 </div>
               </div>
             </div>
@@ -1251,258 +1138,260 @@ function UserAccounts() {
         )}
 
         {/* Users table */}
-        <div className="bg-white bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 border-gray-100">
-          <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50  border-b border-gray-100 ">
-            <h2 className="!text-base !sm:text-lg !font-bold !text-black flex items-center" style={{ color: '#001cbdff', fontWeight: 600 }} ref={headerRef}>
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center">
               <i className="fas fa-users text-blue-500 mr-2"></i>
               Homeowner Accounts
-              <span className="ml-2 sm:ml-3 px-2 sm:px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600 bg-blue-100 text-blue-700">
+              <span className="ml-3 px-3 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
                 {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
               </span>
             </h2>
           </div>
-
-
+        
           {loading ? (
-            <div className="p-8 sm:p-12 text-center">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-gray-100  border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="!text-black text-sm sm:text-base">Loading homeowner accounts...</p>
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-gray-600">Loading homeowner accounts...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 divide-gray-200 border-collapse">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 ">
+            <table className="min-w-full divide-y divide-gray-200 border-collapse">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <FaUser className="text-blue-500" />
+                      <span>User</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <FaHome className="text-amber-500" />
+                      <span>Property Details</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-envelope text-blue-500"></i>
+                      <span>Email</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-circle text-green-500"></i>
+                      <span>Status</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-shield-alt text-purple-500"></i>
+                      <span>Record</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <i className="fas fa-sliders-h text-gray-500"></i>
+                      <span>Actions</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {filteredUsers.length === 0 ? (
                   <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium !text-black uppercase tracking-wider">
-                      <div className="flex items-center space-x-1">
-                        <FaUser className="text-blue-500 text-xs sm:text-sm" />
-                        <span className="hidden sm:inline">User</span>
-                        <span className="sm:hidden">Info</span>
+                    <td colSpan="6" className="px-6 py-8 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <FaUser className="h-10 w-10 text-gray-200 mb-2" />
+                        <p className="text-gray-500 font-medium">No users found</p>
+                        <p className="text-gray-400 text-sm">Try adjusting your search criteria</p>
                       </div>
-                    </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium !text-black uppercase tracking-wider">
-                      <div className="flex items-center space-x-1">
-                        <FaHome className="text-amber-500 text-xs sm:text-sm" />
-                        <span className="hidden lg:inline">Property Details</span>
-                        <span className="lg:hidden">Property</span>
-                      </div>
-                    </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium !text-black uppercase tracking-wider hidden md:table-cell">
-                      <div className="flex items-center space-x-1">
-                        <i className="fas fa-envelope text-blue-500 text-xs sm:text-sm"></i>
-                        <span>Email</span>
-                      </div>
-                    </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium !text-black uppercase tracking-wider">
-                      <div className="flex items-center space-x-1">
-                        <i className="fas fa-circle text-green-500 text-xs sm:text-sm"></i>
-                        <span>Status</span>
-                      </div>
-                    </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium !text-black uppercase tracking-wider">
-                      <div className="flex items-center space-x-1">
-                        <i className="fas fa-shield-alt text-purple-500 text-xs sm:text-sm"></i>
-                        <span>Record Status</span>
-                      </div>
-                    </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium !text-black uppercase tracking-wider">
-                      <div className="flex items-center space-x-1">
-                        <i className="fas fa-sliders-h !text-black text-xs sm:text-sm"></i>
-                        <span>Actions</span>
-                      </div>
-                    </th>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white bg-white divide-y divide-gray-100 divide-gray-200">
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="px-3 sm:px-6 py-6 sm:py-8 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <FaUser className="h-8 w-8 sm:h-10 sm:w-10 text-gray-200 text-gray-200 mb-2" />
-                          <p className="!text-black font-medium text-sm sm:text-base">No users found</p>
-                          <p className="!text-black text-xs sm:text-sm">Try adjusting your search criteria</p>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr 
+                      key={user.id} 
+                      className={`${actionLoading === user.id ? "bg-gray-50" : ""} 
+                        hover:bg-blue-50/30 transition-colors duration-150
+                        ${user.status === 'Inactive' ? 'bg-red-50/20' : ''}`}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button 
+                          onClick={() => handleViewUser(user)}
+                          className="flex items-center hover:text-primary group"
+                        >
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200">
+                            {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                          <div className="ml-0">
+                            <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                              @{user.username || 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {getFullName(user)}
+                            </div>
+                            {user.contactNumber && (
+                              <div className="text-xs text-gray-400 flex items-center mt-1">
+                                <i className="fas fa-phone-alt mr-1 text-gray-300"></i>
+                                {user.contactNumber}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {user.house_no ? (
+                          <div className="flex flex-col">
+                            <div className="flex items-center mb-1">
+                              <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-sm">
+                                #{user.house_no}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                Block {user.block || Math.floor(user.house_no / 100)}
+                              </div>
+                              <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">
+                                Lot {user.lot || user.house_no % 100}
+                              </div>
+                            </div>
+                            {user.houseModel && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {user.houseModel} Model
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500 italic">No property assigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="bg-blue-50 rounded-full p-1 mr-2">
+                            <i className="fas fa-envelope text-blue-400 text-xs"></i>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-700">{user.email || 'N/A'}</div>
+                            <div className="text-xs text-gray-400">Account ID: {user.id?.substring(0, 8)}...</div>
+                          </div>
                         </div>
                       </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <tr 
-                        key={user.id} 
-                        className={`${actionLoading === user.id ? "bg-gray-50 bg-gray-50" : ""} 
-                          hover:bg-blue-50/30  transition-colors duration-150
-                          ${user.status === 'Inactive' ? 'bg-red-50/20 ' : ''}`}
-                      >
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          <button 
-                            onClick={() => handleViewUser(user)}
-                            className="flex items-center hover:text-primary group w-full text-left cursor-pointer"
-                          >
-                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-2 sm:mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200 flex-shrink-0">
-                              {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs sm:text-sm font-medium text-gray-900 !text-black group-hover:text-blue-600  transition-colors truncate">
-                                @{user.username || 'N/A'}
-                              </div>
-                              <div className="text-xs !text-black truncate">
-                                {getFullName(user)}
-                              </div>
-                              {user.contactNumber && (
-                                <div className="text-xs !text-black flex items-center mt-1">
-                                  <i className="fas fa-phone-alt mr-1 !text-black"></i>
-                                  <span className="truncate">{user.contactNumber}</span>
-                                </div>
-                              )}
-                            </div>
-                          </button>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          {user.house_no ? (
-                            <div className="flex flex-col">
-                              <div className="flex items-center mb-1">
-                                <span className="font-medium text-amber-700 text-amber-700 bg-amber-50 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
-                                  #{user.house_no}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 flex-wrap">
-                                <div className="text-xs bg-blue-50 bg-blue-50 text-blue-700 text-blue-700 px-1 sm:px-2 py-0.5 rounded">
-                                  Block {user.block || Math.floor(user.house_no / 100)}
-                                </div>
-                                <div className="text-xs bg-green-50 bg-green-50 text-green-700 text-green-700 px-1 sm:px-2 py-0.5 rounded">
-                                  Lot {user.lot || user.house_no % 100}
-                                </div>
-                              </div>
-                              {user.houseModel && (
-                                <div className="text-xs !text-black mt-1 truncate">
-                                  {user.houseModel} Model
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs sm:text-sm !text-black italic">No property assigned</span>
-                          )}
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden md:table-cell">
-                          <div className="flex items-center">
-                            <div className="bg-blue-50 bg-blue-50 rounded-full p-1 mr-2 flex-shrink-0">
-                              <i className="fas fa-envelope text-blue-400 text-blue-400 text-xs"></i>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs sm:text-sm !text-black truncate">{user.email || 'N/A'}</div>
-                              <div className="text-xs !text-black truncate">ID: {user.id?.substring(0, 8)}...</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <span className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              user.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
-                            }`}>
-                              <span className={`mr-1 h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${
-                                user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
-                              }`}></span>
-                              {user.status || 'Active'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          <span className={`px-2 sm:px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
-                            user.recordStatus === 'Good' ? 'bg-green-100 text-green-800 border border-green-200' : 
-                            user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800 border border-red-200' : 
-                            'bg-gray-100 text-gray-800 border border-gray-200'
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
                           }`}>
-                            <i className={`fas ${
-                              user.recordStatus === 'Good' ? 'fa-thumbs-up mr-1 text-green-600' : 
-                              user.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1 text-red-600' : 
-                              'fa-minus mr-1 !text-black'
-                            } text-xs sm:text-sm`}></i>
-                            {user.recordStatus || 'Neutral'}
+                            <span className={`mr-1 h-2 w-2 rounded-full ${
+                              user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
+                            }`}></span>
+                            {user.status || 'Active'}
                           </span>
-                        </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500 text-gray-500">
-                          {actionLoading === user.id ? (
-                            <div className="flex items-center justify-center">
-                              <FaSpinner className="animate-spin text-primary" />
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-1 sm:gap-2">
-                              {/* Status and Delete Actions */}
-                              <div className="flex flex-wrap gap-1">
-                                <button 
-                                  onClick={() => handleToggleStatus(user.id, user.status)}
-                                  className={`px-1.5 sm:px-2 py-1 text-xs rounded border flex items-center ${
-                                    user.status === 'Active' 
-                                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
-                                    : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                                  }`}
-                                >
-                                  <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
-                                  <span className="hidden sm:inline">{user.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
-                                  <span className="sm:hidden">{user.status === 'Active' ? 'Off' : 'On'}</span>
-                                </button>
-                                
-                                <button 
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  className="px-1.5 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
-                                >
-                                  <i className="fas fa-trash-alt mr-1"></i>
-                                  <span className="hidden sm:inline">Delete</span>
-                                </button>
-                              </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
+                          user.recordStatus === 'Good' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                          user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                          'bg-gray-100 text-gray-800 border border-gray-200'
+                        }`}>
+                          <i className={`fas ${
+                            user.recordStatus === 'Good' ? 'fa-thumbs-up mr-1 text-green-600' : 
+                            user.recordStatus === 'Bad' ? 'fa-thumbs-down mr-1 text-red-600' : 
+                            'fa-minus mr-1 text-gray-500'
+                          }`}></i>
+                          {user.recordStatus || 'Neutral'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {actionLoading === user.id ? (
+                          <div className="flex items-center justify-center">
+                            <FaSpinner className="animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            {/* Top Section: View, Deactivate/Activate, Delete */}
+                            <div className="flex flex-wrap gap-1">
+                              <button
+                                onClick={() => handleViewUser(user)}
+                                className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors flex items-center"
+                              >
+                                <i className="fas fa-eye mr-1"></i>
+                                View
+                              </button>
                               
-                              {/* Record Status Change Actions */}
-                              <div className="flex flex-wrap gap-1">
-                                <button 
-                                  onClick={() => handleSetRecordStatus(user.id, 'Good')}
-                                  className="px-1.5 sm:px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
-                                  title="Mark Good Record"
-                                >
-                                  <i className="fas fa-thumbs-up mr-1"></i>
-                                  <span className="hidden sm:inline">Good</span>
-                                </button>
-                                
-                                <button 
-                                  onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
-                                  className="px-1.5 sm:px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
-                                  title="Reset Record Status"
-                                >
-                                  <i className="fas fa-minus mr-1"></i>
-                                  <span className="hidden sm:inline">Neutral</span>
-                                </button>
-                                
-                                <button 
-                                  onClick={() => handleSetRecordStatus(user.id, 'Bad')}
-                                  className="px-1.5 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
-                                  title="Mark Bad Record"
-                                >
-                                  <i className="fas fa-thumbs-down mr-1"></i>
-                                  <span className="hidden sm:inline">Bad</span>
-                                </button>
-                              </div>
+                              <button 
+                                onClick={() => handleToggleStatus(user.id, user.status)}
+                                className={`px-2 py-1 text-xs rounded border flex items-center ${
+                                  user.status === 'Active' 
+                                  ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                                  : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                                }`}
+                              >
+                                <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
+                                {user.status === 'Active' ? 'Deactivate' : 'Activate'}
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                              >
+                                <i className="fas fa-trash-alt mr-1"></i>
+                                Delete
+                              </button>
                             </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            
+                            {/* Bottom Section: Record Status Buttons */}
+                            <div className="flex flex-wrap gap-1">
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Good')}
+                                className="px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
+                                title="Mark Good Record"
+                              >
+                                <i className="fas fa-thumbs-up mr-1"></i>
+                                Good Record
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
+                                className="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
+                                title="Reset Record Status"
+                              >
+                                <i className="fas fa-minus mr-1"></i>
+                                Neutral
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleSetRecordStatus(user.id, 'Bad')}
+                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                                title="Mark Bad Record"
+                              >
+                                <i className="fas fa-thumbs-down mr-1"></i>
+                                Bad Record
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           )}
           
           {!loading && filteredUsers.length > 0 && (
-            <div className="bg-gray-50 bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-100  flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div className="text-xs sm:text-sm !text-black">
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
+              <div className="text-sm text-gray-500">
                 Showing {filteredUsers.length} homeowner account{filteredUsers.length !== 1 ? 's' : ''}
               </div>
-              <div className="text-xs sm:text-sm !text-black">
-                <span className="font-medium text-blue-600 text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
+              <div className="text-sm text-gray-500">
+                <span className="font-medium text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
               </div>
             </div>
           )}
         </div>
       </div>
-    </ResponsiveLayout>
+    </AdminLayout>
   );
 }
 

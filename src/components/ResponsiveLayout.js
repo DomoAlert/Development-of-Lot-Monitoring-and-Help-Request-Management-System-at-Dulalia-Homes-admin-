@@ -158,7 +158,7 @@ function ResponsiveLayout({ children }) {
               <div className="p-1 rounded-lg bg-white/10">
                 <img src={logo} alt="Dulalia Logo" className="h-10 w-10 object-contain" />
               </div>
-              {!isCollapsed && <h2 className="text-white font-bold text-lg">Dulalia</h2>}
+              {!isCollapsed && <h2 className="text-white font-bold text-lg">Dulalia Homes Executive</h2>}
             </div>
             {/* Close button for mobile */}
             <button
@@ -318,21 +318,21 @@ function ResponsiveLayout({ children }) {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
-          <header className="fixed top-0 left-0 right-0 z-30 bg-white bg-white border-b border-gray-200 border-gray-200 shadow-sm">
+          <header className={`fixed top-0 z-30 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'lg:left-20' : 'lg:left-64'} left-0 right-0`}>
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 {/* Hamburger Menu for Mobile */}
                 <button
                   id="hamburger-button"
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:text-gray-700"
+                  className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700"
                 >
                   <FaBars className="h-6 w-6" />
                 </button>
 
                 {/* Welcome Message */}
                 <div className="flex-1 lg:ml-0">
-                  <h1 className="font-semibold text-lg text-gray-800 text-black">
+                  <h1 className="font-semibold text-lg text-gray-800">
                     Welcome, Admin
                   </h1>
                 </div>
@@ -341,19 +341,19 @@ function ResponsiveLayout({ children }) {
                 <div className="relative" ref={settingsRef}>
                   <button
                     onClick={() => setShowSettings(!showSettings)}
-                    className="flex items-center space-x-2 focus:outline-none transform hover:scale-105 transition-transform duration-200 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:text-gray-700"
+                    className="flex items-center space-x-2 focus:outline-none transform hover:scale-105 transition-transform duration-200 p-2 rounded-md text-gray-500 hover:text-gray-700"
                   >
                     <FaCog className="h-5 w-5" />
                     <span className="hidden sm:block font-medium">Settings</span>
                   </button>
                   {showSettings && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border bg-white bg-white border-gray-200 border-gray-200 z-50">
+                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border bg-white border-gray-200 z-50">
                       <button
                         onClick={() => {
                           setShowSettings(false);
                           handleLogout();
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600  hover:bg-gray-100  flex items-center space-x-2 transition-colors duration-200"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center space-x-2 transition-colors duration-200"
                       >
                         <FaSignOutAlt className="text-lg" />
                         <span>Logout</span>
@@ -365,7 +365,7 @@ function ResponsiveLayout({ children }) {
                 {/* Collapse Toggle for Large Screens */}
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="hidden lg:block p-2 rounded-md text-gray-500 hover:text-gray-700 hover:text-gray-700 ml-2"
+                  className="hidden lg:block p-2 rounded-md text-gray-500 hover:text-gray-700 ml-2"
                 >
                   <svg
                     className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}

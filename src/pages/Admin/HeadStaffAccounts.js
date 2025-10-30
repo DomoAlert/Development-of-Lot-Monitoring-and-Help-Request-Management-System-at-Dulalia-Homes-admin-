@@ -750,6 +750,7 @@ function HeadStaffAccounts() {
                           </label>
                           <input
                             type="text"
+                            name="name"
                             required
                             value={formData.name}
                             onChange={handleInputChange}

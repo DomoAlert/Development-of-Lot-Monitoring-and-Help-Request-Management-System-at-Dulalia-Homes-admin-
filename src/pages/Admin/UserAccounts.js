@@ -549,7 +549,14 @@ function UserAccounts() {
 
   const handleContactNumberChange = (e) => {
     const value = e.target.value.replace(/\D/g, ''); // Remove all non-digit characters
-    setFormData({...formData, contactNumber: value});
+
+    // Limit to exactly 11 digits for Philippine numbers
+    if (value.length <= 10) {
+      setFormData({...formData, contactNumber: value});
+    }
+
+    // Optional: Add visual feedback for valid Philippine number format
+    // Philippine numbers start with 09 and are exactly 11 digits
   };
 
   const resetForm = () => {
@@ -592,6 +599,12 @@ function UserAccounts() {
     }
     if (user.name) return user.name;
     return user.username || 'Unknown';
+  };
+
+  // Validate Philippine phone number (exactly 11 digits, starts with 09)
+  const isValidPhilippineNumber = (number) => {
+    const phoneRegex = /^09\d{9}$/;
+    return phoneRegex.test(number);
   };
 
   return (
@@ -722,13 +735,44 @@ function UserAccounts() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Contact Number
                             </label>
-                            <input
-                              type="tel"
-                              value={formData.contactNumber}
-                              onChange={handleContactNumberChange}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                              placeholder="e.g. 09123456789"
-                            />
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-500 sm:text-sm">+63</span>
+                              </div>
+                              <input
+                                type="tel"
+                                value={formData.contactNumber}
+                                onChange={handleContactNumberChange}
+                                className={`w-full pl-12 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2 transition-colors ${
+                                  formData.contactNumber.length === 10 && isValidPhilippineNumber(formData.contactNumber)
+                                    ? 'border-green-300 focus:ring-green-500 bg-green-50'
+                                    : formData.contactNumber.length > 0 && formData.contactNumber.length !== 10
+                                    ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                                    : 'border-gray-300 focus:ring-blue-500'
+                                }`}
+                                placeholder="9123456789"
+                                maxLength="11"
+                              />
+                              {formData.contactNumber.length > 0 && (
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                  {formData.contactNumber.length === 10 && isValidPhilippineNumber(formData.contactNumber) ? (
+                                    <i className="fas fa-check-circle text-green-500"></i>
+                                  ) : formData.contactNumber.length !== 10 ? (
+                                    <span className="text-xs text-red-500 font-medium">
+                                      {10 - formData.contactNumber.length}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Philippine mobile number (10 digits, starts with 09)
+                            </p>
+                            {formData.contactNumber.length > 0 && formData.contactNumber.length !== 10 && (
+                              <p className="text-xs text-red-500 mt-1">
+                                Please enter exactly 10 digits
+                              </p>
+                            )}
                           </div>
                         </div>
                         
@@ -913,7 +957,7 @@ function UserAccounts() {
 
         {/* User Details Modal */}
         {showUserDetails && selectedUser && (
-          <div 
+          <div
             className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -922,191 +966,324 @@ function UserAccounts() {
             }}
           >
             <div className="flex min-h-full items-center justify-center p-4 py-8">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
-                  <h2 className="text-lg font-semibold">
-                    User Details
-                  </h2>
-                  <button 
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center text-2xl font-bold shadow-lg">
+                      {selectedUser.username ? selectedUser.username.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">
+                        {getFullName(selectedUser)}
+                      </h2>
+                      <p className="text-sm text-gray-600">@{selectedUser.username}</p>
+                    </div>
+                  </div>
+                  <button
                     onClick={closeUserDetails}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 hover:bg-gray-100 rounded-full"
                   >
-                    <FaTimes />
+                    <FaTimes className="h-6 w-6" />
                   </button>
                 </div>
-                
+
                 <div className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-center mb-6">
-                      <div className="h-20 w-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl">
-                        <FaUser />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">First Name</p>
-                        <p className="font-medium">{selectedUser.firstName || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Last Name</p>
-                        <p className="font-medium">{selectedUser.lastName || 'N/A'}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Username</p>
-                      <p className="font-medium">{selectedUser.username || 'N/A'}</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">{selectedUser.email || 'N/A'}</p>
-                    </div>
-                    
-                    {/* Editable Property Section */}
-                    <div className="p-4 bg-amber-50 rounded-md border border-amber-100">
-                      <h3 className="font-medium text-amber-800 mb-3 flex items-center">
-                        <FaHome className="mr-2" />
-                        Property Assignment
-                      </h3>
-                      
-                      <div className="space-y-4">
-                        {/* Current Property Display */}
-                        <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
-                          <div>
-                            <p className="text-sm font-medium text-amber-700">Current Assignment:</p>
-                            <div className="flex items-center mt-1">
-                              <span className="font-medium text-amber-800">House #{selectedUser.house_no || 'None'}</span>
-                              {selectedUser.house_no && (
-                                <>
-                                  <span className="mx-2 text-amber-600">•</span>
-                                  <span className="text-sm text-gray-600">Block {selectedUser.block || Math.floor(selectedUser.house_no / 100)}, Lot {selectedUser.lot || (selectedUser.house_no % 100)}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
-                            {selectedUser.houseModel || 'Standard'}
-                          </span>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Basic Information */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* Personal Information Card */}
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                            <FaUser className="mr-2 text-blue-500" />
+                            Personal Information
+                          </h3>
                         </div>
-                        
-                        {/* Property Editing Form */}
-                        <div className="border-t border-amber-200 pt-4">
-                          <h4 className="text-sm font-medium text-amber-700 mb-3">Update Property Assignment</h4>
-                          
+                        <div className="p-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Select New Lot
-                              </label>
-                              <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                  <FaMapMarkerAlt className="text-amber-600 text-xs" />
-                                </div>
-                                <select
-                                  value={propertyFormData.selectedLotId}
-                                  onChange={(e) => setPropertyFormData({...propertyFormData, selectedLotId: e.target.value})}
-                                  className="w-full pl-8 pr-4 py-2 text-sm rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
-                                >
-                                  <option value="">-- Keep current assignment --</option>
-                                  {loadingLots ? (
-                                    <option disabled>Loading available lots...</option>
-                                  ) : (
-                                    availableLots.map(lot => (
-                                      <option key={lot.id} value={lot.id}>
-                                        {lot.displayName}
-                                      </option>
-                                    ))
-                                  )}
-                                </select>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
+                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.firstName || 'N/A'}</p>
                               </div>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Only vacant lots are available
-                              </p>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
+                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.lastName || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Contact Number</label>
+                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.contactNumber || 'N/A'}</p>
+                              </div>
                             </div>
-                            
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                House Model
-                              </label>
-                              <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                  <i className="fas fa-home text-amber-600 text-xs"></i>
-                                </div>
-                                <select
-                                  value={propertyFormData.houseModel}
-                                  onChange={(e) => setPropertyFormData({...propertyFormData, houseModel: e.target.value})}
-                                  className="w-full pl-8 pr-4 py-2 text-sm rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
-                                >
-                                  <option value="Standard">Standard Model</option>
-                                  <option value="Premium">Premium Model</option>
-                                  <option value="Deluxe">Deluxe Model</option>
-                                  <option value="Executive">Executive Model</option>
-                                  <option value="Custom">Custom Build</option>
-                                </select>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                                <p className="text-sm font-medium text-gray-900 mt-1 break-all">{selectedUser.email || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Role</label>
+                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.role || 'Homeowner'}</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">User ID</label>
+                                <p className="text-xs font-mono text-gray-600 mt-1 bg-gray-100 px-2 py-1 rounded">{selectedUser.id?.substring(0, 12)}...</p>
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="flex justify-end mt-4">
-                            <button
-                              onClick={() => {
-                                const hasLotChange = propertyFormData.selectedLotId !== '';
-                                const hasModelChange = propertyFormData.houseModel !== (selectedUser.houseModel || 'Standard');
-                                
-                                if (hasLotChange || hasModelChange) {
-                                  handleUpdateProperty(selectedUser.id, propertyFormData.selectedLotId, propertyFormData.houseModel);
-                                } else {
-                                  toast.info('No changes detected');
-                                }
-                              }}
-                              disabled={formSubmitting}
-                              className="px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700 disabled:opacity-50 flex items-center"
-                            >
-                              {formSubmitting ? (
-                                <>
-                                  <FaSpinner className="animate-spin mr-2" />
-                                  Updating...
-                                </>
-                              ) : (
-                                <>
-                                  <FaSave className="mr-2" />
-                                  Update Property
-                                </>
-                              )}
-                            </button>
+                        </div>
+                      </div>
+
+                      {/* Property Assignment Card */}
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-amber-50 rounded-t-lg">
+                          <h3 className="text-lg font-semibold text-amber-800 flex items-center">
+                            <FaHome className="mr-2 text-amber-600" />
+                            Property Assignment
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          {/* Current Property Display */}
+                          <div className="mb-6">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">Current Assignment</h4>
+                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4 border border-amber-200">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                    <FaHome className="text-amber-600" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-amber-900">
+                                      {selectedUser.house_no ? `House #${selectedUser.house_no}` : 'No Property Assigned'}
+                                    </p>
+                                    {selectedUser.house_no && (
+                                      <p className="text-sm text-amber-700">
+                                        Block {selectedUser.block || Math.floor(selectedUser.house_no / 100)}, Lot {selectedUser.lot || (selectedUser.house_no % 100)}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                    {selectedUser.houseModel || 'Standard'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Property Editing Form */}
+                          <div className="border-t border-gray-200 pt-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-4">Update Property Assignment</h4>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Select New Lot
+                                </label>
+                                <div className="relative">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <FaMapMarkerAlt className="text-amber-600 text-sm" />
+                                  </div>
+                                  <select
+                                    value={propertyFormData.selectedLotId}
+                                    onChange={(e) => setPropertyFormData({...propertyFormData, selectedLotId: e.target.value})}
+                                    className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                                  >
+                                    <option value="">-- Keep current assignment --</option>
+                                    {loadingLots ? (
+                                      <option disabled>Loading available lots...</option>
+                                    ) : (
+                                      availableLots.map(lot => (
+                                        <option key={lot.id} value={lot.id}>
+                                          {lot.displayName}
+                                        </option>
+                                      ))
+                                    )}
+                                  </select>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Only vacant lots are available
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  House Model
+                                </label>
+                                <div className="relative">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i className="fas fa-home text-amber-600 text-sm"></i>
+                                  </div>
+                                  <select
+                                    value={propertyFormData.houseModel}
+                                    onChange={(e) => setPropertyFormData({...propertyFormData, houseModel: e.target.value})}
+                                    className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                                  >
+                                    <option value="Standard">Standard Model</option>
+                                    <option value="Premium">Premium Model</option>
+                                    <option value="Deluxe">Deluxe Model</option>
+                                    <option value="Executive">Executive Model</option>
+                                    <option value="Custom">Custom Build</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-end">
+                              <button
+                                onClick={() => {
+                                  const hasLotChange = propertyFormData.selectedLotId !== '';
+                                  const hasModelChange = propertyFormData.houseModel !== (selectedUser.houseModel || 'Standard');
+
+                                  if (hasLotChange || hasModelChange) {
+                                    handleUpdateProperty(selectedUser.id, propertyFormData.selectedLotId, propertyFormData.houseModel);
+                                  } else {
+                                    toast.info('No changes detected');
+                                  }
+                                }}
+                                disabled={formSubmitting}
+                                className="px-6 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center transition-colors duration-200 shadow-sm"
+                              >
+                                {formSubmitting ? (
+                                  <>
+                                    <FaSpinner className="animate-spin mr-2" />
+                                    Updating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FaSave className="mr-2" />
+                                    Update Property
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Role</p>
-                      <p className="font-medium">{selectedUser.role || 'Homeowner'}</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Status</p>
-                      <p className={`font-medium ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
-                        {selectedUser.status || 'N/A'}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Record Status</p>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
-                        selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {selectedUser.recordStatus || 'Neutral'}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Contact Number</p>
-                      <p className="font-medium">{selectedUser.contactNumber || 'N/A'}</p>
+
+                    {/* Right Column - Status Information */}
+                    <div className="space-y-6">
+                      {/* Account Status Card */}
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-green-50 rounded-t-lg">
+                          <h3 className="text-lg font-semibold text-green-800 flex items-center">
+                            <i className="fas fa-circle text-green-500 mr-2"></i>
+                            Account Status
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Status</label>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                              selectedUser.status === 'Active'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              <span className={`mr-2 h-2 w-2 rounded-full ${
+                                selectedUser.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
+                              }`}></span>
+                              {selectedUser.status || 'Active'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Record Status</label>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                              selectedUser.recordStatus === 'Good'
+                                ? 'bg-green-100 text-green-800'
+                                : selectedUser.recordStatus === 'Bad'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              <i className={`fas mr-2 ${
+                                selectedUser.recordStatus === 'Good'
+                                  ? 'fa-thumbs-up text-green-600'
+                                  : selectedUser.recordStatus === 'Bad'
+                                  ? 'fa-thumbs-down text-red-600'
+                                  : 'fa-minus text-gray-500'
+                              }`}></i>
+                              {selectedUser.recordStatus || 'Neutral'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Quick Actions Card */}
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-blue-50 rounded-t-lg">
+                          <h3 className="text-lg font-semibold text-blue-800 flex items-center">
+                            <i className="fas fa-sliders-h text-blue-500 mr-2"></i>
+                            Quick Actions
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <button
+                            onClick={() => handleToggleStatus(selectedUser.id, selectedUser.status)}
+                            disabled={actionLoading === selectedUser.id}
+                            className={`w-full px-4 py-2 text-sm font-medium rounded-lg flex items-center justify-center transition-colors duration-200 ${
+                              selectedUser.status === 'Active'
+                                ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                                : 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100'
+                            }`}
+                          >
+                            {actionLoading === selectedUser.id ? (
+                              <FaSpinner className="animate-spin mr-2" />
+                            ) : (
+                              <i className={`fas fa-toggle-${selectedUser.status === 'Active' ? 'off' : 'on'} mr-2`}></i>
+                            )}
+                            {selectedUser.status === 'Active' ? 'Deactivate Account' : 'Activate Account'}
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteUser(selectedUser.id)}
+                            disabled={actionLoading === selectedUser.id}
+                            className="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors duration-200"
+                          >
+                            <FaTrash className="mr-2" />
+                            Delete Account
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Record Status Actions */}
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-purple-50 rounded-t-lg">
+                          <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                            <i className="fas fa-shield-alt text-purple-500 mr-2"></i>
+                            Record Status
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <button
+                            onClick={() => handleSetRecordStatus(selectedUser.id, 'Good')}
+                            disabled={actionLoading === selectedUser.id}
+                            className="w-full px-3 py-2 bg-green-50 text-green-700 border border-green-200 text-xs font-medium rounded-lg flex items-center justify-center hover:bg-green-100 transition-colors duration-200"
+                          >
+                            <i className="fas fa-thumbs-up mr-2"></i>
+                            Mark Good
+                          </button>
+
+                          <button
+                            onClick={() => handleSetRecordStatus(selectedUser.id, 'Neutral')}
+                            disabled={actionLoading === selectedUser.id}
+                            className="w-full px-3 py-2 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-medium rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors duration-200"
+                          >
+                            <i className="fas fa-minus mr-2"></i>
+                            Mark Neutral
+                          </button>
+
+                          <button
+                            onClick={() => handleSetRecordStatus(selectedUser.id, 'Bad')}
+                            disabled={actionLoading === selectedUser.id}
+                            className="w-full px-3 py-2 bg-red-50 text-red-700 border border-red-200 text-xs font-medium rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors duration-200"
+                          >
+                            <i className="fas fa-thumbs-down mr-2"></i>
+                            Mark Bad
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -4,8 +4,7 @@ import { SpeakerphoneIcon as MegaphoneIcon, CalendarIcon, PencilIcon, TrashIcon 
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
-import { Card, CardHeader, CardBody, Button, Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell, Badge, Modal } from '../../components/AdminUI';
-import withAdminPage from '../../components/withAdminPage';
+
 
 function Announcements() {
   const [announcements, setAnnouncements] = useState([]);

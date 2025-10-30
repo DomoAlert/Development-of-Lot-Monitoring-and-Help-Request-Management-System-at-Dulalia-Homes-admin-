@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../components/AdminLayout';
+import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, getDoc, where } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -529,26 +529,26 @@ function UserAccounts() {
   };
 
   return (
-    <AdminLayout>
-      <div className="pt-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8 border-l-4 border-blue-500">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <ResponsiveLayout>
+      <div className="pt-4 sm:pt-20 px-4 sm:px-6 max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 border-l-4 border-blue-500">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             User Accounts
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage resident accounts and their access permissions</p>
+          <p className="text-black-600 mt-2 text-sm sm:text-base" style={{ color: 'black' }}>Manage resident accounts and their access permissions</p>
         </div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
           <button 
             onClick={() => {
               resetForm();
               setShowForm(true);
             }}
-            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+            className="flex items-center bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm sm:text-base"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add New User
@@ -556,13 +556,13 @@ function UserAccounts() {
         </div>
 
         {/* Search and filter section */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <input
             type="text"
             placeholder="Search users by name, username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full md:w-1/3 px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
           />
         </div>
 
@@ -1155,51 +1155,52 @@ function UserAccounts() {
               <p className="text-gray-600">Loading homeowner accounts...</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200 border-collapse">
-              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <FaUser className="text-blue-500" />
-                      <span>User</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <FaHome className="text-amber-500" />
-                      <span>Property Details</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-envelope text-blue-500"></i>
-                      <span>Email</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-circle text-green-500"></i>
-                      <span>Status</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-shield-alt text-purple-500"></i>
-                      <span>Record</span>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    <div className="flex items-center space-x-1">
-                      <i className="fas fa-sliders-h text-gray-500"></i>
-                      <span>Actions</span>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 border-collapse">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <FaUser className="text-blue-500" />
+                        <span>User</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <FaHome className="text-amber-500" />
+                        <span>Property</span>
+                      </div>
+                    </th>
+                    <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-envelope text-blue-500"></i>
+                        <span>Email</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-circle text-green-500"></i>
+                        <span>Status</span>
+                      </div>
+                    </th>
+                    <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-shield-alt text-purple-500"></i>
+                        <span>Record</span>
+                      </div>
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <div className="flex items-center space-x-1">
+                        <i className="fas fa-sliders-h text-gray-500"></i>
+                        <span>Actions</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center">
+                    <td colSpan="6" className="px-3 sm:px-6 py-8 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <FaUser className="h-10 w-10 text-gray-200 mb-2" />
                         <p className="text-gray-500 font-medium">No users found</p>
@@ -1215,16 +1216,16 @@ function UserAccounts() {
                         hover:bg-blue-50/30 transition-colors duration-150
                         ${user.status === 'Inactive' ? 'bg-red-50/20' : ''}`}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <button 
                           onClick={() => handleViewUser(user)}
                           className="flex items-center hover:text-primary group"
                         >
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200">
+                          <div className="h-8 sm:h-10 w-8 sm:w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center mr-2 sm:mr-3 shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-200 text-sm sm:text-base">
                             {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div className="ml-0">
-                            <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
                               @{user.username || 'N/A'}
                             </div>
                             <div className="text-xs text-gray-500">
@@ -1239,46 +1240,46 @@ function UserAccounts() {
                           </div>
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         {user.house_no ? (
                           <div className="flex flex-col">
                             <div className="flex items-center mb-1">
-                              <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-sm">
+                              <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
                                 #{user.house_no}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <div className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
-                                Block {user.block || Math.floor(user.house_no / 100)}
+                            <div className="flex flex-wrap gap-1">
+                              <div className="text-xs bg-blue-50 text-blue-700 px-1 sm:px-2 py-0.5 rounded">
+                                B{user.block || Math.floor(user.house_no / 100)}
                               </div>
-                              <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">
-                                Lot {user.lot || user.house_no % 100}
+                              <div className="text-xs bg-green-50 text-green-700 px-1 sm:px-2 py-0.5 rounded">
+                                L{user.lot || user.house_no % 100}
                               </div>
                             </div>
                             {user.houseModel && (
                               <div className="text-xs text-gray-500 mt-1">
-                                {user.houseModel} Model
+                                {user.houseModel}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-500 italic">No property assigned</span>
+                          <span className="text-xs sm:text-sm text-gray-500 italic">No property</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="bg-blue-50 rounded-full p-1 mr-2">
                             <i className="fas fa-envelope text-blue-400 text-xs"></i>
                           </div>
                           <div>
-                            <div className="text-sm text-gray-700">{user.email || 'N/A'}</div>
-                            <div className="text-xs text-gray-400">Account ID: {user.id?.substring(0, 8)}...</div>
+                            <div className="text-xs sm:text-sm text-gray-700">{user.email || 'N/A'}</div>
+                            <div className="text-xs text-gray-400">ID: {user.id?.substring(0, 8)}...</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          <span className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             user.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
                           }`}>
                             <span className={`mr-1 h-2 w-2 rounded-full ${
@@ -1288,8 +1289,8 @@ function UserAccounts() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
+                      <td className="hidden sm:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 sm:px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
                           user.recordStatus === 'Good' ? 'bg-green-100 text-green-800 border border-green-200' : 
                           user.recordStatus === 'Bad' ? 'bg-red-100 text-red-800 border border-red-200' : 
                           'bg-gray-100 text-gray-800 border border-gray-200'
@@ -1302,41 +1303,33 @@ function UserAccounts() {
                           {user.recordStatus || 'Neutral'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {actionLoading === user.id ? (
                           <div className="flex items-center justify-center">
                             <FaSpinner className="animate-spin text-primary" />
                           </div>
                         ) : (
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-1 sm:gap-2">
                             {/* Top Section: View, Deactivate/Activate, Delete */}
                             <div className="flex flex-wrap gap-1">
-                              <button
-                                onClick={() => handleViewUser(user)}
-                                className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors flex items-center"
-                              >
-                                <i className="fas fa-eye mr-1"></i>
-                                View
-                              </button>
-                              
                               <button 
                                 onClick={() => handleToggleStatus(user.id, user.status)}
-                                className={`px-2 py-1 text-xs rounded border flex items-center ${
+                                className={`px-1 sm:px-2 py-1 text-xs rounded border flex items-center ${
                                   user.status === 'Active' 
                                   ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
                                   : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
                                 }`}
                               >
                                 <i className={`fas fa-toggle-${user.status === 'Active' ? 'off' : 'on'} mr-1`}></i>
-                                {user.status === 'Active' ? 'Deactivate' : 'Activate'}
+                                <span className="hidden sm:inline">{user.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
                               </button>
                               
                               <button 
                                 onClick={() => handleDeleteUser(user.id)}
-                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                                className="px-1 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
                               >
                                 <i className="fas fa-trash-alt mr-1"></i>
-                                Delete
+                                <span className="hidden sm:inline">Delete</span>
                               </button>
                             </div>
                             
@@ -1344,29 +1337,29 @@ function UserAccounts() {
                             <div className="flex flex-wrap gap-1">
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Good')}
-                                className="px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
+                                className="px-1 sm:px-2 py-1 text-xs bg-green-50 text-green-600 rounded border border-green-100 hover:bg-green-100 flex items-center"
                                 title="Mark Good Record"
                               >
                                 <i className="fas fa-thumbs-up mr-1"></i>
-                                Good Record
+                                <span className="hidden sm:inline">Good</span>
                               </button>
                               
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Neutral')}
-                                className="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
+                                className="px-1 sm:px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 flex items-center"
                                 title="Reset Record Status"
                               >
                                 <i className="fas fa-minus mr-1"></i>
-                                Neutral
+                                <span className="hidden sm:inline">Neutral</span>
                               </button>
                               
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Bad')}
-                                className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
+                                className="px-1 sm:px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
                                 title="Mark Bad Record"
                               >
                                 <i className="fas fa-thumbs-down mr-1"></i>
-                                Bad Record
+                                <span className="hidden sm:inline">Bad</span>
                               </button>
                             </div>
                           </div>
@@ -1377,21 +1370,22 @@ function UserAccounts() {
                 )}
               </tbody>
             </table>
+            </div>
           )}
           
           {!loading && filteredUsers.length > 0 && (
-            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
-              <div className="text-sm text-gray-500">
+            <div className="bg-gray-50 px-3 sm:px-6 py-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-2">
+              <div className="text-xs sm:text-sm text-gray-500">
                 Showing {filteredUsers.length} homeowner account{filteredUsers.length !== 1 ? 's' : ''}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 <span className="font-medium text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
               </div>
             </div>
           )}
         </div>
       </div>
-    </AdminLayout>
+    </ResponsiveLayout>
   );
 }
 

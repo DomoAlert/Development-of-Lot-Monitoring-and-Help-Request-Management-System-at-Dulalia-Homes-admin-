@@ -788,7 +788,7 @@ function ServiceRequests() {
     switch (status?.toLowerCase()) {
       case 'pending':
         return 'warning';
-      case 'in-progress':
+      case 'in progress':
         return 'info';
       case 'confirmed':
         return 'success';
@@ -923,7 +923,7 @@ const formatTime = (timestamp) => {
           >
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
-            <option value="In-Progress">In-Progress</option>
+            <option value="In Progress">In Progress</option>
             <option value="Confirmed">Confirmed</option>
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>

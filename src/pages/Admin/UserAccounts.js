@@ -15,13 +15,16 @@ function UserAccounts() {
   const [showForm, setShowForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [propertyFormData, setPropertyFormData] = useState({
+    selectedLotId: '',
+    houseModel: 'Standard'
+  });
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -292,87 +295,6 @@ function UserAccounts() {
     }
   };
 
-  const handleUpdateUser = async (e) => {
-    e.preventDefault();
-    setFormSubmitting(true);
-    
-    if (!selectedUser) return;
-    
-    try {
-      // Generate email from username if not provided
-      const userEmail = formData.email || `${formData.username}@example.com`;
-      
-      // Check if the lot assignment has changed
-      const lotChanged = 
-        selectedUser.house_no !== formData.house_no ||
-        selectedUser.block !== formData.block ||
-        selectedUser.lot !== formData.lot;
-      
-      // Update the user document
-      await updateDoc(doc(db, 'users', selectedUser.id), {
-        ...formData,
-        email: userEmail,
-        last_updated: serverTimestamp()
-      });
-      
-      // If lot assignment changed, update the lots collection
-      if (lotChanged) {
-        try {
-          // Handle the old lot - mark it as vacant
-          if (selectedUser.house_no) {
-            const oldBlockNum = Math.floor(selectedUser.house_no / 100);
-            const oldLotNum = selectedUser.house_no % 100;
-            const oldLotId = `B${oldBlockNum}-L${oldLotNum.toString().padStart(2, '0')}`;
-            
-            await setDoc(doc(db, 'lots', oldLotId), {
-              house_no: selectedUser.house_no,
-              block: oldBlockNum,
-              lot: oldLotNum,
-              status: 'Vacant',
-              owner_id: null,
-              house_owner: null,
-              last_updated: serverTimestamp()
-            }, { merge: true });
-          }
-          
-          // Handle the new lot - mark it as occupied
-          if (formData.house_no) {
-            const newLotId = `B${formData.block}-L${formData.lot.toString().padStart(2, '0')}`;
-            
-            await setDoc(doc(db, 'lots', newLotId), {
-              house_no: formData.house_no,
-              block: formData.block,
-              lot: formData.lot,
-              status: 'Occupied',
-              owner_id: selectedUser.id,
-              house_owner: formData.username || `${formData.firstName} ${formData.lastName}`.trim(),
-              houseModel: formData.houseModel || 'Standard',
-              last_updated: serverTimestamp()
-            }, { merge: true });
-          }
-          
-          toast.success('User and lot assignment updated successfully');
-        } catch (error) {
-          console.error('Error updating lot status:', error);
-          toast.warning('User updated but there was an issue updating lot status');
-        }
-      } else {
-        toast.success('User updated successfully');
-      }
-      
-      setShowUserDetails(false);
-      setIsEditing(false);
-      setSelectedUser(null);
-      resetForm();
-      fetchUsers();
-      fetchAvailableLots(); // Refresh available lots
-    } catch (error) {
-      toast.error('Error updating user: ' + error.message);
-    } finally {
-      setFormSubmitting(false);
-    }
-  };
-
   const handleToggleStatus = async (id, currentStatus) => {
     setActionLoading(id);
     try {
@@ -492,6 +414,10 @@ function UserAccounts() {
 
   const handleViewUser = (user) => {
     setSelectedUser(user);
+    setPropertyFormData({
+      selectedLotId: '',
+      houseModel: user.houseModel || 'Standard'
+    });
     setShowUserDetails(true);
     setIsEditing(false);
   };
@@ -560,7 +486,6 @@ function UserAccounts() {
   const closeUserDetails = () => {
     setShowUserDetails(false);
     setSelectedUser(null);
-    setIsEditing(false);
   };
 
   const filteredUsers = users.filter(user => 
@@ -896,7 +821,7 @@ function UserAccounts() {
           </div>
         )}
 
-        {/* User Details/Edit Modal */}
+        {/* User Details Modal */}
         {showUserDetails && selectedUser && (
           <div 
             className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
@@ -910,7 +835,7 @@ function UserAccounts() {
               <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center p-6 border-b bg-white sticky top-0 z-10">
                   <h2 className="text-lg font-semibold">
-                    {isEditing ? 'Edit User' : 'User Details'}
+                    User Details
                   </h2>
                   <button 
                     onClick={closeUserDetails}
@@ -921,267 +846,179 @@ function UserAccounts() {
                 </div>
                 
                 <div className="p-6">
-              {!isEditing ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center mb-6">
-                    <div className="h-20 w-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl">
-                      <FaUser />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">First Name</p>
-                      <p className="font-medium">{selectedUser.firstName || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Last Name</p>
-                      <p className="font-medium">{selectedUser.lastName || 'N/A'}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Username</p>
-                    <p className="font-medium">{selectedUser.username || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedUser.email || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="p-2 bg-amber-50 rounded-md">
-                    <p className="text-sm text-gray-700">Property Details</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <div>
-                        <p className="font-medium">House #{selectedUser.house_no || 'N/A'}</p>
-                        {selectedUser.block && selectedUser.lot && (
-                          <p className="text-sm text-gray-600">Block {selectedUser.block}, Lot {selectedUser.lot}</p>
-                        )}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center mb-6">
+                      <div className="h-20 w-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl">
+                        <FaUser />
                       </div>
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
-                        {selectedUser.houseModel || 'Standard'}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">First Name</p>
+                        <p className="font-medium">{selectedUser.firstName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Last Name</p>
+                        <p className="font-medium">{selectedUser.lastName || 'N/A'}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Username</p>
+                      <p className="font-medium">{selectedUser.username || 'N/A'}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium">{selectedUser.email || 'N/A'}</p>
+                    </div>
+                    
+                    {/* Editable Property Section */}
+                    <div className="p-4 bg-amber-50 rounded-md border border-amber-100">
+                      <h3 className="font-medium text-amber-800 mb-3 flex items-center">
+                        <FaHome className="mr-2" />
+                        Property Assignment
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        {/* Current Property Display */}
+                        <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
+                          <div>
+                            <p className="text-sm font-medium text-amber-700">Current Assignment:</p>
+                            <div className="flex items-center mt-1">
+                              <span className="font-medium text-amber-800">House #{selectedUser.house_no || 'None'}</span>
+                              {selectedUser.house_no && (
+                                <>
+                                  <span className="mx-2 text-amber-600">•</span>
+                                  <span className="text-sm text-gray-600">Block {selectedUser.block || Math.floor(selectedUser.house_no / 100)}, Lot {selectedUser.lot || (selectedUser.house_no % 100)}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                            {selectedUser.houseModel || 'Standard'}
+                          </span>
+                        </div>
+                        
+                        {/* Property Editing Form */}
+                        <div className="border-t border-amber-200 pt-4">
+                          <h4 className="text-sm font-medium text-amber-700 mb-3">Update Property Assignment</h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Select New Lot
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <FaMapMarkerAlt className="text-amber-600 text-xs" />
+                                </div>
+                                <select
+                                  value={propertyFormData.selectedLotId}
+                                  onChange={(e) => setPropertyFormData({...propertyFormData, selectedLotId: e.target.value})}
+                                  className="w-full pl-8 pr-4 py-2 text-sm rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
+                                >
+                                  <option value="">-- Keep current assignment --</option>
+                                  {loadingLots ? (
+                                    <option disabled>Loading available lots...</option>
+                                  ) : (
+                                    availableLots.map(lot => (
+                                      <option key={lot.id} value={lot.id}>
+                                        {lot.displayName}
+                                      </option>
+                                    ))
+                                  )}
+                                </select>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Only vacant lots are available
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                House Model
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <i className="fas fa-home text-amber-600 text-xs"></i>
+                                </div>
+                                <select
+                                  value={propertyFormData.houseModel}
+                                  onChange={(e) => setPropertyFormData({...propertyFormData, houseModel: e.target.value})}
+                                  className="w-full pl-8 pr-4 py-2 text-sm rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
+                                >
+                                  <option value="Standard">Standard Model</option>
+                                  <option value="Premium">Premium Model</option>
+                                  <option value="Deluxe">Deluxe Model</option>
+                                  <option value="Executive">Executive Model</option>
+                                  <option value="Custom">Custom Build</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end mt-4">
+                            <button
+                              onClick={() => {
+                                const hasLotChange = propertyFormData.selectedLotId !== '';
+                                const hasModelChange = propertyFormData.houseModel !== (selectedUser.houseModel || 'Standard');
+                                
+                                if (hasLotChange || hasModelChange) {
+                                  handleUpdateProperty(selectedUser.id, propertyFormData.selectedLotId, propertyFormData.houseModel);
+                                } else {
+                                  toast.info('No changes detected');
+                                }
+                              }}
+                              disabled={formSubmitting}
+                              className="px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700 disabled:opacity-50 flex items-center"
+                            >
+                              {formSubmitting ? (
+                                <>
+                                  <FaSpinner className="animate-spin mr-2" />
+                                  Updating...
+                                </>
+                              ) : (
+                                <>
+                                  <FaSave className="mr-2" />
+                                  Update Property
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Role</p>
+                      <p className="font-medium">{selectedUser.role || 'Homeowner'}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <p className={`font-medium ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedUser.status || 'N/A'}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Record Status</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
+                        selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedUser.recordStatus || 'Neutral'}
                       </span>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Role</p>
-                    <p className="font-medium">{selectedUser.role || 'Homeowner'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className={`font-medium ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
-                      {selectedUser.status || 'N/A'}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Record Status</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedUser.recordStatus === 'Good' ? 'bg-green-100 text-green-800' : 
-                      selectedUser.recordStatus === 'Bad' ? 'bg-red-100 text-red-800' : 
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedUser.recordStatus || 'Neutral'}
-                    </span>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500">Contact Number</p>
-                    <p className="font-medium">{selectedUser.contactNumber || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2 mt-6">
-                    <button
-                      onClick={handleEditUser}
-                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 flex items-center"
-                    >
-                      <FaEdit className="mr-2" />
-                      Edit User
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleUpdateUser} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                    
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
+                      <p className="text-sm text-gray-500">Contact Number</p>
+                      <p className="font-medium">{selectedUser.contactNumber || 'N/A'}</p>
                     </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.username}
-                      onChange={handleUsernameChange}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  
-                  <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Property Assignment
-  </label>
-  <div className="p-3 bg-amber-50 rounded-md border border-amber-100">
-    <div className="flex items-center justify-between mb-1">
-      <span className="text-sm font-medium text-amber-700">
-        Current House Number:
-      </span>
-      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
-        #{formData.house_no}
-      </span>
-    </div>
-    <div className="text-sm text-gray-600 mb-2">
-      Block {formData.block}, Lot {formData.lot}
-    </div>
-    
-    <div className="mt-3">
-      <label className="block text-xs font-medium text-gray-700 mb-1">
-        Change Lot Assignment
-      </label>
-      <select
-        value=""
-        onChange={(e) => {
-          const selected = availableLots.find(lot => lot.id === e.target.value);
-          if (selected) {
-            setFormData({
-              ...formData,
-              house_no: selected.house_no,
-              block: selected.block,
-              lot: selected.lot
-            });
-          }
-        }}
-        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500"
-      >
-        <option value="">-- Keep current assignment --</option>
-        {loadingLots ? (
-          <option disabled>Loading available lots...</option>
-        ) : (
-          availableLots.map(lot => (
-            <option key={lot.id} value={lot.id}>
-              {lot.displayName}
-            </option>
-          ))
-        )}
-      </select>
-      <p className="text-xs text-gray-500 mt-1">
-        Only vacant lots are available for reassignment
-      </p>
-    </div>
-  </div>
-</div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value, isActive: e.target.value === 'Active'})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Record Status
-                    </label>
-                    <select
-                      value={formData.recordStatus}
-                      onChange={(e) => setFormData({...formData, recordStatus: e.target.value})}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="Neutral">Neutral</option>
-                      <option value="Good">Good</option>
-                      <option value="Bad">Bad</option>
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Bad record status will restrict access to some facilities and services
-                    </p>
-                  </div>
-                
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.contactNumber}
-                      onChange={handleContactNumberChange}
-                      className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="e.g. 09123456789"
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="button"
-                      disabled={formSubmitting}
-                      onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={formSubmitting}
-                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
-                    >
-                      {formSubmitting ? (
-                        <>
-                          <FaSpinner className="animate-spin mr-2" />
-                          Updating...
-                        </>
-                      ) : (
-                        'Update User'
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
                 </div>
               </div>
             </div>

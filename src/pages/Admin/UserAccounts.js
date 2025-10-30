@@ -1401,18 +1401,18 @@ function UserAccounts() {
                         <span>Record</span>
                       </div>
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    {/* <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <i className="fas fa-sliders-h text-gray-500"></i>
                         <span>Actions</span>
                       </div>
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-3 sm:px-6 py-8 text-center">
+                    <td colSpan="5" className="px-3 sm:px-6 py-8 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <FaUser className="h-10 w-10 text-gray-200 mb-2" />
                         <p className="text-gray-500 font-medium">No users found</p>
@@ -1515,14 +1515,13 @@ function UserAccounts() {
                           {user.recordStatus || 'Neutral'}
                         </span>
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {/* <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {actionLoading === user.id ? (
                           <div className="flex items-center justify-center">
                             <FaSpinner className="animate-spin text-primary" />
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1 sm:gap-2">
-                            {/* Top Section: View, Deactivate/Activate, Delete */}
                             <div className="flex flex-wrap gap-1">              
                               <button
                                 onClick={() => handleToggleStatus(user.id, user.status)}
@@ -1545,7 +1544,6 @@ function UserAccounts() {
                               </button>
                             </div>
                             
-                            {/* Bottom Section: Record Status Buttons */}
                             <div className="flex flex-wrap gap-1">
                               <button 
                                 onClick={() => handleSetRecordStatus(user.id, 'Good')}
@@ -1576,7 +1574,7 @@ function UserAccounts() {
                             </div>
                           </div>
                         )}
-                      </td>
+                      </td> */}
                     </tr>
                   ))
                 )}

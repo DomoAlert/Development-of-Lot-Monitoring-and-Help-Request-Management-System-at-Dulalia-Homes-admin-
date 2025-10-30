@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, deleteUser, getAuth } from 'firebase/au
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
 import { Modal, Button } from '../../components/AdminUI';
+import { FaUser, FaTimes, FaSpinner, FaEye, FaEyeSlash, FaCheckCircle, FaExclamationCircle, FaUserShield } from 'react-icons/fa';
 
 function HeadStaffAccounts() {
   const [headStaff, setHeadStaff] = useState([]);
@@ -32,6 +33,7 @@ function HeadStaffAccounts() {
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Department Management States
   const [showDepartmentForm, setShowDepartmentForm] = useState(false);
@@ -216,12 +218,12 @@ function HeadStaffAccounts() {
     }
   };
 
-  // Handle phone number input - only allow numbers
+  // Handle phone number input - only allow numbers and limit to 10 digits
   const handlePhoneNumberChange = (e) => {
     const { value } = e.target;
-    // Only allow digits
-    const numericValue = value.replace(/[^0-9]/g, '');
-    
+    // Only allow digits and limit to 10 characters
+    const numericValue = value.replace(/\D/g, '').slice(0, 10);
+
     setFormData({
       ...formData,
       phone: numericValue
@@ -277,12 +279,11 @@ function HeadStaffAccounts() {
     return isValid;
   };
 
-  // Validate phone number format
+  // Validate phone number format (10-digit Philippine mobile number)
   const validatePhoneNumber = (phone) => {
-    // This pattern allows for Philippine mobile numbers (e.g. 09XXXXXXXXX)
-    // Supports format with or without country code, spaces, and dashes
-    const pattern = /^(\+?63|0)9\d{9}$/;
-    return pattern.test(phone.replace(/\s|-/g, ''));
+    // Philippine mobile numbers: exactly 10 digits starting with 9
+    const pattern = /^9\d{9}$/;
+    return pattern.test(phone);
   };
 
   // Handle add head staff submission
@@ -433,6 +434,7 @@ function HeadStaffAccounts() {
     setShowForm(false);
     setIsEditing(false);
     resetForm();
+    setShowPassword(false);
   };
 
   // Reset form to default values
@@ -448,6 +450,7 @@ function HeadStaffAccounts() {
       status: 'active'
     });
     setCurrentHeadStaffId(null);
+    setShowPassword(false);
   };
 
   // Filter head staff based on search query and status filter
@@ -698,172 +701,304 @@ function HeadStaffAccounts() {
 
         {/* Add/Edit Head Staff Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={handleCancelForm}></div>
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <div className="inline-block align-bottom bg-white bg-white rounded-lg px-6 pt-5 pb-6 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900 text-black" id="modal-title">
-                      {isEditing ? 'Edit Head Staff Account' : 'Add New Head Staff Account'}
-                    </h3>
+          <div
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleCancelForm();
+              }
+            }}
+          >
+            <div className="flex min-h-full items-center justify-center p-2 sm:p-4 py-4 sm:py-8">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 sm:px-8 sm:py-6 rounded-t-xl">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-white bg-opacity-20 p-3 rounded-full">
+                        <FaUserShield className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">{isEditing ? 'Edit Head Staff' : 'Add New Head Staff'}</h2>
+                        <p className="text-blue-100 text-sm sm:text-base">Manage head staff account information</p>
+                      </div>
+                    </div>
                     <button
                       onClick={handleCancelForm}
-                      className="text-gray-400 hover:text-gray-600 hover:text-gray-600"
+                      className="text-white hover:text-blue-100 transition-colors p-2 hover:bg-white hover:bg-opacity-10 rounded-full"
                     >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <FaTimes className="h-5 w-5" />
                     </button>
                   </div>
-                  <form onSubmit={isEditing ? handleUpdateHeadStaff : handleAddHeadStaff} className="space-y-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        id="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="John Doe"
-                        required
-                      />
-                      {!isEditing && (
-                        <p className="mt-1 text-xs text-gray-500 text-gray-600">
-                          Email will be auto-generated based on name
-                        </p>
-                      )}
+                </div>
+
+                {/* Form Content */}
+                <div className="p-6 sm:p-8">
+                  <form onSubmit={isEditing ? handleUpdateHeadStaff : handleAddHeadStaff} className="space-y-8">
+                    {/* Personal Information Card */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                          <FaUser className="h-5 w-5 text-white" />
+                        </div>
+                        Personal Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                            placeholder="Enter head staff's full name"
+                          />
+                          {!isEditing && (
+                            <p className="mt-2 text-xs text-gray-500 flex items-center">
+                              <i className="fas fa-info-circle mr-1 text-blue-500"></i>
+                              Email will be auto-generated based on name
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <label htmlFor="role" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Role/Department <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="role"
-                        id="role"
-                        value={formData.role}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="">Select a role...</option>
-                        {staffRoles.map(role => (
-                          <option key={role.id} value={role.id}>
-                            {role.name}
-                          </option>
-                        ))}
-                      </select>
-                      {formData.role && (
-                        <p className="mt-1 text-xs text-blue-600 text-blue-600">
-                          {staffRoles.find(r => r.id === formData.role)?.description}
-                        </p>
-                      )}
+                    {/* Account Information Card */}
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-100">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <div className="bg-purple-500 p-2 rounded-lg mr-3">
+                          <i className="fas fa-user-lock h-5 w-5 text-white"></i>
+                        </div>
+                        Account Credentials
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Role/Department *
+                          </label>
+                          <select
+                            value={formData.role}
+                            onChange={handleInputChange}
+                            name="role"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-sm"
+                            required
+                          >
+                            <option value="">Select a role/department...</option>
+                            {staffRoles.map(role => (
+                              <option key={role.id} value={role.id}>
+                                {role.name}
+                              </option>
+                            ))}
+                          </select>
+                          {formData.role && (
+                            <p className="mt-2 text-xs text-purple-600 flex items-center">
+                              <i className="fas fa-info-circle mr-1"></i>
+                              {staffRoles.find(r => r.id === formData.role)?.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={handleInputChange}
+                              name="email"
+                              disabled={isEditing}
+                              className={`w-full px-4 py-3 pr-32 rounded-lg border focus:outline-none focus:ring-2 focus:border-transparent transition-all shadow-sm ${
+                                isEditing
+                                  ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                  : 'border-gray-300 focus:ring-purple-500'
+                              }`}
+                              placeholder={isEditing ? formData.email : "Auto-generated from name"}
+                              required
+                              readOnly={!isEditing}
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                              <span className="text-xs text-gray-500 bg-purple-100 px-2 py-1 rounded">
+                                @headstaff.com
+                              </span>
+                            </div>
+                          </div>
+                          {isEditing && (
+                            <p className="mt-2 text-xs text-gray-500 flex items-center">
+                              <i className="fas fa-lock mr-1 text-gray-400"></i>
+                              Email cannot be changed after account creation
+                            </p>
+                          )}
+                        </div>
+
+                        {!isEditing && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Password *
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                required
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                name="password"
+                                className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-sm"
+                                placeholder="Create a strong password"
+                                minLength="6"
+                              />
+                              <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <FaEyeSlash className="h-5 w-5" />
+                                ) : (
+                                  <FaEye className="h-5 w-5" />
+                                )}
+                              </button>
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500 flex items-center">
+                              <i className="fas fa-shield-alt mr-1 text-green-500"></i>
+                              Must be at least 6 characters
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Email Address <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="email"
-                          name="email"
-                          id="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          disabled={isEditing || !isEditing}
-                          className={`w-full px-3 py-2 pr-24 border border-gray-300 border-gray-300 rounded-md text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            isEditing 
-                              ? 'bg-gray-100 bg-gray-50 cursor-not-allowed' 
-                              : 'bg-gray-50 bg-gray-50'
-                          }`}
-                          placeholder="Auto-generated"
-                          required
-                          readOnly
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <span className="text-xs text-gray-500 bg-blue-100 bg-blue-100 px-2 py-1 rounded">
-                            @headstaff.com
+
+                    {/* Contact Information Card */}
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <div className="bg-green-500 p-2 rounded-lg mr-3">
+                          <i className="fas fa-phone-alt h-5 w-5 text-white"></i>
+                        </div>
+                        Contact Information
+                      </h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Contact Number *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={handlePhoneNumberChange}
+                            className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:border-transparent transition-all shadow-sm ${
+                              formData.phone && !validatePhoneNumber(formData.phone)
+                                ? 'border-red-300 focus:ring-red-500'
+                                : formData.phone && validatePhoneNumber(formData.phone)
+                                ? 'border-green-300 focus:ring-green-500'
+                                : 'border-gray-300 focus:ring-green-500'
+                            }`}
+                            placeholder="9123456789"
+                            maxLength="10"
+                            required
+                          />
+                          {formData.phone && (
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                              {validatePhoneNumber(formData.phone) ? (
+                                <FaCheckCircle className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <FaExclamationCircle className="h-5 w-5 text-red-500" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 flex justify-between items-center">
+                          <p className={`text-sm ${
+                            formData.phone && !validatePhoneNumber(formData.phone)
+                              ? 'text-red-600'
+                              : formData.phone && validatePhoneNumber(formData.phone)
+                              ? 'text-green-600'
+                              : 'text-gray-500'
+                          }`}>
+                            {formData.phone && !validatePhoneNumber(formData.phone)
+                              ? 'Please enter a valid 10-digit Philippine mobile number'
+                              : formData.phone && validatePhoneNumber(formData.phone)
+                              ? '✓ Valid Philippine mobile number'
+                              : 'Enter 10-digit mobile number (e.g., 9123456789)'}
+                          </p>
+                          <span className="text-sm text-gray-400 font-medium">
+                            {formData.phone?.length || 0}/10
                           </span>
                         </div>
                       </div>
-                      {isEditing && (
-                        <p className="mt-1 text-xs text-gray-500 text-gray-600">
-                          Email cannot be changed after account creation
+                    </div>
+
+                    {/* Status & Settings Card */}
+                    <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-6 border border-gray-100">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <div className="bg-gray-500 p-2 rounded-lg mr-3">
+                          <i className="fas fa-cog h-5 w-5 text-white"></i>
+                        </div>
+                        Account Status
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center p-4 bg-white rounded-lg border border-gray-200">
+                          <input
+                            id="status"
+                            name="status"
+                            type="checkbox"
+                            checked={formData.status === 'active'}
+                            onChange={handleStatusToggle}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor="status" className="ml-3 block text-sm font-medium text-gray-700">
+                            <span className="flex items-center">
+                              <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                                formData.status === 'active' ? 'bg-green-500' : 'bg-red-500'
+                              }`}></span>
+                              {formData.status === 'active' ? 'Active Account' : 'Inactive Account'}
+                            </span>
+                          </label>
+                        </div>
+                        <p className="text-xs text-gray-500 flex items-center">
+                          <i className="fas fa-info-circle mr-1 text-blue-500"></i>
+                          {formData.status === 'active'
+                            ? 'Active accounts can access the system and perform their duties'
+                            : 'Inactive accounts cannot log in or access system features'
+                          }
                         </p>
-                      )}
-                    </div>
-                    
-                    {!isEditing && (
-                      <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                          Password <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="password"
-                          name="password"
-                          id="password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Minimum 6 characters"
-                          minLength="6"
-                          required
-                        />
                       </div>
-                    )}
-                    
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                        Phone Number <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="phone"
-                        id="phone"
-                        value={formData.phone}
-                        onChange={handlePhoneNumberChange}
-                        className="w-full px-3 py-2 border border-gray-300 border-gray-300 rounded-md bg-white bg-white text-gray-900 text-black placeholder-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="09XXXXXXXXX"
-                        required
-                      />
                     </div>
-                    
-                    <div className="flex items-center">
-                      <input
-                        id="status"
-                        name="status"
-                        type="checkbox"
-                        checked={formData.status === 'active'}
-                        onChange={handleStatusToggle}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 border-gray-300 rounded bg-white bg-white"
-                      />
-                      <label htmlFor="status" className="ml-2 block text-sm text-gray-900 text-black">
-                        Active Account
-                      </label>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3 pt-4">
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
                       <button
                         type="button"
-                        className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                         onClick={handleCancelForm}
+                        disabled={formSubmitting}
+                        className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all font-medium shadow-sm"
                       >
+                        <i className="fas fa-times mr-2"></i>
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={formSubmitting}
-                        className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${
-                          formSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+                        className={`px-6 py-3 rounded-lg text-white font-medium shadow-sm transition-all flex items-center justify-center ${
+                          formSubmitting
+                            ? 'bg-blue-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                         }`}
                       >
-                        {formSubmitting ? 'Processing...' : isEditing ? 'Update Account' : 'Create Account'}
+                        {formSubmitting ? (
+                          <>
+                            <FaSpinner className="animate-spin mr-2" />
+                            {isEditing ? 'Updating...' : 'Creating...'}
+                          </>
+                        ) : (
+                          <>
+                            <FaUserShield className="mr-2" />
+                            {isEditing ? 'Update Head Staff' : 'Add New Head Staff'}
+                          </>
+                        )}
                       </button>
                     </div>
                   </form>

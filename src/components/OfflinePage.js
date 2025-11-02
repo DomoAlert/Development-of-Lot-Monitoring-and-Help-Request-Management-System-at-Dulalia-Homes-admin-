@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaWifi, FaSpinner } from 'react-icons/fa';
+import { createPortal } from 'react-dom';
 
 const DEFAULT_PING_URL = 'https://www.gstatic.com/generate_204';
 
@@ -61,17 +62,42 @@ const OfflinePage = ({ pingUrl = DEFAULT_PING_URL, pollInterval = 2500, pingTime
     };
   }, [pingUrl, pollInterval, pingTimeout]);
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setIsRetrying(true);
-    // Give a short delay so spinner is visible before reload
-    setTimeout(() => window.location.reload(), 300);
+    
+    // Wait a bit to show the spinner
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Re-check connectivity instead of reloading the page
+    try {
+      if (navigator.onLine === false) {
+        setIsOffline(true);
+        setIsRetrying(false);
+        return;
+      }
+
+      // Try to fetch a lightweight URL with timeout
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), pingTimeout);
+
+      await fetch(pingUrl, { method: 'GET', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+      clearTimeout(id);
+
+      // If we get here, connection is restored
+      setIsOffline(false);
+    } catch (err) {
+      // Still offline, keep the page visible
+      setIsOffline(true);
+    }
+    
+    setIsRetrying(false);
   };
 
   if (!isOffline) return null;
 
-  return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-[9999] transition-opacity duration-300">
-      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full text-center transform transition-all">
+  return createPortal(
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-[10000] transition-opacity duration-300" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000 }}>
+      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full text-center transform transition-all" style={{ position: 'relative', zIndex: 10001 }}>
         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100">
           <FaWifi className="h-8 w-8 text-red-600 transform rotate-45" />
         </div>
@@ -94,7 +120,8 @@ const OfflinePage = ({ pingUrl = DEFAULT_PING_URL, pollInterval = 2500, pingTime
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

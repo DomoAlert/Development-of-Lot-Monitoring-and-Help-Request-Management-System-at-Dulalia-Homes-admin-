@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { UserCircleIcon } from '@heroicons/react/outline';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, writeBatch, setDoc } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { db, auth } from '../../services/firebase';
 import { toast } from 'react-toastify';
+import { FaUser, FaTimes, FaSpinner, FaEye, FaEyeSlash, FaCheckCircle, FaExclamationCircle, FaUserShield } from 'react-icons/fa';
 
 function Staff() {
   const [staffMembers, setStaffMembers] = useState([]);
@@ -11,6 +13,8 @@ function Staff() {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentStaffId, setCurrentStaffId] = useState(null);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Updated form data to match new structure
   const [formData, setFormData] = useState({
@@ -18,6 +22,7 @@ function Staff() {
     lastName: '',
     name: '', // Auto-generated from firstName + lastName
     email: '',
+    password: '',
     role: 'staff',
     position: '',
     status: 'Active',
@@ -227,28 +232,62 @@ function Staff() {
     }
   };
 
+  // Validate form data
+  const validateForm = () => {
+    let isValid = true;
+    
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast.error('First name and last name are required');
+      isValid = false;
+    }
+    
+    if (!formData.email.trim()) {
+      toast.error('Email is required');
+      isValid = false;
+    } else if (!/^\S+@staff\.com$/.test(formData.email)) {
+      toast.error('Email must use @staff.com domain');
+      isValid = false;
+    }
+    
+    if (!formData.position || formData.position === '') {
+      toast.error('Please select a position');
+      isValid = false;
+    }
+    
+    if (!isEditing && !formData.password.trim()) {
+      toast.error('Password is required');
+      isValid = false;
+    } else if (!isEditing && formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      isValid = false;
+    }
+    
+    if (!formData.contactNumber.trim()) {
+      toast.error('Phone number is required');
+      isValid = false;
+    } else if (!validatePhoneNumber(formData.contactNumber)) {
+      toast.error('Please enter a valid phone number');
+      isValid = false;
+    }
+    
+    return isValid;
+  };
+
   const handleAddStaff = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('First name and last name are required');
-      return;
-    }
+    if (!validateForm()) return;
     
-    if (!formData.position) {
-      toast.error('Please select a position');
-      return;
-    }
-    
-    if (!validatePhoneNumber(formData.contactNumber)) {
-      toast.error('Please enter a valid phone number');
-      return;
-    }
+    setFormSubmitting(true);
     
     try {
-      // Create the staff data object
-      const staffData = {
+      // Create user in Firebase Authentication
+      const authResult = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const uid = authResult.user.uid;
+      
+      // Add to Firestore collection
+      await setDoc(doc(db, 'staff', uid), {
+        uid: uid,
         firstName: formData.firstName,
         lastName: formData.lastName,
         name: `${formData.firstName} ${formData.lastName}`,
@@ -258,39 +297,37 @@ function Staff() {
         status: formData.status,
         contactNumber: formData.contactNumber,
         specialization: formData.specialization,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+        firebaseUid: uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
       
-      await addDoc(collection(db, 'staff'), staffData);
-      
-      toast.success('Staff member added successfully');
+      toast.success('Staff account created successfully!');
       setShowForm(false);
       resetForm();
       fetchStaff();
     } catch (error) {
-      toast.error('Error adding staff member: ' + error.message);
+      console.error('Error creating staff account:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Email address is already in use. Please use a different email.');
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('Invalid email format.');
+      } else if (error.code === 'auth/weak-password') {
+        toast.error('Password is too weak. Please use a stronger password.');
+      } else {
+        toast.error('Error creating staff account: ' + error.message);
+      }
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
   const handleUpdateStaff = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('First name and last name are required');
-      return;
-    }
+    if (!validateForm()) return;
     
-    if (!formData.position) {
-      toast.error('Please select a position');
-      return;
-    }
-    
-    if (!validatePhoneNumber(formData.contactNumber)) {
-      toast.error('Please enter a valid phone number');
-      return;
-    }
+    setFormSubmitting(true);
     
     try {
       const staffData = {
@@ -303,12 +340,12 @@ function Staff() {
         status: formData.status,
         contactNumber: formData.contactNumber,
         specialization: formData.specialization,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       };
       
       await updateDoc(doc(db, 'staff', currentStaffId), staffData);
       
-      toast.success('Staff member updated successfully');
+      toast.success('Staff member updated successfully!');
       setShowForm(false);
       setIsEditing(false);
       setCurrentStaffId(null);
@@ -316,6 +353,8 @@ function Staff() {
       fetchStaff();
     } catch (error) {
       toast.error('Error updating staff member: ' + error.message);
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -325,8 +364,9 @@ function Staff() {
       lastName: staff.lastName || '',
       name: staff.name || '',
       email: staff.email || '',
+      password: '', // Don't populate password for security
       role: staff.role || 'staff',
-      position: staff.position || '',
+      position: typeof staff.position === 'string' ? staff.position : '',
       status: staff.status || 'Active',
       contactNumber: staff.contactNumber || '',
       specialization: staff.specialization || ''
@@ -349,6 +389,7 @@ function Staff() {
       lastName: '',
       name: '',
       email: '',
+      password: '',
       role: 'staff',
       position: '',
       status: 'Active',
@@ -503,7 +544,7 @@ function Staff() {
         {/* Add/Edit Staff Form Modal */}
         {showForm && (
           <div 
-            className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+            className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto pt-8"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowForm(false);
@@ -511,29 +552,37 @@ function Staff() {
               }
             }}
           >
-            <div className="bg-white bg-white rounded-lg shadow-xl w-full max-w-7xl my-8">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 text-black">
-                  {isEditing ? 'Edit Staff Member' : 'Add New Staff Member'}
-                </h2>
-                <button 
-                  onClick={closeForm}
-                  className="text-gray-500 hover:text-gray-700 text-gray-600 hover:text-gray-700"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl my-8 max-h-[90vh] overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-8 py-6 text-white">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold">
+                      {isEditing ? 'Edit Staff Member' : 'Create New Staff Account'}
+                    </h2>
+                    <p className="text-blue-100 mt-1">
+                      {isEditing ? 'Update staff member information' : 'Add a new staff member with Firebase authentication'}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={closeForm}
+                    className="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               
-              <form onSubmit={isEditing ? handleUpdateStaff : handleAddStaff} className="p-6">
-                {/* 2-Column Layout Container */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+                <form onSubmit={isEditing ? handleUpdateStaff : handleAddStaff} className="p-8">
+                  {/* 2-Column Layout Container */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Left Column */}
                   <div className="space-y-6">
                     {/* Personal Information Section */}
-                    <div className="bg-blue-50 bg-blue-50 rounded-lg p-4 border border-blue-200 border-blue-200">
-                      <h3 className="font-medium text-blue-800 text-blue-800 mb-3 flex items-center">
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200 shadow-sm">
+                      <h3 className="font-semibold text-blue-800 mb-4 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -542,7 +591,7 @@ function Staff() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               First Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -553,12 +602,12 @@ function Staff() {
                                 setFormData({...formData, firstName: e.target.value});
                                 setTimeout(handleNameChange, 0);
                               }}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
                               placeholder="John"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Last Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -569,20 +618,20 @@ function Staff() {
                                 setFormData({...formData, lastName: e.target.value});
                                 setTimeout(handleNameChange, 0);
                               }}
-                              className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
                               placeholder="Doe"
                             />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Full Name (Auto-generated)
                           </label>
                           <input
                             type="text"
                             value={formData.name}
                             readOnly
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-gray-50 bg-gray-50 text-gray-700 text-gray-700"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed shadow-sm"
                             placeholder="Full name will appear here"
                           />
                         </div>
@@ -590,8 +639,8 @@ function Staff() {
                     </div>
 
                     {/* Job Information Section */}
-                    <div className="bg-green-50 bg-green-50 rounded-lg p-4 border border-green-200 border-green-200">
-                      <h3 className="font-medium text-green-800 text-green-800 mb-3 flex items-center">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 shadow-sm">
+                      <h3 className="font-semibold text-green-800 mb-4 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H8a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2" />
                         </svg>
@@ -599,14 +648,14 @@ function Staff() {
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Position <span className="text-red-500">*</span>
                           </label>
                           <select
                             required
                             value={formData.position}
                             onChange={(e) => setFormData({...formData, position: e.target.value, specialization: ''})}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 shadow-sm"
                           >
                             <option value="">Select Position</option>
                             {availablePositions.map((position, index) => (
@@ -615,13 +664,13 @@ function Staff() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Specialization
                           </label>
                           <select
                             value={formData.specialization}
                             onChange={(e) => setFormData({...formData, specialization: e.target.value})}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
                             disabled={!formData.position}
                           >
                             <option value="">Select Specialization</option>
@@ -637,16 +686,16 @@ function Staff() {
                   {/* Right Column */}
                   <div className="space-y-6">
                     {/* Contact Information Section */}
-                    <div className="bg-purple-50 bg-purple-50 rounded-lg p-4 border border-purple-200 border-purple-200">
-                      <h3 className="font-medium text-purple-800 text-purple-800 mb-3 flex items-center">
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200 shadow-sm">
+                      <h3 className="font-semibold text-purple-800 mb-4 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        Contact Information
+                        Account & Contact Information
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email Address <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -654,12 +703,29 @@ function Staff() {
                             required
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="john.doe@example.com"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm"
+                            placeholder="john.doe@staff.com"
                           />
+                          <p className="mt-1 text-xs text-gray-500">Email domain must be @staff.com.</p>
                         </div>
+                        {!isEditing && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Password <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="password"
+                              required={!isEditing}
+                              value={formData.password}
+                              onChange={(e) => setFormData({...formData, password: e.target.value})}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm"
+                              placeholder="Enter a secure password"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Minimum 6 characters required.</p>
+                          </div>
+                        )}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Contact Number <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -670,61 +736,79 @@ function Staff() {
                               const formatted = formatPhoneNumber(e.target.value);
                               setFormData({...formData, contactNumber: formatted});
                             }}
-                            className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm"
                             placeholder="0912 345 6789"
                           />
-                          <p className="mt-1 text-xs text-gray-500 text-gray-600">Format: 09XX XXX XXXX</p>
+                          <p className="mt-1 text-xs text-gray-500">Format: 09XX XXX XXXX</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Status Section */}
-                    <div className="bg-yellow-50 bg-yellow-50 rounded-lg p-4 border border-yellow-200 border-yellow-200">
-                      <h3 className="font-medium text-yellow-800 text-yellow-800 mb-3 flex items-center">
+                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200 shadow-sm">
+                      <h3 className="font-semibold text-yellow-800 mb-4 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Account Status
                       </h3>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Status
                         </label>
                         <select
                           value={formData.status}
                           onChange={(e) => setFormData({...formData, status: e.target.value})}
-                          className="w-full px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 shadow-sm"
                         >
                           <option value="Active">Active</option>
                           <option value="Inactive">Inactive</option>
                         </select>
-                        <p className="mt-2 text-xs text-gray-500 text-gray-600">
-                          Active staff members can access the system and receive assignments.
+                        <p className="mt-3 text-sm text-gray-600 bg-yellow-100 p-3 rounded-lg border border-yellow-200">
+                          <strong>Note:</strong> Active staff members can access the system and receive assignments.
                         </p>
                       </div>
                     </div>
 
                     {/* Form Actions */}
-                    
-                      <div className="flex justify-end space-x-3">
+                    <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                      <div className="flex justify-end space-x-4">
                         <button
                           type="button"
                           onClick={closeForm}
-                          className="px-6 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                          className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                          disabled={formSubmitting}
+                          className={`px-6 py-3 rounded-lg text-white font-medium shadow-sm transition-all flex items-center justify-center ${
+                            formSubmitting
+                              ? 'bg-blue-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                          }`}
                         >
-                          {isEditing ? 'Update Staff' : 'Add Staff'}
+                          {formSubmitting ? (
+                            <>
+                              <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              {isEditing ? 'Updating...' : 'Creating...'}
+                            </>
+                          ) : (
+                            <>
+                              {isEditing ? 'Update Staff Member' : 'Create Staff Account'}
+                            </>
+                          )}
                         </button>
                       </div>
-                    
+                    </div>
                   </div>
-                </div>
-              </form>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

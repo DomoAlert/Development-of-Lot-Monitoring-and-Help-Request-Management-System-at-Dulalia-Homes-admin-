@@ -26,8 +26,8 @@ class ErrorBoundary extends Component {
     window.addEventListener('unhandledrejection', this.rejectionHandler);
     
     // For development help
-    console.log('ErrorBoundary mounted - Debugging enabled');
-    console.log('Environment:', process.env.NODE_ENV);
+    // console.log('ErrorBoundary mounted - Debugging enabled');
+    // console.log('Environment:', process.env.NODE_ENV);
   }
 
   componentWillUnmount() {

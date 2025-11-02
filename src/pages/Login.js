@@ -8,7 +8,7 @@ import overlayPng from '../assets/images/images.jpg';
 import bgPattern from '../assets/images/dulalia.webp';
 import { FaEye, FaEyeSlash} from 'react-icons/fa';
 import DiagnosticPanel from '../components/DiagnosticPanel';
-import { checkEnvironment } from '../utils/debug';
+// import { checkEnvironment } from '../utils/debug';
 
 function Login() {
   const navigate = useNavigate();
@@ -28,13 +28,13 @@ function Login() {
   // Run environment check on component mount
   useEffect(() => {
     try {
-      checkEnvironment();
-      console.log('Login component mounted');
+      // checkEnvironment();
+      // console.log('Login component mounted');
       
       // Check if we already have a token and redirect if needed
       const adminToken = localStorage.getItem('adminToken');
       if (adminToken) {
-        console.log('Token found, redirecting to admin dashboard...');
+        // console.log('Token found, redirecting to admin dashboard...');
         // If user is already logged in, redirect to admin dashboard immediately
         navigate('/admin', { replace: true });
         return;
@@ -85,14 +85,14 @@ function Login() {
       localStorage.removeItem('adminLastLogin');
       
       const user = await signInAdmin(email.trim().toLowerCase(), password.trim());
-      console.log('Login successful, storing token');
+      // console.log('Login successful, storing token');
       
       // Store the auth token
       localStorage.setItem('adminToken', user.accessToken);
       localStorage.setItem('adminLastLogin', Date.now().toString());
       
       toast.success('Login successful!');
-      console.log('Navigating to admin dashboard');
+      // console.log('Navigating to admin dashboard');
       
       // Set login success state for animations
       setLoginSuccess(true);

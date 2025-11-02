@@ -21,12 +21,12 @@ const logError = (error, source) => {
 // Clear any existing auth tokens if in development mode or if requested
 if (process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).has('clearAuth')) {
   localStorage.removeItem('adminToken');
-  console.log('Auth tokens cleared');
+  // console.log('Auth tokens cleared');
 }
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM fully loaded');
+  // console.log('DOM fully loaded');
   const rootElement = document.getElementById('root');
   if (rootElement) {
     rootElement.style.minHeight = '100vh';
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 try {
-  console.log('Starting application render');
+  // console.log('Starting application render');
   const rootElement = document.getElementById('root');
   if (!rootElement) {
     throw new Error('Root element not found in the DOM');
@@ -54,7 +54,7 @@ try {
       </React.StrictMode>
     </ErrorBoundary>
   );
-  console.log('Application rendered successfully');
+  // console.log('Application rendered successfully');
 } catch (err) {
   logError(err, 'Application initialization');
   document.addEventListener('DOMContentLoaded', () => {

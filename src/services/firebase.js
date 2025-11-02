@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { debugLog, checkFirebaseConfig, reportError } from '../utils/debug';
+// import { debugLog, checkFirebaseConfig, reportError } from '../utils/debug';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -15,7 +15,7 @@ const firebaseConfig = {
 };
 
 // Debug log the config
-checkFirebaseConfig(firebaseConfig);
+// checkFirebaseConfig(firebaseConfig);
 
 let app;
 let auth;
@@ -23,30 +23,32 @@ let db;
 let storage;
 
 try {
-  debugLog('Initializing Firebase');
+  // debugLog('Initializing Firebase');
   app = initializeApp(firebaseConfig);
   
-  debugLog('Getting Firebase Auth');
+  // debugLog('Getting Firebase Auth');
   auth = getAuth(app);
   
   // Use session persistence instead of local persistence
   // This can help with auth issues in some environments
   try {
-    debugLog('Setting auth persistence to browser session');
+    // debugLog('Setting auth persistence to browser session');
     setPersistence(auth, browserSessionPersistence)
-      .then(() => debugLog('Auth persistence set successfully'))
+      .then(() => {
+        // debugLog('Auth persistence set successfully')
+      })
       .catch(error => reportError(error, 'Auth Persistence'));
   } catch (persistenceError) {
     reportError(persistenceError, 'Setting Auth Persistence');
   }
   
-  debugLog('Getting Firestore');
+  // debugLog('Getting Firestore');
   db = getFirestore(app);
   
-  debugLog('Getting Storage');
+  // debugLog('Getting Storage');
   storage = getStorage(app);
   
-  console.log('✅ Firebase initialized successfully');
+  // console.log('✅ Firebase initialized successfully');
 } catch (error) {
   reportError(error, 'Firebase Initialization');
   

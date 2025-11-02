@@ -1,5 +1,5 @@
 // Debug utilities for troubleshooting deployment issues
-const DEBUG = process.env.NODE_ENV !== 'production' || window.location.search.includes('debug=true');
+const DEBUG = window.location.search.includes('debug=true');
 
 export const debugLog = (...args) => {
   if (DEBUG) {

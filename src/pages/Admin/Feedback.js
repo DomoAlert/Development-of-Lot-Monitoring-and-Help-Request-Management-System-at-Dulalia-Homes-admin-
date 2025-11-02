@@ -37,15 +37,11 @@ const Feedback = () => {
                 setIsLoading(true);
                 setLoadingError(null);
                 
-                // Fetch service requests with feedback from the services collection
-                // Only get services that have feedback (has_feedback = true)
-                const servicesQuery = query(
-                    collection(db, 'services'), 
-                    where('has_feedback', '==', true)
-                );
-                const servicesSnapshot = await getDocs(servicesQuery);
+                // Fetch feedback from the service_feedback collection
+                const feedbackQuery = collection(db, 'service_feedback');
+                const feedbackSnapshot = await getDocs(feedbackQuery);
                 
-                if (servicesSnapshot.empty) {
+                if (feedbackSnapshot.empty) {
                     setFeedbacks([]);
                     setUniqueServices([]);
                     return;
@@ -54,19 +50,19 @@ const Feedback = () => {
                 const feedbackList = [];
                 const servicesSet = new Set();
                 
-                // Extract feedback data from services collection
-                servicesSnapshot.docs.forEach(doc => {
+                // Extract feedback data from service_feedback collection
+                feedbackSnapshot.docs.forEach(doc => {
                     const data = doc.data();
                     
-                    // Only include services with feedback
-                    if (data.has_feedback && data.feedback_text) {
-                        const serviceName = data.service_provider || data.type_of_request || 'Unknown Service';
+                    // Include all feedback entries from service_feedback collection
+                    if (data.feedback) {
+                        const serviceName = data.service_name || 'Unknown Service';
                         servicesSet.add(serviceName);
                         
-                        // Format the date safely - use feedback_date if available, otherwise fall back to updatedAt
+                        // Format the date safely - use timestamp field
                         let formattedDate = 'Unknown date';
                         try {
-                            const timestamp = data.feedback_date || data.updatedAt || data.created_at;
+                            const timestamp = data.timestamp;
                             if (timestamp) {
                                 formattedDate = format(timestamp.toDate(), 'MMM d, yyyy - h:mm a');
                             }
@@ -76,16 +72,16 @@ const Feedback = () => {
                         
                         feedbackList.push({
                             id: doc.id,
-                            userId: data.uid || '',
-                            feedback: data.feedback_text || data.comment || data.additional_notes || 'No feedback provided',
+                            userId: data.user_id || '',
+                            feedback: data.feedback || 'No feedback provided',
                             rating: data.rating || 0,
                             serviceName,
-                            timestamp: data.feedback_date || data.updatedAt || data.created_at,
+                            timestamp: data.timestamp,
                             date: formattedDate,
-                            userName: data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Anonymous',
-                            houseNo: data.house_no || '',
-                            issue: data.issue || '',
-                            type_of_request: data.type_of_request || ''
+                            userName: 'Anonymous', // Will need to fetch user data separately if needed
+                            houseNo: '',
+                            issue: '',
+                            type_of_request: data.service_name || ''
                         });
                     }
                 });

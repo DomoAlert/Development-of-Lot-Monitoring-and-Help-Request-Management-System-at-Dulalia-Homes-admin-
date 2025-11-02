@@ -126,13 +126,49 @@ function ServiceRequests() {
         const data = doc.data();
         console.log('Request data:', data); // Debug log to see what's coming from Firebase
         
-        // Ensure we have a consistent field for resident name
-        // Prefer fullName if it exists, otherwise fall back to resident_name
+        // Map the data to match the actual Firestore structure
         const formattedData = {
           id: doc.id,
-          ...data,
+          // Personal information
+          uid: data.uid,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          fullName: data.fullName,
+          house_no: data.house_no,
+          
+          // Service information
+          service_provider: data.service_provider,
+          category: data.category,
+          issue: data.issue,
+          additional_notes: data.additional_notes,
+          
+          // Status information
+          staff_status: data.staff_status,
+          headStaff_status: data.headStaff_status,
+          
+          // Assignment information
+          assigned_staff_id: data.assigned_staff_id,
+          assigned_staff_name: data.assigned_staff_name,
+          assigned_at: data.assigned_at,
+          assigned_by: data.assigned_by,
+          
+          // Comments and feedback
+          comment: data.comment,
+          
+          // Scheduling
+          preferred_date: data.preferred_date,
+          
+          // Timestamps
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          updated_by: data.updated_by,
+          
+          // Legacy compatibility fields
+          resident_name: data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+          status: data.staff_status || data.headStaff_status || 'Pending',
+          
           // Convert Firestore timestamp to JS Date if needed
-          timestamp: data.timestamp ? data.timestamp : null
+          timestamp: data.created_at || data.updated_at
         };
         
         return formattedData;
@@ -805,18 +841,23 @@ function ServiceRequests() {
   const filteredRequests = requests.filter(request => {
     const matchesSearch = 
       (request.issue || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (request.house_no || '').toString().includes(searchQuery);
+      (request.house_no || '').toString().includes(searchQuery) ||
+      (request.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (request.assigned_staff_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRequestType = !requestTypeFilter || 
       request.service_provider === requestTypeFilter || 
-      request.request_type === requestTypeFilter;
+      request.category === requestTypeFilter;
     
-    const matchesStatus = !statusFilter || request.status === statusFilter;
+    const matchesStatus = !statusFilter || 
+      request.staff_status === statusFilter || 
+      request.headStaff_status === statusFilter ||
+      request.status === statusFilter;
     
     return matchesSearch && matchesRequestType && matchesStatus;
   });
 
-  // Update the formatDate function to remove the reference to 'request'
+  // Update the formatDate function to handle the new timestamp fields
 const formatDate = (timestamp) => {
   if (!timestamp) {
     return 'N/A';
@@ -835,7 +876,7 @@ const formatDate = (timestamp) => {
   }
 };
 
-// Update the formatTime function to remove the reference to 'request'
+// Update the formatTime function to handle the new timestamp fields
 const formatTime = (timestamp) => {
   if (!timestamp) {
     return 'N/A';
@@ -923,6 +964,7 @@ const formatTime = (timestamp) => {
           >
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
+            <option value="Assigned">Assigned</option>
             <option value="In Progress">In Progress</option>
             <option value="Confirmed">Confirmed</option>
             <option value="Completed">Completed</option>
@@ -968,7 +1010,10 @@ const formatTime = (timestamp) => {
                         Submitted
                       </TableHeaderCell>
                       <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        HeadStaff Status
+                      </TableHeaderCell>
+                      <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Staff Status
                       </TableHeaderCell>
                       <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Assignment
@@ -979,7 +1024,7 @@ const formatTime = (timestamp) => {
               <TableBody>
                 {filteredRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan="7" className="text-center py-8">
+                    <TableCell colSpan="8" className="text-center py-8">
                       <div className="flex flex-col items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1009,10 +1054,10 @@ const formatTime = (timestamp) => {
                       
                       {/* Request Details Column */}
                       <TableCell className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{request.service_provider || request.request_type || 'N/A'}</div>
-                        {request.scheduled_date && (
+                        <div className="text-sm font-medium text-gray-900">{request.service_provider || request.category || 'N/A'}</div>
+                        {request.preferred_date && (
                           <div className="text-xs text-gray-500 mt-1">
-                            Scheduled: {request.scheduled_date} {request.scheduled_time && `at ${request.scheduled_time}`}
+                            Preferred: {formatDate(request.preferred_date)}
                           </div>
                         )}
                       </TableCell>
@@ -1046,23 +1091,35 @@ const formatTime = (timestamp) => {
                         <div className="flex flex-col text-sm text-gray-900">
                           <div className="flex items-center">
                             <span className="mr-1">📅</span>
-                            {formatDate(request.timestamp || request.created_at)}
+                            {formatDate(request.created_at || request.timestamp)}
                           </div>
                           <div className="flex items-center mt-1">
                             <span className="mr-1">⏰</span>
-                            {formatTime(request.timestamp || request.created_at)}
+                            {formatTime(request.created_at || request.timestamp)}
                           </div>
                         </div>
                       </TableCell>
 
                       <TableCell className="px-6 py-4">
-                        <Badge variant={getStatusVariant(request.status)}>
-                          {request.status || 'Pending'}
+                        <Badge variant={getStatusVariant(request.headStaff_status)}>
+                          {request.headStaff_status || 'Pending'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge variant={getStatusVariant(request.staff_status)}>
+                          {request.staff_status || 'Pending'}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-sm text-gray-700">
-                        {request.staff ? (
-                          <span className="text-gray-800 font-medium">{request.staff}</span>
+                        {request.assigned_staff_name ? (
+                          <div className="flex flex-col">
+                            <span className="text-gray-800 font-medium">{request.assigned_staff_name}</span>
+                            {request.assigned_at && (
+                              <span className="text-xs text-gray-500">
+                                Assigned: {formatDate(request.assigned_at)}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-gray-400 italic">Unassigned</span>
                         )}

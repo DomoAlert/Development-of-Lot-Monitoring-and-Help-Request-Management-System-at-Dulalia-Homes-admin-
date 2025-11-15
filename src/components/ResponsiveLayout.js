@@ -24,7 +24,6 @@ function ResponsiveLayout({ children }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAccountsOpen, setIsAccountsOpen] = useState(false);
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
-  const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef(null);
@@ -67,7 +66,6 @@ function ResponsiveLayout({ children }) {
     if (isCollapsed) {
       setIsAccountsOpen(false);
       setIsRequestsOpen(false);
-      setIsStaffOpen(false);
     }
   }, [isCollapsed]);
 
@@ -209,6 +207,18 @@ function ResponsiveLayout({ children }) {
                   >
                     <MdSecurity className="mr-2 text-lg flex-shrink-0" /> Guard Accounts
                   </button>
+                  <button
+                    onClick={() => navigate('/admin/head-staff-accounts')}
+                    className={navLinkClass('/admin/head-staff-accounts', true)}
+                  >
+                    <MdSecurity className="mr-2 text-lg flex-shrink-0" /> Head Staff Accounts
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/staff')}
+                    className={navLinkClass('/admin/staff', true)}
+                  >
+                    <MdAssignment className="mr-2 text-lg flex-shrink-0" /> Staff Accounts
+                  </button>
                 </div>
               )}
             </div>
@@ -248,11 +258,11 @@ function ResponsiveLayout({ children }) {
             </div>
 
             <button
-              onClick={() => navigate('/admin/lot-status')}
-              className={navLinkClass('/admin/lot-status')}
+              onClick={() => navigate('/admin/lot-monitoring')}
+              className={navLinkClass('/admin/lot-monitoring')}
             >
               <MdDashboard className="mr-3 text-xl flex-shrink-0" />
-              {!isCollapsed && 'Lot Status'}
+              {!isCollapsed && 'Lot Monitoring'}
             </button>
 
             <button
@@ -262,40 +272,6 @@ function ResponsiveLayout({ children }) {
               <MdQrCode className="mr-3 text-xl flex-shrink-0" />
               {!isCollapsed && 'Visitor Logs'}
             </button>
-
-            <div>
-              <button
-                onClick={() => (isCollapsed ? navigate('/admin/staff') : setIsStaffOpen(!isStaffOpen))}
-                className={dropdownClass}
-              >
-                <div className="flex items-center">
-                  <MdAssignment className="mr-3 text-xl flex-shrink-0" />
-                  {!isCollapsed && 'Staff'}
-                </div>
-                {!isCollapsed && (
-                  <MdExpandMore
-                    size={14}
-                    className={`transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`}
-                  />
-                )}
-              </button>
-              {isStaffOpen && !isCollapsed && (
-                <div className="pl-6 space-y-1 transition-all duration-200 ease-in-out">
-                  <button
-                    onClick={() => navigate('/admin/head-staff-accounts')}
-                    className={navLinkClass('/admin/head-staff-accounts', true)}
-                  >
-                    <MdSecurity className="mr-2 text-lg flex-shrink-0" /> Head Staff
-                  </button>
-                  <button
-                    onClick={() => navigate('/admin/staff')}
-                    className={navLinkClass('/admin/staff', true)}
-                  >
-                    <MdAssignment className="mr-2 text-lg flex-shrink-0" /> Staff Accounts
-                  </button>
-                </div>
-              )}
-            </div>
 
             <button
               onClick={() => navigate('/admin/announcements')}

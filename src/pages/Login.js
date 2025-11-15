@@ -198,7 +198,7 @@ function Login() {
               type="email"
               placeholder="Admin Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value.trim())}
               onKeyPress={handleKeyPress}
               className="w-full px-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent bg-neutral"
               disabled={isLoading || loginSuccess}
@@ -256,15 +256,6 @@ function Login() {
               'Login'
             )}
           </button>
-
-          {!loginSuccess && (
-            <a
-              href="/forgot-password"
-              className="block text-center mt-5 text-sm text-primary hover:text-primaryLight font-medium transition"
-            >
-              Forgot password?
-            </a>
-          )}
         </div>
       </div>
 

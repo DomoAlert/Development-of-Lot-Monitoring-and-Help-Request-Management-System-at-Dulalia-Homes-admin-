@@ -23,7 +23,6 @@ const Navbar = ({ onToggleCollapse }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAccountsOpen, setIsAccountsOpen] = useState(false);
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
-  const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef(null);
@@ -48,7 +47,6 @@ const Navbar = ({ onToggleCollapse }) => {
     if (newState) {
       setIsAccountsOpen(false);
       setIsRequestsOpen(false);
-      setIsStaffOpen(false);
     }
   };
 
@@ -153,6 +151,18 @@ const Navbar = ({ onToggleCollapse }) => {
                 >
                   <MdSecurity className="mr-2 text-lg" /> Guard Accounts
                 </button>
+                <button
+                  onClick={() => navigate('/admin/head-staff-accounts')}
+                  className={navLinkClass('/admin/head-staff-accounts')}
+                >
+                  <MdSecurity className="mr-2 text-lg" /> Head Staff Accounts
+                </button>
+                <button
+                  onClick={() => navigate('/admin/staff')}
+                  className={navLinkClass('/admin/staff')}
+                >
+                  <MdAssignment className="mr-2 text-lg" /> Staff Accounts
+                </button>
               </div>
             )}
           </div>
@@ -194,13 +204,13 @@ const Navbar = ({ onToggleCollapse }) => {
           </div>
 
           <button
-            onClick={() => navigate('/admin/lot-status')}
-            className={navLinkClass('/admin/lot-status')}
-            data-tooltip-id="lot-status-tooltip"
-            data-tooltip-content="Lot Status"
+            onClick={() => navigate('/admin/lot-monitoring')}
+            className={navLinkClass('/admin/lot-monitoring')}
+            data-tooltip-id="lot-monitoring-tooltip"
+            data-tooltip-content="Lot Monitoring"
           >
             <MdDashboard className="mr-3 text-xl" />
-            {!isCollapsed && 'Lot Status'}
+            {!isCollapsed && 'Lot Monitoring'}
           </button>
 
           <button
@@ -212,42 +222,6 @@ const Navbar = ({ onToggleCollapse }) => {
             <MdQrCode className="mr-3 text-xl" />
             {!isCollapsed && 'Visitor Logs'}
           </button>
-
-          <div>
-            <button
-              onClick={() => (isCollapsed ? navigate('/admin/staff') : setIsStaffOpen(!isStaffOpen))}
-              className={dropdownClass}
-              data-tooltip-id="staff-tooltip"
-              data-tooltip-content="Staff"
-            >
-              <div className="flex items-center">
-                <MdAssignment className="mr-3 text-xl" />
-                {!isCollapsed && 'Staff'}
-              </div>
-              {!isCollapsed && (
-                <MdExpandMore
-                  size={14}
-                  className={`transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`}
-                />
-              )}
-            </button>
-            {isStaffOpen && !isCollapsed && (
-              <div className="pl-6 space-y-1 transition-all duration-200 ease-in-out">
-                <button
-                  onClick={() => navigate('/admin/head-staff-accounts')}
-                  className={navLinkClass('/admin/head-staff-accounts')}
-                >
-                  <MdSecurity className="mr-2 text-lg" /> Head Staff
-                </button>
-                <button
-                  onClick={() => navigate('/admin/staff')}
-                  className={navLinkClass('/admin/staff')}
-                >
-                  <MdAssignment className="mr-2 text-lg" /> Staff Accounts
-                </button>
-              </div>
-            )}
-          </div>
 
           <button
             onClick={() => navigate('/admin/announcements')}
@@ -272,9 +246,8 @@ const Navbar = ({ onToggleCollapse }) => {
         <Tooltip id="dashboard-tooltip" place="right" className="z-50" />
         <Tooltip id="accounts-tooltip" place="right" className="z-50" />
         <Tooltip id="requests-tooltip" place="right" className="z-50" />
-        <Tooltip id="lot-status-tooltip" place="right" className="z-50" />
+        <Tooltip id="lot-monitoring-tooltip" place="right" className="z-50" />
         <Tooltip id="visitor-logs-tooltip" place="right" className="z-50" />
-        <Tooltip id="staff-tooltip" place="right" className="z-50" />
         <Tooltip id="announcements-tooltip" place="right" className="z-50" />
         <Tooltip id="feedback-tooltip" place="right" className="z-50" />
       </aside>

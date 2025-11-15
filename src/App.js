@@ -18,7 +18,7 @@ import Announcements from './pages/Admin/Announcements';
 import Feedback from './pages/Admin/Feedback';
 import GuardAccounts from './pages/Admin/GuardAccounts';
 import VisitorLogs from './pages/Admin/VisitorLogs';
-import LotMonitoring from './pages/Admin/LotStatus';
+import LotMonitoring from './pages/Admin/LotMonitoring';
 import OfflinePage from './components/OfflinePage';
 
 // Safe auth check utility
@@ -138,7 +138,7 @@ function App() {
                   <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
                   <Route path="/admin/guard-accounts" element={<ProtectedRoute><GuardAccounts /></ProtectedRoute>} />
                   <Route path="/admin/visitor-logs" element={<ProtectedRoute><VisitorLogs /></ProtectedRoute>} />
-                  <Route path="/admin/lot-status" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
+                  <Route path="/admin/lot-monitoring" element={<ProtectedRoute><LotMonitoring /></ProtectedRoute>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </RoutesErrorBoundary>

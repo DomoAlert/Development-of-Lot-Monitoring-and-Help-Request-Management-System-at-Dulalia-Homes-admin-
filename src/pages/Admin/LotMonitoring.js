@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { FaHome, FaSearch, FaUserEdit, FaUserPlus, FaTimes, FaUser, FaTag, FaClock } from 'react-icons/fa';
 
-const LotStatus = () => {
+const LotMonitoring = () => {
   // State
   const [lots, setLots] = useState([]);
   const [users, setUsers] = useState([]);
@@ -17,13 +17,12 @@ const LotStatus = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Add Lot Modal State
-  const [showAddLotModal, setShowAddLotModal] = useState(false);
-  const [newLotBlock, setNewLotBlock] = useState('1');
-  const [newLotNumber, setNewLotNumber] = useState('');
-  const [autoLotNumber, setAutoLotNumber] = useState(true);
-  const [isAddingLot, setIsAddingLot] = useState(false);
-  const [lotNumberError, setLotNumberError] = useState('');
+  // Combined Modal State
+  const [showCombinedModal, setShowCombinedModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('addLot'); // 'addLot' or 'manageBlocks'
+  const [lastActiveTab, setLastActiveTab] = useState('addLot'); // Remember last tab
+  const [showDeleteBlockConfirm, setShowDeleteBlockConfirm] = useState(false);
+  const [blockToDelete, setBlockToDelete] = useState(null);
 
   // Valid statuses for lots
   const validStatuses = [
@@ -43,10 +42,16 @@ const LotStatus = () => {
     4: 22,
     5: 18
   });
-  const [isManagingBlocks, setIsManagingBlocks] = useState(false);
   const [blockEditValues, setBlockEditValues] = useState({}); // { blockNum: maxLots }
   const [newBlockNumber, setNewBlockNumber] = useState('');
   const [newBlockMax, setNewBlockMax] = useState('');
+
+  // Add Lot Modal State
+  const [newLotBlock, setNewLotBlock] = useState('1');
+  const [newLotNumber, setNewLotNumber] = useState('');
+  const [autoLotNumber, setAutoLotNumber] = useState(true);
+  const [isAddingLot, setIsAddingLot] = useState(false);
+  const [lotNumberError, setLotNumberError] = useState('');
 
   // Helper to safely set numeric block values in edit form
   const setBlockValue = (blockNum, value) => {
@@ -81,6 +86,21 @@ const LotStatus = () => {
     fetchBlockConfig();
   }, []);
 
+  // Scroll modal content to top when tab changes
+  useEffect(() => {
+    if (showCombinedModal) {
+      const modalContent = document.querySelector('.modal-content-scroll');
+      if (modalContent) {
+        modalContent.scrollTop = 0;
+      }
+    }
+  }, [activeTab, showCombinedModal]);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    document.body.style.overflow = showCombinedModal ? 'hidden' : 'auto';
+  }, [showCombinedModal]);
+
   // Fetch block configuration from Firestore
   const fetchBlockConfig = async () => {
     try {
@@ -104,11 +124,35 @@ const LotStatus = () => {
       const configDocRef = doc(db, 'settings', 'lotConfig');
       await setDoc(configDocRef, { blocks: newConfig, updatedAt: serverTimestamp() }, { merge: true });
       setBlockConfig(newConfig);
-      toast.success('Block configuration saved');
+      toast.success('Block configuration saved successfully');
+      fetchLots(); // Refresh lots data
+      fetchBlockConfig(); // Refresh block config
     } catch (error) {
       console.error('Error saving block configuration:', error);
       toast.error('Failed to save block configuration: ' + error.message);
     }
+  };
+
+  // Handle block deletion with validation
+  const handleDeleteBlock = (blockNum) => {
+    const existingCount = lots.filter(l => l.block === parseInt(blockNum)).length;
+    if (existingCount > 0) {
+      toast.error(`Cannot delete Block ${blockNum}: It contains ${existingCount} lot(s). Remove all lots first.`);
+      return;
+    }
+    setBlockToDelete(blockNum);
+    setShowDeleteBlockConfirm(true);
+  };
+
+  const confirmDeleteBlock = () => {
+    if (blockToDelete) {
+      const copy = { ...blockEditValues };
+      delete copy[blockToDelete];
+      setBlockEditValues(copy);
+      toast.success(`Block ${blockToDelete} removed from configuration`);
+    }
+    setShowDeleteBlockConfirm(false);
+    setBlockToDelete(null);
   };
 
   // Fetch all available users for lot assignment
@@ -486,13 +530,13 @@ const LotStatus = () => {
       
       toast.success(`Successfully created new lot: Block ${blockNum}, Lot ${lotNumber} (House #${houseNo})`);
       
-      // Close the modal and refresh the lots
-      setShowAddLotModal(false);
-      fetchLots();
-      
       // Reset the form
       setNewLotNumber('');
       setLotNumberError('');
+      
+      // Refresh the lots and block config
+      fetchLots();
+      fetchBlockConfig();
       
     } catch (error) {
       console.error('Error adding new lot:', error);
@@ -651,23 +695,26 @@ const LotStatus = () => {
               </button>
               
               <button
-                onClick={() => setShowAddLotModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center"
-              >
-                <FaUserPlus className="mr-2" /> Add New Lot
-              </button>
-              <button
                 onClick={() => {
+                  // Prepare block edit values
                   const edits = {};
                   Object.keys(blockConfig).forEach(k => edits[k] = blockConfig[k]);
                   setBlockEditValues(edits);
                   setNewBlockNumber('');
                   setNewBlockMax('');
-                  setIsManagingBlocks(true);
+                  
+                  // Reset add lot form
+                  setNewLotNumber('');
+                  setLotNumberError('');
+                  setAutoLotNumber(true);
+                  
+                  // Set initial tab to last used tab and open modal
+                  setActiveTab(lastActiveTab);
+                  setShowCombinedModal(true);
                 }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center"
+                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-md hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center shadow-md transition-all duration-200"
               >
-                <FaTag className="mr-2" /> Manage Blocks
+                <FaUserPlus className="mr-2" /> Lot & Block Management
               </button>
             </div>
           </div>
@@ -990,259 +1037,483 @@ const LotStatus = () => {
           </div>
         )}
         
-        {/* Add New Lot Modal */}
-        {showAddLotModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        {/* Combined Lot & Block Management Modal */}
+        {showCombinedModal && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2"
+            onClick={() => {
+              setShowCombinedModal(false);
+              setLotNumberError('');
+              setNewLotNumber('');
+              setLastActiveTab(activeTab);
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg shadow-2xl w-full mx-2 sm:mx-auto max-w-4xl max-h-[calc(100vh-2rem)] flex flex-col overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Add New Lot
-                </h3>
+              <div className="px-4 py-2.5 border-b flex justify-between items-center flex-shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600">
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                  <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
+                    <FaHome className="text-white text-sm" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-semibold text-white truncate">
+                      Lot & Block Management
+                    </h3>
+                    <p className="text-xs text-indigo-100 truncate">Admin Configuration Panel</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => {
-                    setShowAddLotModal(false);
+                    setShowCombinedModal(false);
                     setLotNumberError('');
                     setNewLotNumber('');
+                    setLastActiveTab(activeTab); // Remember current tab
                   }}
-                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                  className="text-white hover:text-gray-200 focus:outline-none transition-colors duration-200 flex-shrink-0 ml-2"
                 >
-                  <FaTimes />
+                  <FaTimes className="text-lg" />
                 </button>
               </div>
               
-              {/* Modal Content */}
-              <div className="px-6 py-4">
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Block
-                  </label>
-                  <select
-                    value={newLotBlock}
-                    onChange={handleBlockChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              {/* Tab Navigation */}
+              <div className="px-4 py-2 border-b bg-gray-50 flex-shrink-0">
+                <div className="flex space-x-1 overflow-x-auto">
+                  <button
+                    onClick={() => {
+                      setActiveTab('addLot');
+                      setLastActiveTab('addLot');
+                    }}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 whitespace-nowrap ${
+                      activeTab === 'addLot'
+                        ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
                   >
-                    {Object.keys(blockConfig).map(blockNum => (
-                      <option key={blockNum} value={blockNum}>Block {blockNum}</option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Each block has a different layout and maximum number of lots.
-                  </p>
+                    <FaUserPlus className="text-base" />
+                    <span className="font-semibold">Add Lots</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('manageBlocks');
+                      setLastActiveTab('manageBlocks');
+                    }}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 whitespace-nowrap ${
+                      activeTab === 'manageBlocks'
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FaTag className="text-base" />
+                    <span className="font-semibold">Block Management</span>
+                  </button>
                 </div>
-                
-                <div className="mb-4">
-                  <div className="flex items-center">
-                    <input
-                      id="autoLotNumber"
-                      name="autoLotNumber"
-                      type="checkbox"
-                      checked={autoLotNumber}
-                      onChange={(e) => {
-                        setAutoLotNumber(e.target.checked);
-                        // Clear error when switching to auto mode
-                        if (e.target.checked) {
+              </div>
+              
+              {/* Modal Content */}
+              <div className="p-4 sm:p-6">
+                {/* Add Lot Tab */}
+                {activeTab === 'addLot' && (
+                  <div className="space-y-4">
+                    {/* Helper Banner */}
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-xs text-blue-700 font-medium">
+                            Add new lots to existing blocks
+                          </p>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Note: Blocks are created in the <button onClick={() => setActiveTab('manageBlocks')} className="underline font-semibold hover:text-blue-800">Block Management</button> tab.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <span className="flex items-center">
+                          <FaHome className="mr-2 text-indigo-600" />
+                          Select Block
+                        </span>
+                      </label>
+                      <select
+                        value={newLotBlock}
+                        onChange={handleBlockChange}
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
+                      >
+                        {Object.keys(blockConfig).sort((a,b) => parseInt(a) - parseInt(b)).map(blockNum => (
+                          <option key={blockNum} value={blockNum}>
+                            Block {blockNum} (Max: {blockConfig[blockNum]} lots)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Each block has a different layout and maximum number of lots configured by the admin.
+                      </p>
+                    </div>
+                    
+                    <div className="mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <input
+                          id="autoLotNumber"
+                          name="autoLotNumber"
+                          type="checkbox"
+                          checked={autoLotNumber}
+                          onChange={(e) => {
+                            setAutoLotNumber(e.target.checked);
+                            if (e.target.checked) {
+                              setLotNumberError('');
+                            }
+                          }}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="autoLotNumber" className="ml-3 block text-sm font-medium text-gray-700">
+                          <span className="flex items-center">
+                            Automatically assign lot number
+                            <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">Recommended</span>
+                          </span>
+                        </label>
+                      </div>
+                      <p className="mt-2 ml-7 text-xs text-gray-500">
+                        The system will find the next available lot number in the selected block automatically.
+                      </p>
+                    </div>
+                    
+                    {!autoLotNumber && (
+                      <div className="mb-4 animate-fadeIn">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="flex items-center">
+                            <FaTag className="mr-2 text-orange-600" />
+                            Lot Number (Manual Entry)
+                          </span>
+                        </label>
+                        <input
+                          type="number"
+                          value={newLotNumber}
+                          onChange={handleLotNumberChange}
+                          min="1"
+                          max={blockConfig[newLotBlock]}
+                          className={`block w-full px-4 py-3 border rounded-lg leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm shadow-sm ${
+                            lotNumberError 
+                              ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                              : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                          }`}
+                          placeholder={`Enter lot number (1-${blockConfig[newLotBlock]})`}
+                        />
+                        {lotNumberError && (
+                          <div className="mt-2 flex items-start">
+                            <svg className="h-5 w-5 text-red-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            <p className="text-xs text-red-600 font-medium">
+                              {lotNumberError}
+                            </p>
+                          </div>
+                        )}
+                        {!lotNumberError && (
+                          <p className="mt-2 text-xs text-gray-500">
+                            ⚠️ Manual lot number assignment may cause conflicts. Ensure the lot number is not already in use.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="mt-8 pt-6 border-t flex justify-end space-x-3">
+                      <button
+                        onClick={() => {
+                          setShowCombinedModal(false);
                           setLotNumberError('');
-                        }
-                      }}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="autoLotNumber" className="ml-2 block text-sm font-medium text-gray-700">
-                      Automatically assign lot number (recommended)
-                    </label>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    This will find the next available lot number in the selected block.
-                  </p>
-                </div>
-                
-                {!autoLotNumber && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Lot Number
-                    </label>
-                    <input
-                      type="number"
-                      value={newLotNumber}
-                      onChange={handleLotNumberChange}
-                      min="1"
-                      max={blockConfig[newLotBlock]}
-                      className={`block w-full px-3 py-2 border rounded-md leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm ${
-                        lotNumberError 
-                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                      }`}
-                      placeholder={`Enter lot number (1-${blockConfig[newLotBlock]})`}
-                    />
-                    {lotNumberError && (
-                      <p className="mt-1 text-xs text-red-600">
-                        {lotNumberError}
-                      </p>
-                    )}
-                    {!lotNumberError && (
-                      <p className="mt-1 text-xs text-gray-500">
-                        Manual lot number assignment may cause conflicts if not careful.
-                      </p>
-                    )}
+                          setNewLotNumber('');
+                        }}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAddNewLot}
+                        disabled={isAddingLot || (!autoLotNumber && (!newLotNumber || lotNumberError))}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 flex items-center ${
+                          isAddingLot || (!autoLotNumber && (!newLotNumber || lotNumberError))
+                            ? 'bg-gray-300 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 shadow-md'
+                        }`}
+                      >
+                        {isAddingLot ? (
+                          <>
+                            <span className="inline-block animate-spin mr-2">⟳</span>
+                            Creating Lot...
+                          </>
+                        ) : (
+                          <>
+                            <FaUserPlus className="mr-2" />
+                            Create New Lot
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
                 
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowAddLotModal(false);
-                      setLotNumberError('');
-                      setNewLotNumber('');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddNewLot}
-                    disabled={isAddingLot || (!autoLotNumber && (!newLotNumber || lotNumberError))}
-                    className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-                      isAddingLot || (!autoLotNumber && (!newLotNumber || lotNumberError))
-                        ? 'bg-green-300 cursor-not-allowed' 
-                        : 'bg-green-600 hover:bg-green-700'
-                    }`}
-                  >
-                    {isAddingLot ? (
-                      <>
-                        <span className="inline-block animate-spin mr-2">⟳</span>
-                        Creating...
-                      </>
-                    ) : (
-                      'Create New Lot'
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Manage Blocks Modal */}
-        {isManagingBlocks && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl">
-              <div className="px-6 py-4 border-b flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Manage Blocks</h3>
-                <button onClick={() => setIsManagingBlocks(false)} className="text-gray-400 hover:text-gray-500"><FaTimes /></button>
-              </div>
-              <div className="px-6 py-4 space-y-4">
-                <p className="text-sm text-gray-600">Edit maximum lots per block, add a new block, or remove an existing block. Changes are saved to the database.</p>
+                {/* Manage Blocks Tab */}
+                {activeTab === 'manageBlocks' && (
+                  <div className="space-y-4">
+                    {/* Warning Banner */}
+                    <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-r-lg">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="h-4 w-4 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-xs text-orange-700 font-medium">
+                            Structural Settings - Handle with Care
+                          </p>
+                          <p className="text-xs text-orange-600 mt-1">
+                            These settings affect how the subdivision map is generated.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.keys(blockEditValues).sort((a,b)=>parseInt(a)-parseInt(b)).map(blockNum => {
-                    const existingCount = lots.filter(l => l.block === parseInt(blockNum)).length;
-                    const rawVal = blockEditValues[blockNum];
-                    const newMax = parseInt(rawVal || 0) || 0;
-                    const willShrinkBelowExisting = newMax > 0 && newMax < existingCount;
-                    const minAllowed = Math.max(1, existingCount);
-                    return (
-                      <div key={blockNum} className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
-                        <div className="flex items-center space-x-3 w-full sm:w-auto">
-                          <div className="w-24">Block {blockNum}</div>
-                          <div className="flex items-center border rounded-md overflow-hidden">
+                    <p className="text-xs text-gray-600">
+                      Configure maximum lots per block, add new blocks, or remove existing blocks.
+                    </p>
+
+                    {/* Existing Blocks */}
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                        <FaHome className="mr-2 text-indigo-600" />
+                        Existing Blocks
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {Object.keys(blockEditValues).sort((a,b)=>parseInt(a)-parseInt(b)).map(blockNum => {
+                          const existingCount = lots.filter(l => l.block === parseInt(blockNum)).length;
+                          const rawVal = blockEditValues[blockNum];
+                          const newMax = parseInt(rawVal || 0) || 0;
+                          const willShrinkBelowExisting = newMax > 0 && newMax < existingCount;
+                          const minAllowed = Math.max(1, existingCount);
+                          const canDelete = existingCount === 0;
+                          
+                          return (
+                            <div key={blockNum} className="bg-white border border-gray-300 rounded-lg p-3 hover:shadow-md transition-shadow duration-200">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="bg-indigo-100 p-1.5 rounded">
+                                    <FaHome className="text-indigo-600 text-sm" />
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-gray-800 text-sm">Block {blockNum}</span>
+                                    <p className="text-xs text-gray-500">{existingCount} lot(s)</p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 mb-2">
+                                <label className="text-xs font-medium text-gray-600 whitespace-nowrap">Max:</label>
+                                <div className="flex items-center border border-gray-300 rounded overflow-hidden flex-1">
+                                  <button
+                                    onClick={() => decrementBlock(blockNum, minAllowed)}
+                                    disabled={newMax <= minAllowed}
+                                    className={`px-3 py-2 flex-shrink-0 text-sm font-bold ${newMax <= minAllowed ? 'text-gray-300 bg-gray-50 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-100'}`}
+                                    aria-label={`Decrease Block ${blockNum} max`}
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="number"
+                                    value={rawVal}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value || '0') || 0;
+                                      const clamped = val < minAllowed ? minAllowed : val;
+                                      setBlockValue(blockNum, clamped);
+                                    }}
+                                    className="w-full px-2 py-1 text-center text-sm font-semibold border-0 focus:ring-0"
+                                    min={minAllowed}
+                                  />
+                                  <button
+                                    onClick={() => incrementBlock(blockNum)}
+                                    className="px-3 py-2 flex-shrink-0 text-sm font-bold text-gray-700 bg-white hover:bg-gray-100"
+                                    aria-label={`Increase Block ${blockNum} max`}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+
+                              {willShrinkBelowExisting && (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded p-1.5 mb-2">
+                                  <p className="text-xs text-yellow-800">
+                                    ⚠️ Cannot reduce below {existingCount}
+                                  </p>
+                                </div>
+                              )}
+
+                              <button
+                                className={`w-full px-2 py-1.5 text-xs rounded transition-colors duration-200 flex items-center justify-center ${
+                                  canDelete 
+                                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                }`}
+                                onClick={() => canDelete && handleDeleteBlock(blockNum)}
+                                disabled={!canDelete}
+                                title={canDelete ? 'Remove this block' : 'Cannot delete: Contains existing lots'}
+                              >
+                                <FaTimes className="mr-1 text-xs" />
+                                {canDelete ? 'Remove' : 'Has Lots'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t"></div>
+
+                    {/* Add New Block Section */}
+                    <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+                      <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                        <FaUserPlus className="mr-2 text-green-600" />
+                        Add New Block
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Block Number</label>
+                          <input 
+                            type="number" 
+                            value={newBlockNumber} 
+                            onChange={e => setNewBlockNumber(e.target.value)} 
+                            className="px-3 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm" 
+                            min="1" 
+                            placeholder="e.g., 6"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Max Lots</label>
+                          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                             <button
-                              onClick={() => decrementBlock(blockNum, minAllowed)}
-                              disabled={newMax <= minAllowed}
-                              className={`px-3 py-2 ${newMax <= minAllowed ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'}`}
-                              aria-label={`Decrease Block ${blockNum} max`}
+                              onClick={decrementNewBlockMax}
+                              disabled={(parseInt(newBlockMax || '0') || 0) <= 1}
+                              className={`px-3 py-2 flex-shrink-0 text-sm font-bold ${((parseInt(newBlockMax || '0') || 0) <= 1) ? 'text-gray-300 bg-gray-50 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-100'}`}
+                              aria-label="Decrease new block max"
                             >
                               −
                             </button>
-                            <input
-                              type="number"
-                              value={rawVal}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value || '0') || 0;
-                                // Clamp to minAllowed
-                                const clamped = val < minAllowed ? minAllowed : val;
-                                setBlockValue(blockNum, clamped);
-                              }}
-                              className="w-20 px-3 py-2 text-center"
-                              min={minAllowed}
+                            <input 
+                              type="number" 
+                              value={newBlockMax} 
+                              onChange={e => setNewBlockMax(e.target.value)} 
+                              className="w-full px-2 py-2 text-center text-sm font-semibold border-0 focus:ring-0" 
+                              min="1" 
+                              placeholder="20"
                             />
                             <button
-                              onClick={() => incrementBlock(blockNum)}
-                              className="px-3 py-2 text-gray-700 bg-white hover:bg-gray-50"
-                              aria-label={`Increase Block ${blockNum} max`}
+                              onClick={incrementNewBlockMax}
+                              className="px-3 py-2 flex-shrink-0 text-sm font-bold text-gray-700 bg-white hover:bg-gray-100"
+                              aria-label="Increase new block max"
                             >
                               +
                             </button>
                           </div>
-                          <button
-                            className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                            onClick={() => {
-                              const copy = { ...blockEditValues };
-                              delete copy[blockNum];
-                              setBlockEditValues(copy);
-                            }}
-                          >Remove</button>
                         </div>
-                        {willShrinkBelowExisting && (
-                          <p className="text-xs text-yellow-700 mt-1 sm:mt-0">Warning: There are currently {existingCount} lots in Block {blockNum}. Reducing the max below this number may orphan existing lots.</p>
-                        )}
+                        <div>
+                          <button
+                            onClick={() => {
+                              const bn = newBlockNumber.toString();
+                              const max = parseInt(newBlockMax || '0');
+                              if (!bn || isNaN(max) || max <= 0) {
+                                toast.error('Enter a valid block number and max lots');
+                                return;
+                              }
+                              if (blockEditValues[bn]) {
+                                toast.error('Block already exists in the list');
+                                return;
+                              }
+                              setBlockEditValues(prev => ({ ...prev, [bn]: max }));
+                              setNewBlockNumber('');
+                              setNewBlockMax('');
+                              toast.success(`Block ${bn} added with max ${max} lots`);
+                            }}
+                            className="w-full px-3 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 text-sm font-medium shadow-md transition-all duration-200 flex items-center justify-center"
+                          >
+                            <FaUserPlus className="mr-1.5 text-sm" />
+                            Add Block
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
 
-                <div className="pt-2 border-t"></div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                  <div>
-                    <label className="block text-sm text-gray-700">New Block Number</label>
-                    <input type="number" value={newBlockNumber} onChange={e => setNewBlockNumber(e.target.value)} className="px-3 py-2 border rounded-md w-full" min="1" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-700">Max Lots</label>
-                    <div className="flex items-center border rounded-md overflow-hidden">
-                      <button
-                        onClick={decrementNewBlockMax}
-                        disabled={(parseInt(newBlockMax || '0') || 0) <= 1}
-                        className={`px-3 py-2 ${((parseInt(newBlockMax || '0') || 0) <= 1) ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'}`}
-                        aria-label="Decrease new block max"
+                    <div className="mt-6 pt-4 border-t flex justify-end space-x-3">
+                      <button 
+                        onClick={() => {
+                          setShowCombinedModal(false);
+                        }} 
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
                       >
-                        −
+                        Cancel
                       </button>
-                      <input type="number" value={newBlockMax} onChange={e => setNewBlockMax(e.target.value)} className="w-24 px-3 py-2 text-center" min="1" />
-                      <button
-                        onClick={incrementNewBlockMax}
-                        className="px-3 py-2 text-gray-700 bg-white hover:bg-gray-50"
-                        aria-label="Increase new block max"
+                      <button 
+                        onClick={() => {
+                          saveBlockConfig(blockEditValues);
+                        }} 
+                        className="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 font-medium shadow-md transition-all duration-200 flex items-center"
                       >
-                        +
+                        <FaTag className="mr-2" />
+                        Save Configuration
                       </button>
                     </div>
                   </div>
-                  <div>
-                    <button
-                      onClick={() => {
-                        const bn = newBlockNumber.toString();
-                        const max = parseInt(newBlockMax || '0');
-                        if (!bn || isNaN(max) || max <= 0) {
-                          toast.error('Enter a valid block number and max lots');
-                          return;
-                        }
-                        if (blockEditValues[bn]) {
-                          toast.error('Block already exists in the list');
-                          return;
-                        }
-                        setBlockEditValues(prev => ({ ...prev, [bn]: max }));
-                        setNewBlockNumber('');
-                        setNewBlockMax('');
-                      }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    >Add Block</button>
-                  </div>
-                </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
-                <div className="pt-4 flex justify-end space-x-3">
-                  <button onClick={() => setIsManagingBlocks(false)} className="px-4 py-2 border rounded-md">Cancel</button>
-                  <button onClick={() => saveBlockConfig(blockEditValues)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+        {/* Delete Block Confirmation Modal */}
+        {showDeleteBlockConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="p-4 sm:p-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <svg className="h-6 w-6 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Confirm Block Deletion
+                </h3>
+              </div>
+              <div className="p-4 sm:p-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  Are you sure you want to remove <span className="font-semibold">Block {blockToDelete}</span> from the configuration?
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <p className="text-xs text-yellow-800">
+                    This action will remove the block from future lot creation options.
+                  </p>
                 </div>
+              </div>
+              <div className="p-4 sm:p-6 bg-gray-50 flex justify-end space-x-3 rounded-b-lg">
+                <button
+                  onClick={() => {
+                    setShowDeleteBlockConfirm(false);
+                    setBlockToDelete(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteBlock}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
+                >
+                  Remove Block
+                </button>
               </div>
             </div>
           </div>
@@ -1252,4 +1523,4 @@ const LotStatus = () => {
   );
 };
 
-export default LotStatus;
+export default LotMonitoring;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
-import { collection, getDocs, query, doc, updateDoc, getDoc, setDoc, serverTimestamp, addDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, doc, updateDoc, getDoc, setDoc, serverTimestamp, addDoc, deleteDoc, orderBy, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
 import { FaHome, FaSearch, FaUserEdit, FaUserPlus, FaTimes, FaUser, FaTag, FaClock } from 'react-icons/fa';
@@ -203,18 +203,33 @@ const LotMonitoring = () => {
     try {
       const usersQuery = query(collection(db, 'users'));
       const querySnapshot = await getDocs(usersQuery);
-      
-      const usersData = querySnapshot.docs
+
+      const usersData = await Promise.all(querySnapshot.docs
         .filter(doc => doc.data().role === 'Homeowner') // Only get homeowners
-        .map(doc => ({
-          id: doc.id,
-          username: doc.data().username || 'Unknown',
-          firstName: doc.data().firstName || '',
-          lastName: doc.data().lastName || '',
-          house_no: doc.data().house_no || null,
-          email: doc.data().email || ''
+        .map(async (doc) => {
+          const userData = doc.data();
+
+          // Fetch assigned lots for this user
+          const assignedLotsQuery = query(collection(db, 'users', doc.id, 'assignedLots'));
+          const assignedLotsSnapshot = await getDocs(assignedLotsQuery);
+
+          const assignedLots = assignedLotsSnapshot.docs.map(lotDoc => ({
+            id: lotDoc.id,
+            ...lotDoc.data()
+          }));
+
+          return {
+            id: doc.id,
+            username: userData.username || 'Unknown',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            house_no: userData.house_no || null, // Keep for backward compatibility
+            email: userData.email || '',
+            assignedLots: assignedLots,
+            totalLots: assignedLots.length
+          };
         }));
-      
+
       setUsers(usersData);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -264,7 +279,7 @@ const LotMonitoring = () => {
       toast.error('No lot selected');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       // Get the block for this lot
@@ -274,7 +289,7 @@ const LotMonitoring = () => {
         setIsSubmitting(false);
         return;
       }
-      
+
       // Update the lot in subcollection
       const lotDocRef = doc(db, 'blocks', blockData.id, 'lots', selectedLot.id);
       await setDoc(lotDocRef, {
@@ -283,27 +298,22 @@ const LotMonitoring = () => {
         ownerName: null,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      
-      // Then, if we know the owner's ID, update their user record
+
+      // Remove assignment from user's subcollection
       if (selectedLot.owner_id) {
-        const userDocRef = doc(db, 'users', selectedLot.owner_id);
-        try {
-          const userSnap = await getDoc(userDocRef);
-          if (userSnap.exists()) {
-            await updateDoc(userDocRef, {
-              house_no: null,
-              block: null,
-              lot: null,
-              last_updated: serverTimestamp()
-            });
-          }
-        } catch (error) {
-          console.error('Error updating user record:', error);
-          // Continue even if user update fails
-        }
+        const assignmentQuery = query(
+          collection(db, 'users', selectedLot.owner_id, 'assignedLots'),
+          where('lotId', '==', selectedLot.id)
+        );
+        const assignmentSnapshot = await getDocs(assignmentQuery);
+
+        const deletePromises = assignmentSnapshot.docs.map(assignmentDoc =>
+          deleteDoc(assignmentDoc.ref)
+        );
+        await Promise.all(deletePromises);
       }
-      
-      toast.success('Lot marked as vacant and homeowner removed');
+
+      toast.success('Lot marked as vacant and homeowner assignment removed');
       setShowAssignModal(false);
       fetchLots(); // Refresh the lots data
       fetchUsers(); // Refresh the users data
@@ -321,7 +331,7 @@ const LotMonitoring = () => {
       toast.error('No lot selected');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       // Get the block for this lot
@@ -331,16 +341,16 @@ const LotMonitoring = () => {
         setIsSubmitting(false);
         return;
       }
-      
+
       const lotDocRef = doc(db, 'blocks', blockData.id, 'lots', selectedLot.id);
-      
+
       // CASE 1: Changing the status of an unoccupied lot
       if (selectedUserId === 'status-change') {
         await setDoc(lotDocRef, {
           status: selectedLot.status,
           updatedAt: serverTimestamp()
         }, { merge: true });
-        
+
         toast.success(`Lot status updated to ${selectedLot.status}`);
       }
       // CASE 2: Assigning a homeowner to a vacant lot
@@ -348,20 +358,40 @@ const LotMonitoring = () => {
         // Get the selected user data
         const userDocRef = doc(db, 'users', selectedUserId);
         const userSnap = await getDoc(userDocRef);
-        
+
         if (!userSnap.exists()) {
           toast.error('Selected user does not exist');
           return;
         }
-        
-        // Update the user with the house number and block/lot information
-        await updateDoc(userDocRef, {
-          house_no: selectedLot.house_no,
-          block: selectedLot.block,
-          lot: selectedLot.lot,
-          last_updated: serverTimestamp()
-        });
-        
+
+        const userData = userSnap.data();
+
+        // Check if this lot is already assigned to this user
+        const existingAssignmentQuery = query(
+          collection(db, 'users', selectedUserId, 'assignedLots'),
+          where('lotId', '==', selectedLot.id)
+        );
+        const existingAssignment = await getDocs(existingAssignmentQuery);
+
+        if (!existingAssignment.empty) {
+          toast.error('This lot is already assigned to this homeowner');
+          return;
+        }
+
+        // Create assignment in user's subcollection
+        const assignmentData = {
+          lotId: selectedLot.id,
+          blockId: blockData.id,
+          blockNumber: selectedLot.block,
+          lotNumber: selectedLot.lot,
+          houseNumber: selectedLot.house_no,
+          houseModel: userData.houseModel || 'Standard',
+          assignedAt: serverTimestamp(),
+          status: 'Active'
+        };
+
+        await addDoc(collection(db, 'users', selectedUserId, 'assignedLots'), assignmentData);
+
         // Update the lot document
         await setDoc(lotDocRef, {
           house_no: selectedLot.house_no,
@@ -370,14 +400,14 @@ const LotMonitoring = () => {
           status: 'Occupied',
           owner_id: selectedUserId,
           house_owner: userSnap.data().username || `${userSnap.data().firstName || ''} ${userSnap.data().lastName || ''}`.trim() || 'Unknown',
-          houseModel: userSnap.data().houseModel || 'Standard',
+          houseModel: userData.houseModel || 'Standard',
           last_updated: serverTimestamp(),
           created_at: serverTimestamp()
         }, { merge: true });
-        
+
         toast.success('Lot assigned to homeowner successfully');
       }
-      
+
       setShowAssignModal(false);
       fetchLots(); // Refresh the lots data
       fetchUsers(); // Refresh the users data
@@ -988,6 +1018,34 @@ const LotMonitoring = () => {
                         <option value="Reserved">Reserved</option>
                       </select>
                     </div>
+
+                    {/* Show homeowner assignment only for Vacant lots */}
+                    {selectedLot.status === 'Vacant' && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Assign to Homeowner (Optional)
+                        </label>
+                        <select
+                          value={selectedUserId}
+                          onChange={(e) => setSelectedUserId(e.target.value)}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                          <option value="">Leave unassigned</option>
+                          {users
+                            .filter(user => user.role === 'Homeowner')
+                            .sort((a, b) => (b.totalLots || 0) - (a.totalLots || 0)) // Sort by lot count descending
+                            .map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.username} ({user.totalLots || 0} lot{user.totalLots !== 1 ? 's' : ''})
+                                {user.firstName || user.lastName ? ` - ${user.firstName} ${user.lastName}`.trim() : ''}
+                              </option>
+                            ))}
+                        </select>
+                        <p className="mt-2 text-xs text-gray-500">
+                          Shows current lot count for each homeowner. Homeowners can own multiple lots.
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
                 
@@ -1033,6 +1091,8 @@ const LotMonitoring = () => {
                           <span className="inline-block animate-spin mr-2">⟳</span>
                           Processing...
                         </>
+                      ) : selectedUserId ? (
+                        'Assign Lot to Homeowner'
                       ) : (
                         `Update Status to ${selectedLot.status}`
                       )}

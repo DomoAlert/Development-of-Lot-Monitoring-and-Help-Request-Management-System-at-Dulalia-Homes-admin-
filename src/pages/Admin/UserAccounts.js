@@ -35,6 +35,7 @@ function UserAccounts() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [editFormData, setEditFormData] = useState({});
+  const [errors, setErrors] = useState({});
 
   // Fetch users
   useEffect(() => {
@@ -62,10 +63,25 @@ function UserAccounts() {
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, 'users'));
-      const usersData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const usersData = await Promise.all(querySnapshot.docs.map(async (doc) => {
+        const userData = { id: doc.id, ...doc.data() };
+        
+        // Load assigned lots from subcollection
+        try {
+          const assignedLotsRef = collection(db, 'users', doc.id, 'assignedLots');
+          const assignedLotsSnapshot = await getDocs(assignedLotsRef);
+          userData.assignedLots = assignedLotsSnapshot.docs.map(lotDoc => ({
+            id: lotDoc.id,
+            ...lotDoc.data()
+          }));
+        } catch (error) {
+          // If subcollection doesn't exist or error, assignedLots will be empty array
+          userData.assignedLots = [];
+        }
+        
+        return userData;
       }));
+      
       setUsers(usersData);
     } catch (error) {
       toast.error('Error fetching users: ' + error.message);
@@ -76,11 +92,25 @@ function UserAccounts() {
   
   const handleAddUser = async (e) => {
     e.preventDefault();
+    
+    // Check for validation errors
+    if (errors.username) {
+      toast.error('Please fix the username validation error before submitting.');
+      return;
+    }
+    
     setFormSubmitting(true);
     
     // Generate email from username if not provided
     const userEmail = formData.email || `${formData.username}@example.com`;
     const userPassword = formData.password || formData.username; // Default password is username
+    
+    // Validate password strength before attempting to create user
+    if (userPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long. Please enter a stronger password.');
+      setFormSubmitting(false);
+      return;
+    }
     
     try {
       // First create the auth account
@@ -111,15 +141,21 @@ function UserAccounts() {
       resetForm();
       fetchUsers();
     } catch (error) {
+      console.error('Firebase Auth Error:', error);
+      
       // Handle different Firebase Auth errors
       if (error.code === 'auth/email-already-in-use') {
         toast.error('Email already in use. Please use a different email.');
       } else if (error.code === 'auth/invalid-email') {
         toast.error('Invalid email format.');
       } else if (error.code === 'auth/weak-password') {
-        toast.error('Password is too weak. Please use a stronger password.');
+        toast.error('Password is too weak. Please use a stronger password (at least 6 characters).');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        toast.error('Email/password authentication is not enabled in Firebase. Please contact administrator.');
+      } else if (error.code === 'auth/network-request-failed') {
+        toast.error('Network error. Please check your internet connection and try again.');
       } else {
-        toast.error('Error adding user: ' + error.message);
+        toast.error(`Error creating account: ${error.message}`);
       }
     } finally {
       setFormSubmitting(false);
@@ -201,17 +237,23 @@ function UserAccounts() {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
-    // Check if user has a lot assigned (legacy check)
+    // Check if user has assigned lots (new structure)
+    if (user.assignedLots && user.assignedLots.length > 0) {
+      toast.error('Cannot delete user with assigned properties. Please remove all property assignments first.');
+      return;
+    }
+
+    // Legacy check for backward compatibility
     if (user.house_no) {
       toast.error('Cannot delete user with assigned property. Please remove the property assignment first.');
       return;
     }
 
-    // If no lot assigned, proceed with normal deletion
+    // If no lots assigned, proceed with normal deletion
     if (window.confirm('Are you sure you want to delete this user?')) {
       setActionLoading(userId);
       try {
-        // Delete all owned lots from subcollection first
+        // Delete all owned lots from subcollection first (though this shouldn't exist for new structure)
         const ownedLotsRef = collection(db, 'users', userId, 'ownedLots');
         const ownedLotsSnapshot = await getDocs(ownedLotsRef);
 
@@ -313,6 +355,13 @@ function UserAccounts() {
       username,
       email: `${username}@example.com`
     });
+    
+    // Validate username length
+    if (username.length > 0 && username.length < 6) {
+      setErrors({...errors, username: 'Username must be at least 6 characters long'});
+    } else {
+      setErrors({...errors, username: ''});
+    }
   };
 
   const handleContactNumberChange = (e) => {
@@ -325,6 +374,17 @@ function UserAccounts() {
 
     // Optional: Add visual feedback for valid Philippine number format
     // Philippine numbers start with 09 and are exactly 11 digits
+  };
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    setFormData({...formData, email});
+    
+    // If password is empty and email contains @, set password to username part
+    if (!formData.password && email.includes('@')) {
+      const usernameFromEmail = email.split('@')[0];
+      setFormData(prev => ({...prev, password: usernameFromEmail}));
+    }
   };
 
   const resetForm = () => {
@@ -341,6 +401,7 @@ function UserAccounts() {
       password: '',
       fcmToken: ''
     });
+    setErrors({});
   };
 
   const closeUserDetails = () => {
@@ -545,12 +606,12 @@ function UserAccounts() {
                             <input
                               type="email"
                               value={formData.email}
-                              onChange={(e) => setFormData({...formData, email: e.target.value})}
+                              onChange={handleEmailChange}
                               className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                               placeholder={formData.username ? `${formData.username}@example.com` : "email@example.com"}
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                              Auto-generated if left empty
+                              Auto-generated if left empty. Password will be set to username part if password field is empty.
                             </p>
                           </div>
                           
@@ -579,8 +640,11 @@ function UserAccounts() {
                               </button>
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                              Default: same as username
+                              Default: username part from email (if email provided) or same as username
                             </p>
+                            {errors.username && (
+                              <p className="text-xs text-red-500 mt-1">{errors.username}</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -778,6 +842,79 @@ function UserAccounts() {
                                   </div>
                                 </div>
                               </div>
+                            </div>
+                          </div>
+
+                          {/* Property Information Card */}
+                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                            <div className="p-4 border-b border-gray-100 bg-amber-50 rounded-t-lg">
+                              <h3 className="text-lg font-semibold text-amber-800 flex items-center">
+                                <FaHome className="mr-2 text-amber-600" />
+                                Property Information
+                                {selectedUser.assignedLots && selectedUser.assignedLots.length > 0 && (
+                                  <span className="ml-2 px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full">
+                                    {selectedUser.assignedLots.length} lot{selectedUser.assignedLots.length !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </h3>
+                            </div>
+                            <div className="p-4">
+                              {selectedUser.assignedLots && selectedUser.assignedLots.length > 0 ? (
+                                <div className="space-y-3">
+                                  {selectedUser.assignedLots.map((lot, index) => (
+                                    <div key={lot.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                      <div className="flex items-center space-x-3">
+                                        <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full">
+                                          <FaHome className="text-amber-600 text-sm" />
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center space-x-2">
+                                            <span className="font-semibold text-amber-800">#{lot.houseNumber}</span>
+                                            <span className="text-xs text-gray-600 bg-white px-2 py-0.5 rounded">
+                                              B{lot.blockNumber}-L{lot.lotNumber}
+                                            </span>
+                                          </div>
+                                          {lot.houseModel && (
+                                            <div className="text-xs text-gray-600 mt-1">
+                                              {lot.houseModel}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Lot {index + 1}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : selectedUser.house_no ? (
+                                <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full">
+                                      <FaHome className="text-amber-600 text-sm" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="font-semibold text-amber-800">#{selectedUser.house_no}</span>
+                                        <span className="text-xs text-gray-600 bg-white px-2 py-0.5 rounded">
+                                          B{selectedUser.block || Math.floor(selectedUser.house_no / 100)}-L{selectedUser.lot || selectedUser.house_no % 100}
+                                        </span>
+                                      </div>
+                                      {selectedUser.houseModel && (
+                                        <div className="text-xs text-gray-600 mt-1">
+                                          {selectedUser.houseModel}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-center py-8">
+                                  <FaHome className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                                  <p className="text-gray-500 text-sm">No property assigned</p>
+                                  <p className="text-gray-400 text-xs mt-1">This homeowner doesn't own any lots yet</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </>
@@ -1070,7 +1207,25 @@ function UserAccounts() {
                         </button>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        {user.house_no ? (
+                        {user.assignedLots && user.assignedLots.length > 0 ? (
+                          <div className="flex flex-col space-y-1">
+                            {user.assignedLots.slice(0, 2).map((lot, index) => (
+                              <div key={lot.id} className="flex items-center mb-1">
+                                <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
+                                  #{lot.houseNumber}
+                                </span>
+                                <span className="ml-1 text-xs text-gray-500">
+                                  B{lot.blockNumber}-L{lot.lotNumber}
+                                </span>
+                              </div>
+                            ))}
+                            {user.assignedLots.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{user.assignedLots.length - 2} more lot{user.assignedLots.length - 2 !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        ) : user.house_no ? (
                           <div className="flex flex-col">
                             <div className="flex items-center mb-1">
                               <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
@@ -1206,7 +1361,9 @@ function UserAccounts() {
                 Showing {filteredUsers.length} homeowner account{filteredUsers.length !== 1 ? 's' : ''}
               </div>
               <div className="text-xs sm:text-sm text-gray-500">
-                <span className="font-medium text-blue-600">{filteredUsers.filter(u => u.house_no).length}</span> users with property assigned
+                <span className="font-medium text-blue-600">
+                  {filteredUsers.filter(u => (u.assignedLots && u.assignedLots.length > 0) || u.house_no).length}
+                </span> users with property assigned
               </div>
             </div>
           )}

@@ -26,8 +26,7 @@ function Staff() {
     role: 'staff',
     position: '',
     status: 'Active',
-    contactNumber: '',
-    specialization: ''
+    contactNumber: ''
   });
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,12 +45,6 @@ function Staff() {
 
   // Dynamic positions loaded from Firestore
   const [availablePositions, setAvailablePositions] = useState([]);
-
-  // Get specializations based on selected position
-  const getSpecializationsForPosition = (positionId) => {
-    const position = availablePositions.find(p => p.id === positionId);
-    return position ? position.specializations : [];
-  };
 
   useEffect(() => {
     document.title = "Staff list";
@@ -296,7 +289,6 @@ function Staff() {
         position: formData.position,
         status: formData.status,
         contactNumber: formData.contactNumber,
-        specialization: formData.specialization,
         firebaseUid: uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -339,7 +331,6 @@ function Staff() {
         position: formData.position,
         status: formData.status,
         contactNumber: formData.contactNumber,
-        specialization: formData.specialization,
         updatedAt: serverTimestamp()
       };
       
@@ -362,24 +353,17 @@ function Staff() {
     setFormData({
       firstName: staff.firstName || '',
       lastName: staff.lastName || '',
-      name: staff.name || '',
+      name: staff.firstName && staff.lastName ? `${staff.firstName.trim()} ${staff.lastName.trim()}`.trim() : (staff.name || ''),
       email: staff.email || '',
       password: '', // Don't populate password for security
       role: staff.role || 'staff',
       position: typeof staff.position === 'string' ? staff.position : '',
       status: staff.status || 'Active',
-      contactNumber: staff.contactNumber || '',
-      specialization: staff.specialization || ''
+      contactNumber: staff.contactNumber || ''
     });
     setCurrentStaffId(staff.id);
     setIsEditing(true);
     setShowForm(true);
-  };
-
-  // Helper function to auto-generate name
-  const handleNameChange = () => {
-    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-    setFormData(prev => ({ ...prev, name: fullName }));
   };
 
   // Reset form to initial state
@@ -393,33 +377,8 @@ function Staff() {
       role: 'staff',
       position: '',
       status: 'Active',
-      contactNumber: '',
-      specialization: ''
+      contactNumber: ''
     });
-  };
-
-  const handleToggleStatus = async (id, currentStatus) => {
-    try {
-      await updateDoc(doc(db, 'staff', id), { 
-        status: currentStatus === 'Active' ? 'Inactive' : 'Active' 
-      });
-      toast.success('Staff status updated successfully');
-      fetchStaff();
-    } catch (error) {
-      toast.error('Error updating staff status: ' + error.message);
-    }
-  };
-
-  const handleDeleteStaff = async (id) => {
-    if (window.confirm('Are you sure you want to delete this staff member?')) {
-      try {
-        await deleteDoc(doc(db, 'staff', id));
-        toast.success('Staff member deleted successfully');
-        fetchStaff();
-      } catch (error) {
-        toast.error('Error deleting staff member: ' + error.message);
-      }
-    }
   };
 
   const closeForm = () => {
@@ -599,8 +558,9 @@ function Staff() {
                               required
                               value={formData.firstName}
                               onChange={(e) => {
-                                setFormData({...formData, firstName: e.target.value});
-                                setTimeout(handleNameChange, 0);
+                                const newFirstName = e.target.value;
+                                const fullName = `${newFirstName.trim()} ${formData.lastName.trim()}`.trim();
+                                setFormData({...formData, firstName: newFirstName, name: fullName});
                               }}
                               className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
                               placeholder="John"
@@ -615,8 +575,9 @@ function Staff() {
                               required
                               value={formData.lastName}
                               onChange={(e) => {
-                                setFormData({...formData, lastName: e.target.value});
-                                setTimeout(handleNameChange, 0);
+                                const newLastName = e.target.value;
+                                const fullName = `${formData.firstName.trim()} ${newLastName.trim()}`.trim();
+                                setFormData({...formData, lastName: newLastName, name: fullName});
                               }}
                               className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
                               placeholder="Doe"
@@ -654,28 +615,12 @@ function Staff() {
                           <select
                             required
                             value={formData.position}
-                            onChange={(e) => setFormData({...formData, position: e.target.value, specialization: ''})}
+                            onChange={(e) => setFormData({...formData, position: e.target.value})}
                             className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 shadow-sm"
                           >
                             <option value="">Select Position</option>
                             {availablePositions.map((position, index) => (
                               <option key={`${position.id}-${index}`} value={position.id}>{position.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Specialization
-                          </label>
-                          <select
-                            value={formData.specialization}
-                            onChange={(e) => setFormData({...formData, specialization: e.target.value})}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
-                            disabled={!formData.position}
-                          >
-                            <option value="">Select Specialization</option>
-                            {formData.position && getSpecializationsForPosition(formData.position).map(spec => (
-                              <option key={spec} value={spec}>{spec}</option>
                             ))}
                           </select>
                         </div>
@@ -850,7 +795,7 @@ function Staff() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H8a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2" />
                         </svg>
-                        <span>Position & Specialization</span>
+                        <span>Position</span>
                       </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 text-gray-700 uppercase tracking-wider">
@@ -924,11 +869,6 @@ function Staff() {
                           <div className="text-sm text-gray-900 text-black">
                             {availablePositions.find(p => p.id === staff.position)?.name || staff.position || 'No position assigned'}
                           </div>
-                          {staff.specialization && (
-                            <div className="text-xs text-gray-500 text-gray-600 mt-1">
-                              {staff.specialization}
-                            </div>
-                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 text-black">{staff.email || 'No email'}</div>
@@ -954,26 +894,6 @@ function Staff() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                               Edit
-                            </button>
-                            <button 
-                              onClick={() => handleToggleStatus(staff.id, staff.status)}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
-                              title="Toggle status"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                              </svg>
-                              Toggle
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteStaff(staff.id)}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                              title="Delete staff member"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
                             </button>
                           </div>
                         </td>

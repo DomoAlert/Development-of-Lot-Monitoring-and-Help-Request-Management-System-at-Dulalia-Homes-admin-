@@ -15,12 +15,13 @@ function HeadStaffAccounts() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentHeadStaffId, setCurrentHeadStaffId] = useState(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [staffToDelete, setStaffToDelete] = useState(null);
   
   // Form data for head staff
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
+    username: '',
+    name: '', // Keep for backward compatibility
     email: '',
     phone: '',
     password: '',
@@ -185,14 +186,21 @@ function HeadStaffAccounts() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    if (name === 'name') {
-      // Auto-generate email based on name
+    if (name === 'firstName' || name === 'lastName') {
+      // Update firstName or lastName and combine to create full name
+      const updatedFormData = {
+        ...formData,
+        [name]: value,
+        name: name === 'firstName' 
+          ? `${value} ${formData.lastName}`.trim()
+          : `${formData.firstName} ${value}`.trim()
+      };
+      setFormData(updatedFormData);
+    } else if (name === 'username') {
+      // Auto-generate email based on username
       const emailPrefix = value.toLowerCase()
-        .replace(/\s+/g, '.') // Replace spaces with dots
-        .replace(/[^a-z0-9.]/g, '') // Remove special characters except dots
-        .replace(/\.+/g, '.') // Replace multiple dots with single dot
-        .replace(/^\./, '') // Remove leading dot
-        .replace(/\.$/, ''); // Remove trailing dot
+        .replace(/[^a-z0-9]/g, '') // Remove special characters except letters and numbers
+        .replace(/^\s+|\s+$/g, ''); // Remove leading/trailing spaces
       
       const email = emailPrefix ? `${emailPrefix}@headstaff.com` : '';
       
@@ -242,8 +250,18 @@ function HeadStaffAccounts() {
   const validateForm = () => {
     let isValid = true;
     
-    if (!formData.name.trim()) {
-      toast.error('Name is required');
+    if (!formData.firstName.trim()) {
+      toast.error('First name is required');
+      isValid = false;
+    }
+    
+    if (!formData.lastName.trim()) {
+      toast.error('Last name is required');
+      isValid = false;
+    }
+    
+    if (!formData.username.trim()) {
+      toast.error('Username is required');
       isValid = false;
     }
     
@@ -303,6 +321,9 @@ function HeadStaffAccounts() {
       // Add to Firestore collection
       await setDoc(doc(db, 'head_staff', uid), {
         uid: uid,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -345,6 +366,9 @@ function HeadStaffAccounts() {
     try {
       // Update in Firestore
       await updateDoc(doc(db, 'head_staff', currentHeadStaffId), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -375,7 +399,19 @@ function HeadStaffAccounts() {
       
       if (docSnap.exists()) {
         const data = docSnap.data();
+        // Split full name into first and last name
+        const nameParts = (data.name || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Extract username from email (remove @headstaff.com)
+        const emailParts = (data.email || '').split('@');
+        const username = emailParts[0] || '';
+        
         setFormData({
+          firstName: firstName,
+          lastName: lastName,
+          username: username,
           name: data.name || '',
           email: data.email || '',
           phone: data.phone || '',
@@ -396,39 +432,6 @@ function HeadStaffAccounts() {
     }
   };
 
-  // Handle delete button click
-  const handleDeleteClick = (staff) => {
-    setStaffToDelete(staff);
-    setConfirmDelete(true);
-  };
-
-  // Confirm deletion of head staff
-  const handleConfirmDelete = async () => {
-    if (!staffToDelete) return;
-    
-    try {
-      await deleteDoc(doc(db, 'head_staff', staffToDelete.id));
-      
-      // Attempt to delete the auth user if it exists
-      try {
-        // Note: Deleting auth users from client-side is usually restricted
-        // You may need a cloud function or server-side code for this in production
-        const auth = getAuth();
-        await deleteUser(staffToDelete.uid);
-      } catch (authError) {
-        console.error('Could not delete auth user:', authError);
-        // Continue since we still want to remove from Firestore
-      }
-      
-      toast.success('Head Staff account deleted successfully!');
-      setConfirmDelete(false);
-      setStaffToDelete(null);
-      fetchHeadStaff();
-    } catch (error) {
-      toast.error('Error deleting head staff account: ' + error.message);
-    }
-  };
-
   // Cancel form
   const handleCancelForm = () => {
     setShowForm(false);
@@ -440,6 +443,9 @@ function HeadStaffAccounts() {
   // Reset form to default values
   const resetForm = () => {
     setFormData({
+      firstName: '',
+      lastName: '',
+      username: '',
       name: '',
       email: '',
       phone: '',
@@ -456,6 +462,8 @@ function HeadStaffAccounts() {
   // Filter head staff based on search query and status filter
   const filteredHeadStaff = headStaff.filter(staff => {
     const matchesSearch = staff.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         staff.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         staff.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          staff.email?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === '' || staff.status === statusFilter;
@@ -515,7 +523,7 @@ function HeadStaffAccounts() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full md:w-1/3 px-4 py-2 rounded-md border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Search by name or email..."
+              placeholder="Search by name, first name, last name or email..."
             />
             <select
               value={statusFilter}
@@ -678,16 +686,6 @@ function HeadStaffAccounts() {
                               </svg>
                               Edit
                             </button>
-                            <button
-                              onClick={() => handleDeleteClick(staff)}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                              title="Delete staff account"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -744,23 +742,53 @@ function HeadStaffAccounts() {
                         Personal Information
                       </h3>
                       <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              First Name *
+                            </label>
+                            <input
+                              type="text"
+                              name="firstName"
+                              required
+                              value={formData.firstName}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                              placeholder="Enter first name"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Last Name *
+                            </label>
+                            <input
+                              type="text"
+                              name="lastName"
+                              required
+                              value={formData.lastName}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                              placeholder="Enter last name"
+                            />
+                          </div>
+                        </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Full Name *
+                            Username *
                           </label>
                           <input
                             type="text"
-                            name="name"
+                            name="username"
                             required
-                            value={formData.name}
+                            value={formData.username}
                             onChange={handleInputChange}
                             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
-                            placeholder="Enter head staff's full name"
+                            placeholder="Enter username"
                           />
                           {!isEditing && (
                             <p className="mt-2 text-xs text-gray-500 flex items-center">
                               <i className="fas fa-info-circle mr-1 text-blue-500"></i>
-                              Email will be auto-generated based on name
+                              Email will be auto-generated based on username
                             </p>
                           )}
                         </div>
@@ -818,7 +846,7 @@ function HeadStaffAccounts() {
                                   ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
                                   : 'border-gray-300 focus:ring-purple-500'
                               }`}
-                              placeholder={isEditing ? formData.email : "Auto-generated from name"}
+                              placeholder={isEditing ? formData.email : "Auto-generated from username"}
                               required
                               readOnly={!isEditing}
                             />
@@ -1009,59 +1037,6 @@ function HeadStaffAccounts() {
           </div>
         )}
         
-        {/* Confirm Delete Modal */}
-        {confirmDelete && staffToDelete && (
-          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div 
-                className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
-                aria-hidden="true"
-                onClick={() => setConfirmDelete(false)}
-              ></div>
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <div className="inline-block align-bottom bg-white bg-white rounded-lg px-6 pt-5 pb-6 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div>
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 bg-red-100 mb-4">
-                    <svg className="h-6 w-6 text-red-600 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-900 text-black mb-2" id="modal-title">
-                      Delete Head Staff Account
-                    </h3>
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 text-gray-600">
-                        Are you sure you want to delete <strong className="text-gray-900 text-black">{staffToDelete.name}'s</strong> account? 
-                        This action cannot be undone and will permanently remove their access to the system.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    className="px-4 py-2 border border-gray-300 border-gray-300 rounded-md text-gray-700 text-gray-700 bg-white bg-white hover:bg-gray-50 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                    onClick={() => {
-                      setConfirmDelete(false);
-                      setStaffToDelete(null);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                    onClick={handleConfirmDelete}
-                  >
-                    Delete Account
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Positions Management Modal */}
         <Modal
           isOpen={isPositionsManagementModalOpen}

@@ -342,30 +342,6 @@ function GuardAccounts() {
     }
   };
 
-  const handleDeleteGuard = async (guardId) => {
-    if (!window.confirm("Are you sure you want to delete this guard account? This action cannot be undone.")) {
-      return;
-    }
-    
-    setActionLoading(guardId);
-    
-    try {
-      // Delete from Firestore
-      await deleteDoc(doc(db, 'guards', guardId));
-      
-      toast.success("Guard account deleted successfully!");
-      
-      // Update UI
-      setGuards(prev => prev.filter(guard => guard.id !== guardId));
-      
-    } catch (error) {
-      console.error("Error deleting guard: ", error);
-      toast.error(error.message || "Failed to delete guard account");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const toggleGuardStatus = async (guardId, currentStatus) => {
     setActionLoading(guardId);
     
@@ -1452,14 +1428,6 @@ function GuardAccounts() {
                                 >
                                   <i className={`fas fa-toggle-${guard.isActive ? 'off' : 'on'} mr-1`}></i>
                                   {guard.isActive ? 'Deactivate' : 'Activate'}
-                                </button>
-                                
-                                <button
-                                  onClick={() => handleDeleteGuard(guard.id)}
-                                  className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded border border-red-100 hover:bg-red-100 flex items-center"
-                                >
-                                  <i className="fas fa-trash-alt mr-1"></i>
-                                  Delete
                                 </button>
                               </div>
                               

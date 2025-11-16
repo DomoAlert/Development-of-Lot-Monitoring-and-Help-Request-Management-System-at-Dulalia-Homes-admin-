@@ -59,4 +59,26 @@ export const UserService = {
       throw error;
     }
   },
+
+  /**
+   * Update user details in Firestore
+   * @param {string} userId - The user ID to update
+   * @param {object} updateData - The data to update
+   */
+  async updateUserDetails(userId, updateData) {
+    try {
+      // Add last_updated timestamp
+      const dataToUpdate = {
+        ...updateData,
+        last_updated: new Date()
+      };
+
+      await updateDoc(doc(db, "users", userId), dataToUpdate);
+      console.log("✅ User details updated in Firestore");
+      return dataToUpdate;
+    } catch (error) {
+      console.error("❌ Failed to update user details:", error);
+      throw error;
+    }
+  },
 };

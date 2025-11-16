@@ -9,23 +9,15 @@ import { UserService } from '../../services/UserService';
 
 function UserAccounts() {
   const [users, setUsers] = useState([]);
-  const [availableLots, setAvailableLots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingLots, setLoadingLots] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedLot, setSelectedLot] = useState(null);
+  const [originalUser, setOriginalUser] = useState(null);
+  const [isEditingInModal, setIsEditingInModal] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
-  const [propertyFormData, setPropertyFormData] = useState({
-    selectedLotId: '',
-    houseModel: 'Standard'
-  });
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -33,30 +25,26 @@ function UserAccounts() {
     username: '',
     email: '',
     contactNumber: '',
-    house_no: null,
-    block: '',
-    lot: '',
     role: 'Homeowner',
     status: 'Active',
     isActive: true,
     recordStatus: 'Neutral',
     password: '',
     fcmToken: '',
-    houseModel: 'Standard'
   });
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [editFormData, setEditFormData] = useState({});
 
-  // Fetch users and available lots
+  // Fetch users
   useEffect(() => {
     document.title = "Homeowner Accounts";
     fetchUsers();
-    fetchAvailableLots();
   }, []);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (showForm || showUserDetails || showDeleteModal) {
+    if (showForm || showUserDetails) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -66,129 +54,10 @@ function UserAccounts() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showForm, showUserDetails, showDeleteModal]);
+  }, [showForm, showUserDetails]);
 
-  // Blocks configuration - how many lots are in each block (same as in LotStatus.jsx)
-  const blockConfig = {
-    1: 20, // Block 1 has 20 lots
-    2: 25, // Block 2 has 25 lots
-    3: 15, // Block 3 has 15 lots
-    4: 22, // Block 4 has 22 lots
-    5: 18  // Block 5 has 18 lots
-  };
+
   
-  // Fetch all available lots (vacant lots)
-  const fetchAvailableLots = async () => {
-    try {
-      setLoadingLots(true);
-      
-      // Create a structured array of all possible lots based on block configuration
-      const allLots = [];
-      
-      // Populate with empty lot data for all blocks and lots
-      Object.keys(blockConfig).forEach(blockNum => {
-        for (let i = 1; i <= blockConfig[blockNum]; i++) {
-          // Create a unique lot identifier (Block-LotNumber)
-          const blockLotId = `B${blockNum}-L${i.toString().padStart(2, '0')}`;
-          
-          // Calculate house number as BlockNumber * 100 + LotNumber
-          const houseNo = (parseInt(blockNum) * 100) + i;
-          
-          allLots.push({
-            id: blockLotId,
-            block: parseInt(blockNum),
-            lot: i,
-            house_no: houseNo,
-            status: 'Vacant',
-            house_owner: null,
-            owner_id: null,
-            houseModel: 'Standard',
-            created_at: null,
-            displayName: `Block ${blockNum}, Lot ${i} (House #${houseNo})`
-          });
-        }
-      });
-      
-      // First check the dedicated lots collection in Firebase
-      try {
-        const lotsQuery = query(collection(db, 'lots'));
-        const lotsSnapshot = await getDocs(lotsQuery);
-        
-        // Update lots with information from lots collection
-        lotsSnapshot.docs.forEach(doc => {
-          const lotData = doc.data();
-          const houseNo = lotData.house_no;
-          
-          if (houseNo) {
-            const lotIndex = allLots.findIndex(l => l.house_no === houseNo);
-            if (lotIndex !== -1) {
-              allLots[lotIndex] = {
-                ...allLots[lotIndex],
-                status: lotData.status || 'Vacant',
-                house_owner: lotData.house_owner || null,
-                owner_id: lotData.owner_id || null,
-                houseModel: lotData.houseModel || 'Standard',
-                description: lotData.description,
-                price: lotData.price,
-                size: lotData.size,
-                created_at: lotData.created_at
-              };
-            }
-          }
-        });
-      } catch (error) {
-        console.log('Checking lots collection:', error);
-      }
-      
-      // Also fetch users with house numbers to ensure data consistency
-      const usersQuery = query(collection(db, 'users'));
-      const querySnapshot = await getDocs(usersQuery);
-      
-      // Create a map of house numbers to user data for quick lookup
-      const userMap = {};
-      querySnapshot.docs.forEach(doc => {
-        const userData = doc.data();
-        if (userData.house_no) {
-          userMap[userData.house_no] = {
-            owner_id: doc.id,
-            house_owner: userData.username || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Unknown',
-            houseModel: userData.houseModel || 'Standard'
-          };
-        }
-      });
-      
-      // Update lots with user data if needed (this ensures data consistency)
-      for (let lot of allLots) {
-        if (userMap[lot.house_no]) {
-          // If a user has this house number but the lot isn't already marked as occupied
-          if (lot.status !== 'Occupied') {
-            lot.house_owner = userMap[lot.house_no].house_owner;
-            lot.owner_id = userMap[lot.house_no].owner_id;
-            lot.status = 'Occupied';
-            lot.houseModel = userMap[lot.house_no].houseModel;
-          }
-        }
-      }
-      
-      // Filter out lots that are already occupied, reserved or for sale
-      const vacantLots = allLots.filter(lot => 
-        lot.status === 'Vacant' || !lot.status
-      );
-      
-      // Add displayName property to each lot for the dropdown
-      vacantLots.forEach(lot => {
-        lot.displayName = `Block ${lot.block}, Lot ${lot.lot} (House #${lot.house_no})`;
-      });
-      
-      setAvailableLots(vacantLots);
-    } catch (error) {
-      console.error("Error fetching available lots:", error);
-      toast.error('Error fetching available lots');
-    } finally {
-      setLoadingLots(false);
-    }
-  };
-
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -204,25 +73,10 @@ function UserAccounts() {
       setLoading(false);
     }
   };
-
+  
   const handleAddUser = async (e) => {
     e.preventDefault();
     setFormSubmitting(true);
-    
-    if (!formData.house_no && selectedLot) {
-      setFormData({
-        ...formData, 
-        house_no: selectedLot.house_no,
-        block: selectedLot.block,
-        lot: selectedLot.lot
-      });
-    }
-    
-    if (!formData.house_no && !selectedLot) {
-      toast.error('Please select a lot for this homeowner');
-      setFormSubmitting(false);
-      return;
-    }
     
     // Generate email from username if not provided
     const userEmail = formData.email || `${formData.username}@example.com`;
@@ -240,46 +94,22 @@ function UserAccounts() {
         username: formData.username,
         email: userEmail,
         contactNumber: formData.contactNumber,
-        house_no: selectedLot.house_no,
-        block: selectedLot.block,
-        lot: selectedLot.lot,
         role: 'Homeowner',
         status: 'Active',
         isActive: true,
         recordStatus: 'Neutral',
         password: userPassword,
         fcmToken: '',
-        houseModel: formData.houseModel || 'Standard',
         uid: uid,
         created_at: serverTimestamp(),
         last_updated: serverTimestamp()
       });
       
-      // Also update the lot in the 'lots' collection to mark it as occupied
-      try {
-        const lotDocRef = doc(db, 'lots', selectedLot.id);
-        await setDoc(lotDocRef, {
-          house_no: selectedLot.house_no,
-          block: selectedLot.block,
-          lot: selectedLot.lot,
-          status: 'Occupied',
-          owner_id: uid,
-          house_owner: formData.username || `${formData.firstName} ${formData.lastName}`.trim(),
-          houseModel: formData.houseModel || 'Standard',
-          last_updated: serverTimestamp(),
-          created_at: serverTimestamp()
-        }, { merge: true });
-      } catch (error) {
-        console.error('Error updating lot status:', error);
-        // Continue even if this fails, as we've updated the user
-      }
-      
-      toast.success('User added successfully and lot assigned');
+      toast.success('User added successfully');
       setShowForm(false);
       setShowPassword(false);
       resetForm();
       fetchUsers();
-      fetchAvailableLots(); // Refresh available lots
     } catch (error) {
       // Handle different Firebase Auth errors
       if (error.code === 'auth/email-already-in-use') {
@@ -299,12 +129,22 @@ function UserAccounts() {
   const handleToggleStatus = async (id, currentStatus) => {
     setActionLoading(id);
     try {
-      await updateDoc(doc(db, 'users', id), { 
-        status: currentStatus === 'Active' ? 'Inactive' : 'Active',
-        isActive: currentStatus !== 'Active',
-        last_updated: serverTimestamp()
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      await UserService.updateUserDetails(id, { 
+        status: newStatus,
+        isActive: currentStatus !== 'Active'
       });
       toast.success('User status updated');
+      
+      // Update selectedUser if it's the same user
+      if (selectedUser && selectedUser.id === id) {
+        setSelectedUser({
+          ...selectedUser,
+          status: newStatus,
+          isActive: currentStatus !== 'Active'
+        });
+      }
+      
       fetchUsers();
     } catch (error) {
       toast.error('Error updating user status: ' + error.message);
@@ -316,10 +156,17 @@ function UserAccounts() {
   const handleSetRecordStatus = async (id, recordStatus) => {
     setActionLoading(id);
     try {
-      await updateDoc(doc(db, 'users', id), { 
-        recordStatus: recordStatus,
-        last_updated: serverTimestamp()
+      await UserService.updateUserDetails(id, { 
+        recordStatus: recordStatus
       });
+      
+      // Update selectedUser if it's the same user
+      if (selectedUser && selectedUser.id === id) {
+        setSelectedUser({
+          ...selectedUser,
+          recordStatus: recordStatus
+        });
+      }
       
       // Send notification to user based on record status
       const userDoc = await getDoc(doc(db, 'users', id));
@@ -354,10 +201,9 @@ function UserAccounts() {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
-    // Check if user has a lot assigned
+    // Check if user has a lot assigned (legacy check)
     if (user.house_no) {
-      setUserToDelete(user);
-      setShowDeleteModal(true);
+      toast.error('Cannot delete user with assigned property. Please remove the property assignment first.');
       return;
     }
 
@@ -365,6 +211,14 @@ function UserAccounts() {
     if (window.confirm('Are you sure you want to delete this user?')) {
       setActionLoading(userId);
       try {
+        // Delete all owned lots from subcollection first
+        const ownedLotsRef = collection(db, 'users', userId, 'ownedLots');
+        const ownedLotsSnapshot = await getDocs(ownedLotsRef);
+
+        const deletePromises = ownedLotsSnapshot.docs.map(lotDoc => deleteDoc(lotDoc.ref));
+        await Promise.all(deletePromises);
+
+        // Then delete the user document
         await deleteDoc(doc(db, 'users', userId));
         toast.success('User deleted successfully');
         fetchUsers();
@@ -376,163 +230,77 @@ function UserAccounts() {
     }
   };
 
-  const confirmDeleteUser = async () => {
-    if (!userToDelete) return;
-
-    setActionLoading(userToDelete.id);
+  const handleViewUser = async (user) => {
     try {
-      // Delete user from Firestore
-      await deleteDoc(doc(db, 'users', userToDelete.id));
-
-      // Mark the lot as available
-      if (userToDelete.house_no) {
-        const blockNum = Math.floor(userToDelete.house_no / 100);
-        const lotNum = userToDelete.house_no % 100;
-        const lotId = `B${blockNum}-L${lotNum.toString().padStart(2, '0')}`;
-
-        await setDoc(doc(db, 'lots', lotId), {
-          house_no: userToDelete.house_no,
-          block: blockNum,
-          lot: lotNum,
-          status: 'Vacant',
-          owner_id: null,
-          house_owner: null,
-          last_updated: serverTimestamp()
-        }, { merge: true });
-      }
-
-      toast.success('User deleted successfully and lot marked as available');
-      setShowDeleteModal(false);
-      setUserToDelete(null);
-      fetchUsers();
-      fetchAvailableLots(); // Refresh available lots
-    } catch (error) {
-      toast.error('Error deleting user: ' + error.message);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleViewUser = (user) => {
-    setSelectedUser(user);
-    setPropertyFormData({
-      selectedLotId: '',
-      houseModel: user.houseModel || 'Standard'
-    });
-    setShowUserDetails(true);
-    setIsEditing(false);
-  };
-
-  const handleEditUser = () => {
-    if (!selectedUser) return;
-    
-    // Make sure we have the latest lots data
-    fetchAvailableLots();
-    
-    setFormData({
-      firstName: selectedUser.firstName || '',
-      lastName: selectedUser.lastName || '',
-      username: selectedUser.username || '',
-      email: selectedUser.email || '',
-      contactNumber: selectedUser.contactNumber || '',
-      house_no: selectedUser.house_no || null,
-      block: selectedUser.block || '',
-      lot: selectedUser.lot || '',
-      role: selectedUser.role || 'Homeowner',
-      status: selectedUser.status || 'Active',
-      isActive: selectedUser.isActive !== undefined ? selectedUser.isActive : true,
-      password: selectedUser.password || '',
-      fcmToken: selectedUser.fcmToken || '',
-      houseModel: selectedUser.houseModel || 'Standard'
-    });
-    
-    setIsEditing(true);
-  };
-
-  const handleUpdateProperty = async (userId, newLotId, newHouseModel) => {
-    setFormSubmitting(true);
-    try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
+      const userDoc = await getDoc(doc(db, 'users', user.id));
       if (!userDoc.exists()) {
         toast.error('User not found');
         return;
       }
+      let viewUser = { id: userDoc.id, ...userDoc.data() };
 
-      const userData = userDoc.data();
-      const batch = db.batch();
-      let finalLot = null;
+      setSelectedUser(viewUser);
+      setShowUserDetails(true);
+    } catch (error) {
+      toast.error('Error loading user');
+    }
+  };
 
-      // Handle lot reassignment if a new lot is selected
-      if (newLotId) {
-        const lotDoc = await getDoc(doc(db, 'lots', newLotId));
-        if (!lotDoc.exists()) {
-          toast.error('Selected lot not found');
-          return;
-        }
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+    setFormSubmitting(true); // Use formSubmitting to show loading on edit button
+    
+    try {
+      setOriginalUser(selectedUser);
+      setIsEditingInModal(true);
+      setEditFormData({
+        firstName: selectedUser.firstName || '',
+        lastName: selectedUser.lastName || '',
+        username: selectedUser.username || '',
+        email: selectedUser.email || '',
+        contactNumber: selectedUser.contactNumber || '',
+      });
+    } catch (error) {
+      toast.error('Error loading edit data');
+      setIsEditingInModal(false);
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
 
-        finalLot = { id: lotDoc.id, ...lotDoc.data() };
+  const handleSaveInlineEdit = async (e) => {
+    if (e) e.preventDefault(); // Prevent form submission if called from form
+    if (!selectedUser) return;
+    setFormSubmitting(true);
 
-        // Mark old lot as vacant if user had one
-        if (userData.house_no) {
-          const oldBlockNum = Math.floor(userData.house_no / 100);
-          const oldLotNum = userData.house_no % 100;
-          const oldLotId = `B${oldBlockNum}-L${oldLotNum.toString().padStart(2, '0')}`;
-
-          batch.set(doc(db, 'lots', oldLotId), {
-            house_no: userData.house_no,
-            block: oldBlockNum,
-            lot: oldLotNum,
-            status: 'Vacant',
-            owner_id: null,
-            house_owner: null,
-            last_updated: serverTimestamp()
-          }, { merge: true });
-        }
-
-        // Mark new lot as occupied
-        batch.set(doc(db, 'lots', newLotId), {
-          house_no: finalLot.house_no,
-          block: finalLot.block,
-          lot: finalLot.lot,
-          status: 'Occupied',
-          owner_id: userId,
-          house_owner: userData.username || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Unknown',
-          houseModel: newHouseModel,
-          last_updated: serverTimestamp()
-        }, { merge: true });
+    try {
+      // Validate phone
+      if (editFormData.contactNumber && !/^09\d{9}$/.test(editFormData.contactNumber)) {
+        toast.error('Invalid phone: must be 11 digits starting with 09');
+        return;
       }
 
-      // Update user document
       const updateData = {
-        houseModel: newHouseModel,
-        last_updated: serverTimestamp()
+        firstName: editFormData.firstName,
+        lastName: editFormData.lastName,
+        username: editFormData.username,
+        email: editFormData.email,
+        contactNumber: editFormData.contactNumber,
       };
 
-      if (finalLot) {
-        updateData.house_no = finalLot.house_no;
-        updateData.block = finalLot.block;
-        updateData.lot = finalLot.lot;
+      // Use UserService to update user details
+      await UserService.updateUserDetails(selectedUser.id, updateData);
+
+      toast.success('Homeowner updated');
+
+      const updated = await getDoc(doc(db, 'users', selectedUser.id));
+      if (updated.exists()) {
+        setSelectedUser({ id: updated.id, ...updated.data() });
       }
-
-      batch.update(doc(db, 'users', userId), updateData);
-
-      await batch.commit();
-
-      toast.success('Property assignment updated successfully');
-      
-      // Refresh data
-      fetchUsers();
-      fetchAvailableLots();
-      
-      // Reset form data
-      setPropertyFormData({
-        selectedLotId: '',
-        houseModel: newHouseModel
-      });
-      
+      setIsEditingInModal(false);
+      await fetchUsers();
     } catch (error) {
-      console.error('Error updating property:', error);
-      toast.error('Error updating property assignment: ' + error.message);
+      toast.error('Save failed: ' + error.message);
     } finally {
       setFormSubmitting(false);
     }
@@ -551,7 +319,7 @@ function UserAccounts() {
     const value = e.target.value.replace(/\D/g, ''); // Remove all non-digit characters
 
     // Limit to exactly 11 digits for Philippine numbers
-    if (value.length <= 10) {
+    if (value.length <= 11) {
       setFormData({...formData, contactNumber: value});
     }
 
@@ -566,23 +334,19 @@ function UserAccounts() {
       username: '',
       email: '',
       contactNumber: '',
-      house_no: null,
-      block: '',
-      lot: '',
       role: 'Homeowner',
       status: 'Active',
       isActive: true,
       recordStatus: 'Neutral',
       password: '',
-      fcmToken: '',
-      houseModel: 'Standard'
+      fcmToken: ''
     });
-    setSelectedLot(null);
   };
 
   const closeUserDetails = () => {
     setShowUserDetails(false);
     setSelectedUser(null);
+    setIsEditingInModal(false);
   };
 
   const filteredUsers = users.filter(user => 
@@ -601,11 +365,8 @@ function UserAccounts() {
     return user.username || 'Unknown';
   };
 
-  // Validate Philippine phone number (exactly 11 digits, starts with 09)
-  const isValidPhilippineNumber = (number) => {
-    const phoneRegex = /^09\d{9}$/;
-    return phoneRegex.test(number);
-  };
+  // FIX: Phone validation
+  const isValidPhilippineNumber = (num) => /^09\d{9}$/.test(num);
 
   return (
     <ResponsiveLayout>
@@ -615,7 +376,7 @@ function UserAccounts() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
-            User Accounts
+            Homeowner Accounts
           </h1>
           <p className="text-black-600 mt-2 text-sm sm:text-base" style={{ color: 'black' }}>Manage resident accounts and their access permissions</p>
         </div>
@@ -630,7 +391,7 @@ function UserAccounts() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Add New User
+            Add New Homeowner
           </button>
         </div>
 
@@ -638,7 +399,7 @@ function UserAccounts() {
         <div className="mb-4 sm:mb-6">
           <input
             type="text"
-            placeholder="Search users by name, username or email..."
+            placeholder="Search homeowners by name, username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full md:w-1/3 px-3 sm:px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
@@ -688,7 +449,7 @@ function UserAccounts() {
                             value={formData.firstName}
                             onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                             className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                            placeholder="John"
+                            placeholder="Juan"
                           />
                         </div>
                         <div>
@@ -701,7 +462,7 @@ function UserAccounts() {
                             value={formData.lastName}
                             onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                             className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                            placeholder="Doe"
+                            placeholder="Dela Cruz"
                           />
                         </div>
                       </div>
@@ -727,7 +488,7 @@ function UserAccounts() {
                                 value={formData.username}
                                 onChange={handleUsernameChange}
                                 className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                                placeholder="johndoe"
+                                placeholder="juandelacruz"
                               />
                             </div>
                           </div>
@@ -744,9 +505,9 @@ function UserAccounts() {
                                 value={formData.contactNumber}
                                 onChange={handleContactNumberChange}
                                 className={`w-full pl-12 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2 transition-colors ${
-                                  formData.contactNumber.length === 10 && isValidPhilippineNumber(formData.contactNumber)
+                                  formData.contactNumber.length === 11 && isValidPhilippineNumber(formData.contactNumber)
                                     ? 'border-green-300 focus:ring-green-500 bg-green-50'
-                                    : formData.contactNumber.length > 0 && formData.contactNumber.length !== 10
+                                    : formData.contactNumber.length > 0 && formData.contactNumber.length !== 11
                                     ? 'border-red-300 focus:ring-red-500 bg-red-50'
                                     : 'border-gray-300 focus:ring-blue-500'
                                 }`}
@@ -755,22 +516,22 @@ function UserAccounts() {
                               />
                               {formData.contactNumber.length > 0 && (
                                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                  {formData.contactNumber.length === 10 && isValidPhilippineNumber(formData.contactNumber) ? (
+                                  {formData.contactNumber.length === 11 && isValidPhilippineNumber(formData.contactNumber) ? (
                                     <i className="fas fa-check-circle text-green-500"></i>
-                                  ) : formData.contactNumber.length !== 10 ? (
+                                  ) : formData.contactNumber.length !== 11 ? (
                                     <span className="text-xs text-red-500 font-medium">
-                                      {10 - formData.contactNumber.length}
+                                      {11 - formData.contactNumber.length}
                                     </span>
                                   ) : null}
                                 </div>
                               )}
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                              Philippine mobile number (10 digits, starts with 09)
+                              Philippine mobile number (11 digits, starts with 09)
                             </p>
-                            {formData.contactNumber.length > 0 && formData.contactNumber.length !== 10 && (
+                            {formData.contactNumber.length > 0 && formData.contactNumber.length !== 11 && (
                               <p className="text-xs text-red-500 mt-1">
-                                Please enter exactly 10 digits
+                                Please enter exactly 11 digits
                               </p>
                             )}
                           </div>
@@ -825,98 +586,7 @@ function UserAccounts() {
                       </div>
                     </div>
                     
-                    <div className="bg-amber-50 rounded-lg p-4 mb-6 border border-amber-100">
-                      <h3 className="font-medium text-amber-800 mb-2 flex items-center">
-                        <FaMapMarkerAlt className="mr-2" /> Property Assignment
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Select Available Lot *
-                            </label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <FaMapMarkerAlt className="text-amber-600" />
-                              </div>
-                              {loadingLots ? (
-                                <div className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 bg-gray-50">
-                                  <FaSpinner className="animate-spin inline mr-2 text-gray-500" />
-                                  Loading available lots...
-                                </div>
-                              ) : (
-                                <select
-                                  value={selectedLot ? selectedLot.id : ""}
-                                  onChange={(e) => {
-                                    const selected = availableLots.find(lot => lot.id === e.target.value);
-                                    setSelectedLot(selected);
-                                    if (selected) {
-                                      setFormData({
-                                        ...formData,
-                                        house_no: selected.house_no,
-                                        block: selected.block,
-                                        lot: selected.lot
-                                      });
-                                    }
-                                  }}
-                                  className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
-                                  required
-                                >
-                                  <option value="">-- Select a lot --</option>
-                                  {availableLots.map(lot => (
-                                    <option key={lot.id} value={lot.id}>
-                                      {lot.displayName}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Only showing vacant lots that are available for assignment
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              House Model
-                            </label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i className="fas fa-home text-amber-600"></i>
-                              </div>
-                              <select
-                                value={formData.houseModel}
-                                onChange={(e) => setFormData({...formData, houseModel: e.target.value})}
-                                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500 shadow-sm"
-                              >
-                                <option value="Standard">Standard Model</option>
-                                <option value="Premium">Premium Model</option>
-                                <option value="Deluxe">Deluxe Model</option>
-                                <option value="Executive">Executive Model</option>
-                                <option value="Custom">Custom Build</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {selectedLot && (
-                          <div className="col-span-2 mt-3 p-3 bg-white rounded-lg border border-amber-200">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-amber-700">Selected Lot Details:</span>
-                              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
-                                #{selectedLot.house_no}
-                              </span>
-                            </div>
-                            <div className="mt-2 text-sm">
-                              <div className="flex items-center text-gray-700">
-                                <FaHome className="mr-1 text-amber-500" />
-                                Block {selectedLot.block}, Lot {selectedLot.lot}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+
                     
                     <div className="bg-gray-50 rounded-lg p-4 mt-4 border border-gray-200">
                       <div className="flex justify-end space-x-3">
@@ -992,175 +662,126 @@ function UserAccounts() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column - Basic Information */}
                     <div className="lg:col-span-2 space-y-6">
-                      {/* Personal Information Card */}
-                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                        <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-                          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                            <FaUser className="mr-2 text-blue-500" />
-                            Personal Information
-                          </h3>
-                        </div>
-                        <div className="p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.firstName || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.lastName || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Contact Number</label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.contactNumber || 'N/A'}</p>
-                              </div>
+                      {isEditingInModal ? (
+                        <form onSubmit={handleSaveInlineEdit}>
+                          {/* Personal Information Card */}
+                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                            <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                <FaUser className="mr-2 text-blue-500" />
+                                Personal Information
+                              </h3>
                             </div>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
-                                <p className="text-sm font-medium text-gray-900 mt-1 break-all">{selectedUser.email || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Role</label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.role || 'Homeowner'}</p>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">User ID</label>
-                                <p className="text-xs font-mono text-gray-600 mt-1 bg-gray-100 px-2 py-1 rounded">{selectedUser.id?.substring(0, 12)}...</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Property Assignment Card */}
-                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                        <div className="p-4 border-b border-gray-100 bg-amber-50 rounded-t-lg">
-                          <h3 className="text-lg font-semibold text-amber-800 flex items-center">
-                            <FaHome className="mr-2 text-amber-600" />
-                            Property Assignment
-                          </h3>
-                        </div>
-                        <div className="p-4">
-                          {/* Current Property Display */}
-                          <div className="mb-6">
-                            <h4 className="text-sm font-medium text-gray-700 mb-3">Current Assignment</h4>
-                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4 border border-amber-200">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                                    <FaHome className="text-amber-600" />
+                            <div className="p-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.firstName}
+                                      onChange={(e) => setEditFormData({...editFormData, firstName: e.target.value})}
+                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
                                   </div>
                                   <div>
-                                    <p className="font-semibold text-amber-900">
-                                      {selectedUser.house_no ? `House #${selectedUser.house_no}` : 'No Property Assigned'}
-                                    </p>
-                                    {selectedUser.house_no && (
-                                      <p className="text-sm text-amber-700">
-                                        Block {selectedUser.block || Math.floor(selectedUser.house_no / 100)}, Lot {selectedUser.lot || (selectedUser.house_no % 100)}
-                                      </p>
-                                    )}
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.lastName}
+                                      onChange={(e) => setEditFormData({...editFormData, lastName: e.target.value})}
+                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Contact Number</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.contactNumber}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '');
+                                        if (value.length <= 11) {
+                                          setEditFormData({...editFormData, contactNumber: value});
+                                        }
+                                      }}
+                                      placeholder="09XXXXXXXXX"
+                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                    {selectedUser.houseModel || 'Standard'}
-                                  </span>
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                                    <input
+                                      type="email"
+                                      value={editFormData.email}
+                                      onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Username</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.username}
+                                      onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
+                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Role</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.role || 'Homeowner'}</p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-
-                          {/* Property Editing Form */}
-                          <div className="border-t border-gray-200 pt-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-4">Update Property Assignment</h4>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Select New Lot
-                                </label>
-                                <div className="relative">
-                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <FaMapMarkerAlt className="text-amber-600 text-sm" />
-                                  </div>
-                                  <select
-                                    value={propertyFormData.selectedLotId}
-                                    onChange={(e) => setPropertyFormData({...propertyFormData, selectedLotId: e.target.value})}
-                                    className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
-                                  >
-                                    <option value="">-- Keep current assignment --</option>
-                                    {loadingLots ? (
-                                      <option disabled>Loading available lots...</option>
-                                    ) : (
-                                      availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
-                                          {lot.displayName}
-                                        </option>
-                                      ))
-                                    )}
-                                  </select>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Only vacant lots are available
-                                </p>
-                              </div>
-
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  House Model
-                                </label>
-                                <div className="relative">
-                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i className="fas fa-home text-amber-600 text-sm"></i>
-                                  </div>
-                                  <select
-                                    value={propertyFormData.houseModel}
-                                    onChange={(e) => setPropertyFormData({...propertyFormData, houseModel: e.target.value})}
-                                    className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
-                                  >
-                                    <option value="Standard">Standard Model</option>
-                                    <option value="Premium">Premium Model</option>
-                                    <option value="Deluxe">Deluxe Model</option>
-                                    <option value="Executive">Executive Model</option>
-                                    <option value="Custom">Custom Build</option>
-                                  </select>
-                                </div>
-                              </div>
+                        </form>
+                      ) : (
+                        <>
+                          {/* Personal Information Card */}
+                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                            <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                <FaUser className="mr-2 text-blue-500" />
+                                Personal Information
+                              </h3>
                             </div>
-
-                            <div className="flex justify-end">
-                              <button
-                                onClick={() => {
-                                  const hasLotChange = propertyFormData.selectedLotId !== '';
-                                  const hasModelChange = propertyFormData.houseModel !== (selectedUser.houseModel || 'Standard');
-
-                                  if (hasLotChange || hasModelChange) {
-                                    handleUpdateProperty(selectedUser.id, propertyFormData.selectedLotId, propertyFormData.houseModel);
-                                  } else {
-                                    toast.info('No changes detected');
-                                  }
-                                }}
-                                disabled={formSubmitting}
-                                className="px-6 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center transition-colors duration-200 shadow-sm"
-                              >
-                                {formSubmitting ? (
-                                  <>
-                                    <FaSpinner className="animate-spin mr-2" />
-                                    Updating...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FaSave className="mr-2" />
-                                    Update Property
-                                  </>
-                                )}
-                              </button>
+                            <div className="p-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.firstName || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.lastName || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Contact Number</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.contactNumber || 'N/A'}</p>
+                                  </div>
+                                </div>
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1 break-all">{selectedUser.email || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Username</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.username || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Role</label>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.role || 'Homeowner'}</p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Right Column - Status Information */}
@@ -1235,15 +856,6 @@ function UserAccounts() {
                             )}
                             {selectedUser.status === 'Active' ? 'Deactivate Account' : 'Activate Account'}
                           </button>
-
-                          <button
-                            onClick={() => handleDeleteUser(selectedUser.id)}
-                            disabled={actionLoading === selectedUser.id}
-                            className="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors duration-200"
-                          >
-                            <FaTrash className="mr-2" />
-                            Delete Account
-                          </button>
                         </div>
                       </div>
 
@@ -1284,66 +896,71 @@ function UserAccounts() {
                           </button>
                         </div>
                       </div>
+
+                      {/* Edit/Save Actions Card */}
+                      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-indigo-50 rounded-t-lg">
+                          <h3 className="text-lg font-semibold text-indigo-800 flex items-center">
+                            <FaEdit className="mr-2 text-indigo-600" />
+                            Edit Details
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {!isEditingInModal ? (
+                            <button
+                              onClick={handleEditUser}
+                              disabled={formSubmitting}
+                              className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200 shadow-sm"
+                            >
+                              {formSubmitting ? (
+                                <>
+                                  <FaSpinner className="animate-spin mr-2" />
+                                  Loading...
+                                </>
+                              ) : (
+                                <>
+                                  <FaEdit className="mr-2" />
+                                  Edit Homeowner
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={handleSaveInlineEdit}
+                                disabled={formSubmitting}
+                                className="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200 shadow-sm"
+                              >
+                                {formSubmitting ? (
+                                  <>
+                                    <FaSpinner className="animate-spin mr-2" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FaSave className="mr-2" />
+                                    Save Changes
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditFormData(originalUser); // Reset to original data
+                                  setIsEditingInModal(false);
+                                }}
+                                disabled={formSubmitting}
+                                className="w-full px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200 shadow-sm"
+                              >
+                                <FaTimes className="mr-2" />
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && userToDelete && (
-          <div
-            className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"
-            onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}
-          >
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-              <div className="flex items-center justify-center mb-4">
-                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-red-100">
-                  <FaExclamationTriangle className="text-red-600" size={24} />
-                </div>
-              </div>
-              <h3 className="text-lg font-medium text-center mb-2 text-gray-900">
-                Confirm Account Deletion
-              </h3>
-              <p className="text-sm text-center mb-4 text-gray-600">
-                Are you sure you want to delete <strong>{userToDelete.username || getFullName(userToDelete)}</strong>?
-              </p>
-
-              {userToDelete.house_no && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-center mb-2">
-                    <FaHome className="text-amber-600 mr-2" />
-                    <span className="font-medium text-amber-800">Property Impact</span>
-                  </div>
-                  <p className="text-sm text-amber-700">
-                    This user has House #{userToDelete.house_no} assigned. Deleting this account will make the lot available for reassignment.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex justify-center gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 rounded-md transition-colors duration-200 bg-gray-200 hover:bg-gray-300 text-gray-900"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteUser}
-                  disabled={actionLoading === userToDelete.id}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors duration-200 flex items-center justify-center"
-                >
-                  {actionLoading === userToDelete.id ? (
-                    <>
-                      <FaSpinner className="animate-spin mr-2" />
-                      Deleting...
-                    </>
-                  ) : (
-                    'Delete Account'
-                  )}
-                </button>
               </div>
             </div>
           </div>

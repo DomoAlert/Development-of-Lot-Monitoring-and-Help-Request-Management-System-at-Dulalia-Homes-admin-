@@ -199,7 +199,7 @@ function ResponsiveLayout({ children }) {
                     onClick={() => navigate('/admin/user-accounts')}
                     className={navLinkClass('/admin/user-accounts', true)}
                   >
-                    <MdPeople className="mr-2 text-lg flex-shrink-0" /> User Accounts
+                    <MdPeople className="mr-2 text-lg flex-shrink-0" /> Homeowner Accounts
                   </button>
                   <button
                     onClick={() => navigate('/admin/guard-accounts')}

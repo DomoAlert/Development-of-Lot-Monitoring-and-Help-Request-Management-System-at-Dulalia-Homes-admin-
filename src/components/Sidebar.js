@@ -143,7 +143,7 @@ const Navbar = ({ onToggleCollapse }) => {
                   onClick={() => navigate('/admin/user-accounts')}
                   className={navLinkClass('/admin/user-accounts')}
                 >
-                  <MdPeople className="mr-2 text-lg" /> User Accounts
+                  <MdPeople className="mr-2 text-lg" /> Homeowner Accounts
                 </button>
                 <button
                   onClick={() => navigate('/admin/guard-accounts')}

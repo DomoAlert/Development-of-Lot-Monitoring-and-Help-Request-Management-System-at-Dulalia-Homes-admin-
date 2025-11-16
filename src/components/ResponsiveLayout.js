@@ -294,7 +294,7 @@ function ResponsiveLayout({ children }) {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
-          <header className={`fixed top-0 z-30 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'lg:left-20' : 'lg:left-64'} left-0 right-0`}>
+          <header className={`fixed top-0 z-20 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'lg:left-20' : 'lg:left-64'} left-0 right-0`}>
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 {/* Hamburger Menu for Mobile */}
@@ -357,7 +357,7 @@ function ResponsiveLayout({ children }) {
           </header>
 
           {/* Page Content */}
-          <main className={`flex-1 overflow-y-auto pt-16 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+          <main className={`flex-1 overflow-y-auto custom-scrollbar pt-16 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
             <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
               {children}
             </div>

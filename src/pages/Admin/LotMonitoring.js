@@ -3,13 +3,17 @@ import { db } from '../../services/firebase';
 import { collection, getDocs, query, doc, updateDoc, getDoc, setDoc, serverTimestamp, addDoc, deleteDoc, orderBy, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import ResponsiveLayout from '../../components/ResponsiveLayout';
-import { FaHome, FaSearch, FaUserEdit, FaUserPlus, FaTimes, FaUser, FaTag, FaClock } from 'react-icons/fa';
+import { FaHome, FaSearch, FaUserEdit, FaUserPlus, FaTimes, FaUser, FaTag, FaClock, FaBed, FaBath, FaRulerCombined, FaExpand } from 'react-icons/fa';
 import { color } from 'framer-motion';
 
+// Dulalia Homes Viente Reales Executive Series - Official House Models (November 2025)
+// All images served remotely - no local imports required
+// House Models Configuration - fetched from Firebase
 const LotMonitoring = () => {
   // State
   const [lots, setLots] = useState([]);
   const [users, setUsers] = useState([]);
+  const [houseModels, setHouseModels] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +28,9 @@ const LotMonitoring = () => {
   const [lastActiveTab, setLastActiveTab] = useState('addLot'); // Remember last tab
   const [showDeleteBlockConfirm, setShowDeleteBlockConfirm] = useState(false);
   const [blockToDelete, setBlockToDelete] = useState(null);
+
+  // Assignment Modal State
+  const [selectedHouseModelForAssignment, setSelectedHouseModelForAssignment] = useState('Standard');
 
   // Valid statuses for lots
   const validStatuses = [
@@ -47,6 +54,12 @@ const LotMonitoring = () => {
   const [isAddingLot, setIsAddingLot] = useState(false);
   const [lotNumberError, setLotNumberError] = useState('');
   const [numberOfLots, setNumberOfLots] = useState('1'); // How many lots to add
+  const [maxAddableLots, setMaxAddableLots] = useState(50); // Maximum lots that can be added to selected block
+  const [selectedHouseModel, setSelectedHouseModel] = useState(''); // House model for new lots
+  
+  // House Model Details Modal State
+  const [showHouseModelDetails, setShowHouseModelDetails] = useState(false);
+  const [selectedHouseModelForDetails, setSelectedHouseModelForDetails] = useState(null);
 
   // Helpers for new block stepper
   const incrementNewBlockMax = () => setNewBlockMax((parseInt(newBlockMax || '0') || 0) + 1 + '');
@@ -70,11 +83,60 @@ const LotMonitoring = () => {
     return blocks.find(b => b.blockNumber === parseInt(blockNum));
   };
 
+  // Get house model images from remote URLs (Dulalia Homes Viente Reales Executive Series)
+  const getHouseModelImages = (modelName) => {
+    const images = {
+      'Kate': {
+        unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/KATE-UNIT.jpg',
+        floorPlans: [
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/KATE-1ST-FLOOR.jpg',
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/KATE-2ND-FLOOR.jpg'
+        ]
+      },
+      'Ivory': {
+        unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/IVORY-UNIT.jpg',
+        floorPlans: [
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/IVORY-1ST-FLOOR.jpg',
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/IVORY-2ND-FLOOR.jpg'
+        ]
+      },
+      'Flora': {
+        unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/FLORA-UNIT.jpg',
+        floorPlans: [
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/FLORA-1ST-FLOOR.jpg',
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/FLORA-2ND-FLOOR.jpg'
+        ]
+      },
+      'Edelweiss': {
+        unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/EDELWEISS-UNIT.jpg',
+        floorPlans: [
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/EDELWEISS-1ST-FLOOR.jpg',
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/EDELWEISS-2ND-FLOOR.jpg'
+        ]
+      },
+      'Daffodil': {
+        unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/DAFFODIL-UNIT.jpg',
+        floorPlans: [
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/DAFFODIL-1ST-FLOOR.jpg',
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/DAFFODIL-2ND-FLOOR.jpg'
+        ]
+      },
+      'Bellis': {
+        unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/BELLIS-UNIT.jpg',
+        floorPlans: [
+          'https://dulaliahomes.com/wp-content/uploads/2024/11/BELLIS-END-UNIT-COLORED-FLOORPLAN-scaled.jpg'
+        ]
+      }
+    };
+    return images[modelName] || { unit: null, floorPlans: [] };
+  };
+
   // Set page title and fetch data from Firebase
   useEffect(() => {
     document.title = "Lot Monitoring";
     fetchBlocks();
     fetchUsers();
+    fetchHouseModels();
   }, []);
 
   // Fetch lots when blocks are loaded
@@ -84,10 +146,143 @@ const LotMonitoring = () => {
     }
   }, [blocks]);
 
-  // Prevent background scrolling when modal is open
+  // Set loading to false when both lots and house models are loaded
   useEffect(() => {
-    document.body.style.overflow = showCombinedModal ? 'hidden' : 'auto';
-  }, [showCombinedModal]);
+    if (lots.length >= 0 && houseModels.length >= 0) { // Allow empty arrays
+      setIsLoading(false);
+    }
+  }, [lots, houseModels]);
+
+  // Set default house model when house models are loaded
+  useEffect(() => {
+    if (houseModels.length > 0 && selectedHouseModel === '') {
+      setSelectedHouseModel(houseModels[0].name);
+    }
+  }, [houseModels, selectedHouseModel]);
+
+  // Disable body scroll when house model modal is open
+  useEffect(() => {
+    if (showHouseModelDetails) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showHouseModelDetails]);
+
+  // Fetch house models from Firebase collection - Viente Reales Executive Series
+  const fetchHouseModels = async () => {
+    try {
+      const houseModelsQuery = query(collection(db, 'houseModels'), orderBy('name', 'asc'));
+      const querySnapshot = await getDocs(houseModelsQuery);
+
+      const houseModelsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // If no house models exist, seed official Dulalia Homes Viente Reales Executive Series models
+      if (houseModelsData.length === 0) {
+        console.log('Seeding official Dulalia Homes Viente Reales Executive Series models...');
+        const vienteRealesModels = [
+          { 
+            name: 'Kate', 
+            lotArea: '128 sqm', 
+            floorArea: '154 sqm', 
+            bedrooms: 4, 
+            bathrooms: 3, 
+            notes: 'Premium 2-storey flagship model with modern elevation. Perfect for families seeking luxury and space in Viente Reales Executive Village.',
+            subdivision: 'Viente Reales Executive Village',
+            developer: 'Dulalia Homes'
+          },
+          { 
+            name: 'Ivory', 
+            lotArea: '100 sqm', 
+            floorArea: '123 sqm', 
+            bedrooms: 3, 
+            bathrooms: 4, 
+            notes: 'Spacious unit with terrace, carport, and flexible 4th room. Ideal for growing families who value comfort and versatility.',
+            subdivision: 'Viente Reales Executive Village',
+            developer: 'Dulalia Homes'
+          },
+          { 
+            name: 'Flora', 
+            lotArea: '125 sqm', 
+            floorArea: '87 sqm', 
+            bedrooms: 4, 
+            bathrooms: 2, 
+            notes: 'Compact yet spacious layout with efficient design. Perfect balance of functionality and comfort for modern living.',
+            subdivision: 'Viente Reales Executive Village',
+            developer: 'Dulalia Homes'
+          },
+          { 
+            name: 'Edelweiss', 
+            lotArea: '64 sqm', 
+            floorArea: '64 sqm', 
+            bedrooms: 3, 
+            bathrooms: 2, 
+            notes: 'Townhouse-style design ideal for young families. Maximizes space efficiency without compromising livability.',
+            subdivision: 'Viente Reales Executive Village',
+            developer: 'Dulalia Homes'
+          },
+          { 
+            name: 'Daffodil', 
+            lotArea: '75 sqm', 
+            floorArea: '73 sqm', 
+            bedrooms: 3, 
+            bathrooms: 2, 
+            notes: 'Budget-friendly full 2-storey design. Excellent entry-level home for first-time buyers in Viente Reales.',
+            subdivision: 'Viente Reales Executive Village',
+            developer: 'Dulalia Homes'
+          },
+          { 
+            name: 'Bellis', 
+            lotArea: '119 sqm', 
+            floorArea: '56 sqm', 
+            bedrooms: 2, 
+            bathrooms: 1, 
+            notes: 'End-unit design with 1-car garage. Cozy and practical for small families or couples starting their journey.',
+            subdivision: 'Viente Reales Executive Village',
+            developer: 'Dulalia Homes'
+          }
+        ];
+
+        const addPromises = vienteRealesModels.map(model =>
+          addDoc(collection(db, 'houseModels'), {
+            ...model,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          })
+        );
+
+        await Promise.all(addPromises);
+        console.log('✓ Successfully seeded 6 official Viente Reales house models');
+        setHouseModels(vienteRealesModels);
+      } else {
+        setHouseModels(houseModelsData);
+      }
+    } catch (error) {
+      console.error('Error fetching house models:', error);
+      toast.error('Failed to fetch house models: ' + error.message);
+      // Fallback to Kate model if Firebase fails
+      setHouseModels([
+        { 
+          name: 'Kate', 
+          lotArea: '128 sqm', 
+          floorArea: '154 sqm', 
+          bedrooms: 4, 
+          bathrooms: 3, 
+          notes: 'Premium 2-storey model (fallback)',
+          subdivision: 'Viente Reales Executive Village',
+          developer: 'Dulalia Homes'
+        }
+      ]);
+    }
+  };
 
   // Fetch blocks from Firestore collection
   const fetchBlocks = async () => {
@@ -379,10 +574,11 @@ const LotMonitoring = () => {
 
       const lotDocRef = doc(db, 'blocks', blockData.id, 'lots', selectedLot.id);
 
-      // CASE 1: Changing the status of an unoccupied lot
-      if (selectedUserId === 'status-change') {
+      // CASE 1: Updating lot status and house model
+      if (!selectedUserId) {
         await setDoc(lotDocRef, {
           status: selectedLot.status,
+          houseModel: selectedHouseModelForAssignment,
           updatedAt: serverTimestamp()
         }, { merge: true });
 
@@ -423,7 +619,7 @@ const LotMonitoring = () => {
           blockNumber: selectedLot.block,
           lotNumber: selectedLot.lot,
           houseNumber: selectedLot.house_no,
-          houseModel: userData.houseModel || 'Standard',
+          houseModel: selectedHouseModelForAssignment,
           assignedAt: serverTimestamp(),
           status: 'Active'
         };
@@ -437,7 +633,7 @@ const LotMonitoring = () => {
           status: 'Occupied', // Always set to Occupied when assigning homeowner
           ownerId: selectedUserId,
           ownerName: `${userSnap.data().firstName || ''} ${userSnap.data().lastName || ''}`.trim() || userSnap.data().username || 'Unknown',
-          houseModel: userData.houseModel || 'Standard',
+          houseModel: selectedHouseModelForAssignment,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: false }); // Use merge: false to replace the entire document
@@ -555,8 +751,8 @@ const LotMonitoring = () => {
         return;
       }
       
-      if (numLots > 50) {
-        toast.error('Cannot add more than 50 lots at once');
+      if (numLots > maxAddableLots) {
+        toast.error(`Cannot add more than ${maxAddableLots} lots at once`);
         setIsAddingLot(false);
         return;
       }
@@ -569,6 +765,21 @@ const LotMonitoring = () => {
         return;
       }
       const maxLotsForBlock = blockData.maxLots;
+
+      // Check if selected house model is appropriate for the block
+      const selectedModel = houseModels.find(m => m.name === selectedHouseModel);
+      if (selectedModel && selectedModel.lotArea !== 'N/A') {
+        // Extract approximate lot area (e.g., "~128 sqm" -> 128)
+        const modelLotAreaMatch = selectedModel.lotArea.match(/~?(\d+(?:\.\d+)?)/);
+        if (modelLotAreaMatch) {
+          const modelLotArea = parseFloat(modelLotAreaMatch[1]);
+          // For now, just show a warning if the model seems too large for the block
+          // This is approximate since we don't have exact lot sizes per block
+          if (modelLotArea > 100 && maxLotsForBlock > 20) { // Rough heuristic
+            toast.warning(`House model "${selectedHouseModel}" has a large lot area (~${modelLotArea} sqm). Consider if this is appropriate for Block ${blockNum}.`);
+          }
+        }
+      }
 
       
       // Check if block is already at capacity
@@ -630,7 +841,7 @@ const LotMonitoring = () => {
             status: 'Vacant',
             ownerId: null,
             ownerName: null,
-            houseModel: 'Standard',
+            houseModel: selectedHouseModel,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
@@ -699,6 +910,26 @@ const LotMonitoring = () => {
     const newBlock = e.target.value;
     setNewLotBlock(newBlock);
     setLotNumberError('');
+    
+    // Calculate max addable lots for this block
+    const selectedBlock = blocks.find(b => b.blockNumber.toString() === newBlock);
+    if (selectedBlock) {
+      const currentLots = lots.filter(lot => lot.block === selectedBlock.blockNumber).length;
+      const remaining = selectedBlock.maxLots - currentLots;
+      setMaxAddableLots(Math.max(0, remaining));
+      
+      // Clamp numberOfLots based on remaining capacity
+      if (remaining === 0) {
+        setNumberOfLots('0');
+      } else {
+        const currentNum = parseInt(numberOfLots) || 1;
+        if (currentNum > remaining) {
+          setNumberOfLots(Math.max(1, remaining).toString());
+        }
+      }
+    } else {
+      setMaxAddableLots(50); // Default when no block selected
+    }
     
     // Re-validate current lot number if it exists
     if (newLotNumber && !autoLotNumber) {
@@ -842,6 +1073,7 @@ const LotMonitoring = () => {
                   setLotNumberError('');
                   setAutoLotNumber(true);
                   setNumberOfLots('1');
+                  setSelectedHouseModel(houseModels.length > 0 ? houseModels[0].name : 'Standard');
                   
                   // Set initial tab to last used tab and open modal
                   setActiveTab(lastActiveTab);
@@ -932,20 +1164,16 @@ const LotMonitoring = () => {
                         return (
                           <div 
                             key={lot.id} 
-                            className="relative p-3 border rounded-lg hover:shadow-md transition-shadow"
-                            onClick={() => {
-                              setSelectedLot(lot);
-                              setShowAssignModal(true);
-                              setSelectedUserId('');
-                            }}
+                            className="relative p-3 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                           >
+                          
                             {/* Status indicator */}
                             <div className={`absolute top-0 right-0 w-3 h-3 rounded-full ${statusColor} m-2`}></div>
                             
                             {/* Block/Lot label */}
                             <div className="mb-2">
                               <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                                B{lot.block}-L{lot.lot.toString().padStart(2, '0')}
+                                B{lot.block} - L{lot.lot.toString().padStart(2, '0')}
                               </span>
                             </div>
                             
@@ -954,9 +1182,22 @@ const LotMonitoring = () => {
                               <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-blue-100">
                                 <FaHome className="h-4 w-4 text-blue-600" />
                               </div>
-                              <div className="ml-2">
+                              <div className="ml-2 flex-1">
                                 <p className="text-sm font-medium">#{lot.house_no}</p>
-                                <p className="text-xs text-gray-500">{lot.houseModel || 'Standard'}</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const model = houseModels.find(m => m.name === (lot.houseModel || 'Standard'));
+                                    if (model) {
+                                      setSelectedHouseModelForDetails(model);
+                                      setShowHouseModelDetails(true);
+                                    }
+                                  }}
+                                  className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer text-left"
+                                  title="View house model details"
+                                >
+                                  {lot.houseModel || 'Standard'}
+                                </button>
                               </div>
                             </div>
                             
@@ -967,6 +1208,20 @@ const LotMonitoring = () => {
                                 {lot.house_owner || 'None (Vacant)'}
                               </p>
                             </div>
+                            
+                            {/* Edit button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLot(lot);
+                                setShowAssignModal(true);
+                                setSelectedUserId('');
+                                setSelectedHouseModelForAssignment(lot.houseModel || 'Standard');
+                              }}
+                              className="mt-2 w-full px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Manage
+                            </button>
                           </div>
                         );
                     })}
@@ -1017,6 +1272,9 @@ const LotMonitoring = () => {
                         'text-gray-600'
                       }>{selectedLot.status}</span>
                     </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      House Model: {selectedLot.houseModel || 'Standard'}
+                    </p>
                     {selectedLot.house_owner && (
                       <p className="text-sm text-gray-600 mt-1">
                         Current Owner: {selectedLot.house_owner}
@@ -1043,7 +1301,7 @@ const LotMonitoring = () => {
                           setSelectedLot({...selectedLot, status: e.target.value});
                           // Clear selected user if status is not Vacant or Occupied since we'll only assign users to vacant or occupied lots
                           if (e.target.value !== 'Vacant' && e.target.value !== 'Occupied') {
-                            setSelectedUserId('status-change');
+                            setSelectedUserId('');
                           } else {
                             setSelectedUserId('');
                           }
@@ -1084,6 +1342,27 @@ const LotMonitoring = () => {
                         </p>
                       </div>
                     )}
+
+                    {/* House Model Selection */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        House Model
+                      </label>
+                      <select
+                        value={selectedHouseModelForAssignment}
+                        onChange={(e) => setSelectedHouseModelForAssignment(e.target.value)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      >
+                        {houseModels.map(model => (
+                          <option key={model.name} value={model.name}>
+                            {model.name} - {model.bedrooms} bed, {model.bathrooms} bath ({model.floorArea} FA)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Select the house model for this lot. This will be updated in the database.
+                      </p>
+                    </div>
                   </>
                 )}
                 
@@ -1108,7 +1387,7 @@ const LotMonitoring = () => {
                       {isSubmitting ? (
                         <>
                           <span className="inline-block animate-spin mr-2">⟳</span>
-                          Removing...
+                          Marking as Vacant...
                         </>
                       ) : (
                         'Mark as Vacant'
@@ -1129,10 +1408,8 @@ const LotMonitoring = () => {
                           <span className="inline-block animate-spin mr-2">⟳</span>
                           Processing...
                         </>
-                      ) : selectedUserId ? (
-                        'Assign Lot to Homeowner'
                       ) : (
-                        `Update Status to ${selectedLot.status}`
+                        'Update Status'
                       )}
                     </button>
                   )}
@@ -1268,62 +1545,105 @@ const LotMonitoring = () => {
                       </p>
                     </div>
                     
-                    {/* Number of Lots Field */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <span className="flex items-center">
-                          <svg className="h-4 w-4 mr-2 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                          </svg>
-                          Number of Lots to Add
-                        </span>
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            const current = parseInt(numberOfLots) || 1;
-                            if (current > 1) setNumberOfLots((current - 1).toString());
-                          }}
-                          disabled={parseInt(numberOfLots) <= 1}
-                          className={`px-4 py-2 text-sm font-bold rounded-lg ${
-                            parseInt(numberOfLots) <= 1 
-                              ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                          }`}
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          value={numberOfLots}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 1;
-                            if (val >= 1 && val <= 50) {
-                              setNumberOfLots(e.target.value);
-                            }
-                          }}
-                          min="1"
-                          max="50"
-                          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-center font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm shadow-sm"
-                        />
-                        <button
-                          onClick={() => {
-                            const current = parseInt(numberOfLots) || 1;
-                            if (current < 50) setNumberOfLots((current + 1).toString());
-                          }}
-                          disabled={parseInt(numberOfLots) >= 50}
-                          className={`px-4 py-2 text-sm font-bold rounded-lg ${
-                            parseInt(numberOfLots) >= 50 
-                              ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                          }`}
-                        >
-                          +
-                        </button>
+                    {/* House Model and Number of Lots - Side by Side */}
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                      {/* House Model Selection */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="flex items-center">
+                            <FaHome className="mr-2 text-green-600" />
+                            House Model
+                          </span>
+                        </label>
+                        {houseModels.length > 0 ? (
+                          <select
+                            value={selectedHouseModel}
+                            onChange={(e) => setSelectedHouseModel(e.target.value)}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm shadow-sm"
+                          >
+                            {houseModels.map(model => (
+                              <option key={model.name} value={model.name}>
+                                {model.name} - {model.bedrooms} bed, {model.bathrooms} bath ({model.floorArea} FA)
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500">
+                            Loading house models...
+                          </div>
+                        )}
+                        <p className="mt-2 text-xs text-gray-500">
+                          Select the house model for the new lots. This will be stored in the database.
+                        </p>
                       </div>
-                      <p className="mt-2 text-xs text-gray-500">
-                        Add multiple lots sequentially (1-50). Lots will be created starting from the next available number.
-                      </p>
+
+                      {/* Number of Lots Field */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="flex items-center">
+                            <svg className="h-4 w-4 mr-2 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                            </svg>
+                            Number of Lots to Add
+                          </span>
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              const current = parseInt(numberOfLots) || 1;
+                              if (current > (maxAddableLots === 0 ? 0 : 1)) setNumberOfLots((current - 1).toString());
+                            }}
+                            disabled={parseInt(numberOfLots) <= (maxAddableLots === 0 ? 0 : 1)}
+                            className={`px-4 py-2 text-sm font-bold rounded-lg ${
+                              parseInt(numberOfLots) <= (maxAddableLots === 0 ? 0 : 1) 
+                                ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            value={numberOfLots}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || (maxAddableLots === 0 ? 0 : 1);
+                              const minVal = maxAddableLots === 0 ? 0 : 1;
+                              if (val >= minVal && val <= maxAddableLots) {
+                                setNumberOfLots(e.target.value);
+                              } else if (val > maxAddableLots && maxAddableLots > 0) {
+                                // Prevent setting values that exceed the limit
+                                setNumberOfLots(maxAddableLots.toString());
+                                toast.error(`Cannot add more than ${maxAddableLots} lots to this block`);
+                              }
+                            }}
+                            min={maxAddableLots === 0 ? "0" : "1"}
+                            max={maxAddableLots}
+                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-center font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm shadow-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              const current = parseInt(numberOfLots) || 1;
+                              if (current < maxAddableLots) setNumberOfLots((current + 1).toString());
+                            }}
+                            disabled={parseInt(numberOfLots) >= maxAddableLots}
+                            className={`px-4 py-2 text-sm font-bold rounded-lg ${
+                              parseInt(numberOfLots) >= maxAddableLots 
+                                ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">
+                          Add multiple lots sequentially (1-{maxAddableLots}). Lots will be created starting from the next available number.
+                        </p>
+                        {parseInt(numberOfLots) > maxAddableLots && maxAddableLots > 0 && (
+                          <p className="mt-1 text-xs text-red-600 font-medium">
+                            ⚠️ Cannot add more than {maxAddableLots} lots to this block
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1535,9 +1855,9 @@ const LotMonitoring = () => {
                 {activeTab === 'addLot' && (
                   <button
                     onClick={handleAddNewLot}
-                    disabled={isAddingLot}
+                    disabled={isAddingLot || houseModels.length === 0 || maxAddableLots === 0 || parseInt(numberOfLots) > maxAddableLots}
                     className={`px-6 py-2.5 rounded-lg text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 flex items-center ${
-                      isAddingLot
+                      isAddingLot || houseModels.length === 0 || maxAddableLots === 0 || parseInt(numberOfLots) > maxAddableLots
                         ? 'bg-gray-300 cursor-not-allowed' 
                         : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 shadow-md'
                     }`}
@@ -1546,6 +1866,21 @@ const LotMonitoring = () => {
                       <>
                         <span className="inline-block animate-spin mr-2">⟳</span>
                         Creating {parseInt(numberOfLots) > 1 ? `${numberOfLots} Lots` : 'Lot'}...
+                      </>
+                    ) : houseModels.length === 0 ? (
+                      <>
+                        <span className="inline-block animate-spin mr-2">⟳</span>
+                        Loading...
+                      </>
+                    ) : maxAddableLots === 0 ? (
+                      <>
+                        <FaTimes className="mr-2" />
+                        Block Full
+                      </>
+                    ) : parseInt(numberOfLots) > maxAddableLots ? (
+                      <>
+                        <FaTimes className="mr-2" />
+                        Exceeds Limit
                       </>
                     ) : (
                       <>
@@ -1597,6 +1932,201 @@ const LotMonitoring = () => {
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
                 >
                   Remove Block
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* House Model Details Modal */}
+        {showHouseModelDetails && selectedHouseModelForDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex items-center justify-center p-4 pt-20">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 144px)' }}>
+              {/* Modal Header - Fixed */}
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-white rounded-t-xl flex-shrink-0">
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {selectedHouseModelForDetails.name}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowHouseModelDetails(false);
+                    setSelectedHouseModelForDetails(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                >
+                  <FaTimes className="text-2xl" />
+                </button>
+              </div>
+
+              {/* Modal Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 256px)' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Left Column - Unit Image and Description */}
+                  <div className="space-y-6">
+                    {/* Unit Image */}
+                    {getHouseModelImages(selectedHouseModelForDetails.name).unit && (
+                      <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100">
+                        <img 
+                          src={getHouseModelImages(selectedHouseModelForDetails.name).unit}
+                          alt={`${selectedHouseModelForDetails.name} Model`}
+                          className="w-full h-64 md:h-80 object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="320"%3E%3Crect fill="%23f3f4f6" width="400" height="320"/%3E%3Ctext fill="%236b7280" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3E' + encodeURIComponent(selectedHouseModelForDetails.name) + ' Model%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                          <p className="text-white font-semibold text-lg">{selectedHouseModelForDetails.name} Model</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Description */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {selectedHouseModelForDetails.notes || 'These units feature thoughtfully crafted designs to combine comfort and sophistication. With a range of modern and classic designs, these homes appeal to diverse preferences, while fostering a unified neighborhood vibe.'}
+                      </p>
+                    </div>
+
+                    {/* Specifications - Icons Only Layout (Like Reference) */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Lot Area */}
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <FaHome className="text-blue-600 text-xl" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">{selectedHouseModelForDetails.lotArea?.replace('~', '').replace(' sqm', '') || 'N/A'} <span className="text-base font-normal">sqm</span></p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 ml-12">Lot Area</p>
+                      </div>
+
+                      {/* Floor Area */}
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <FaHome className="text-blue-600 text-xl" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">{selectedHouseModelForDetails.floorArea?.replace('~', '').replace(' sqm', '') || 'N/A'} <span className="text-base font-normal">sqm</span></p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 ml-12">Floor area</p>
+                      </div>
+
+                      {/* Bedrooms */}
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <FaBed className="text-blue-600 text-xl" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">{selectedHouseModelForDetails.bedrooms || 'N/A'}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 ml-12">Bedrooms</p>
+                      </div>
+
+                      {/* Bathrooms */}
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <FaBath className="text-blue-600 text-xl" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">{selectedHouseModelForDetails.bathrooms || 'N/A'}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 ml-12">Toilet and bath</p>
+                      </div>
+                    </div>
+
+                    {/* Floor Plan Button */}
+                    <button
+                      onClick={() => {
+                        const floorPlanSection = document.getElementById('floor-plans-section');
+                        if (floorPlanSection) {
+                          floorPlanSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="w-full md:w-auto px-8 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors"
+                    >
+                      Floor Plan
+                    </button>
+                  </div>
+
+                  {/* Right Column - Floor Plans */}
+                  <div id="floor-plans-section" className="space-y-4">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-4">
+                      <h3 className="text-xl font-bold text-white">
+                        {getHouseModelImages(selectedHouseModelForDetails.name).floorPlans.length === 1 
+                          ? 'Floor Plan (Complete)' 
+                          : 'Floor Plan'}
+                      </h3>
+                      <p className="text-indigo-100 text-sm">Detailed layout and design specifications</p>
+                    </div>
+
+                    {getHouseModelImages(selectedHouseModelForDetails.name).floorPlans.length > 0 ? (
+                      <div className="space-y-4">
+                        {getHouseModelImages(selectedHouseModelForDetails.name).floorPlans.map((floorPlan, index) => {
+                          const isBellis = selectedHouseModelForDetails.name === 'Bellis';
+                          const isSinglePlan = getHouseModelImages(selectedHouseModelForDetails.name).floorPlans.length === 1;
+                          
+                          return (
+                            <div key={index} className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                              {!isSinglePlan && (
+                                <div className="bg-gray-100 px-4 py-2 border-b">
+                                  <p className="text-sm font-semibold text-gray-700">
+                                    {index === 0 ? '1st Floor Plan' : '2nd Floor Plan'}
+                                  </p>
+                                </div>
+                              )}
+                              {isBellis && isSinglePlan && (
+                                <div className="bg-gray-100 px-4 py-2 border-b">
+                                  <p className="text-sm font-semibold text-gray-700">
+                                    Ground & Second Floor Plan
+                                  </p>
+                                </div>
+                              )}
+                              <div className="p-4 bg-white">
+                                <img 
+                                  src={floorPlan}
+                                  alt={isBellis && isSinglePlan 
+                                    ? `${selectedHouseModelForDetails.name} Complete Floor Plan` 
+                                    : `${selectedHouseModelForDetails.name} Floor Plan ${index + 1}`}
+                                  className="w-full h-auto rounded"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%236b7280" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                        <FaHome className="mx-auto text-gray-400 text-4xl mb-3" />
+                        <p className="text-gray-500">No floor plans available for this model</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-gray-50 border-t flex justify-end rounded-b-xl">
+                <button
+                  onClick={() => {
+                    setShowHouseModelDetails(false);
+                    setSelectedHouseModelForDetails(null);
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium shadow-md transition-all duration-200"
+                >
+                  Close
                 </button>
               </div>
             </div>

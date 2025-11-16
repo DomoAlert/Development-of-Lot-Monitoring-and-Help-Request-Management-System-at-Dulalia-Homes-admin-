@@ -281,6 +281,19 @@ function UserAccounts() {
       }
       let viewUser = { id: userDoc.id, ...userDoc.data() };
 
+      // Load assigned lots from subcollection
+      try {
+        const assignedLotsRef = collection(db, 'users', user.id, 'assignedLots');
+        const assignedLotsSnapshot = await getDocs(assignedLotsRef);
+        viewUser.assignedLots = assignedLotsSnapshot.docs.map(lotDoc => ({
+          id: lotDoc.id,
+          ...lotDoc.data()
+        }));
+      } catch (error) {
+        // If subcollection doesn't exist or error, assignedLots will be empty array
+        viewUser.assignedLots = [];
+      }
+
       setSelectedUser(viewUser);
       setShowUserDetails(true);
     } catch (error) {
@@ -337,7 +350,22 @@ function UserAccounts() {
 
       const updated = await getDoc(doc(db, 'users', selectedUser.id));
       if (updated.exists()) {
-        setSelectedUser({ id: updated.id, ...updated.data() });
+        let updatedUser = { id: updated.id, ...updated.data() };
+        
+        // Re-fetch assigned lots from subcollection after update
+        try {
+          const assignedLotsRef = collection(db, 'users', selectedUser.id, 'assignedLots');
+          const assignedLotsSnapshot = await getDocs(assignedLotsRef);
+          updatedUser.assignedLots = assignedLotsSnapshot.docs.map(lotDoc => ({
+            id: lotDoc.id,
+            ...lotDoc.data()
+          }));
+        } catch (error) {
+          // If subcollection doesn't exist or error, assignedLots will be empty array
+          updatedUser.assignedLots = [];
+        }
+        
+        setSelectedUser(updatedUser);
       }
       setIsEditingInModal(false);
       await fetchUsers();
@@ -727,80 +755,156 @@ function UserAccounts() {
                     {/* Left Column - Basic Information */}
                     <div className="lg:col-span-2 space-y-6">
                       {isEditingInModal ? (
-                        <form onSubmit={handleSaveInlineEdit}>
-                          {/* Personal Information Card */}
-                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-                              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                                <FaUser className="mr-2 text-blue-500" />
-                                Personal Information
-                              </h3>
-                            </div>
-                            <div className="p-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
-                                    <input
-                                      type="text"
-                                      value={editFormData.firstName}
-                                      onChange={(e) => setEditFormData({...editFormData, firstName: e.target.value})}
-                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                        <>
+                          <form onSubmit={handleSaveInlineEdit}>
+                            {/* Personal Information Card */}
+                            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                              <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                  <FaUser className="mr-2 text-blue-500" />
+                                  Personal Information
+                                </h3>
+                              </div>
+                              <div className="p-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
+                                      <input
+                                        type="text"
+                                        value={editFormData.firstName}
+                                        onChange={(e) => setEditFormData({...editFormData, firstName: e.target.value})}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
+                                      <input
+                                        type="text"
+                                        value={editFormData.lastName}
+                                        onChange={(e) => setEditFormData({...editFormData, lastName: e.target.value})}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Contact Number</label>
+                                      <input
+                                        type="text"
+                                        value={editFormData.contactNumber}
+                                        onChange={(e) => {
+                                          const value = e.target.value.replace(/\D/g, '');
+                                          if (value.length <= 11) {
+                                            setEditFormData({...editFormData, contactNumber: value});
+                                          }
+                                        }}
+                                        placeholder="09XXXXXXXXX"
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
                                   </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
-                                    <input
-                                      type="text"
-                                      value={editFormData.lastName}
-                                      onChange={(e) => setEditFormData({...editFormData, lastName: e.target.value})}
-                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Contact Number</label>
-                                    <input
-                                      type="text"
-                                      value={editFormData.contactNumber}
-                                      onChange={(e) => {
-                                        const value = e.target.value.replace(/\D/g, '');
-                                        if (value.length <= 11) {
-                                          setEditFormData({...editFormData, contactNumber: value});
-                                        }
-                                      }}
-                                      placeholder="09XXXXXXXXX"
-                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="space-y-3">
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
-                                    <input
-                                      type="email"
-                                      value={editFormData.email}
-                                      onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
-                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Username</label>
-                                    <input
-                                      type="text"
-                                      value={editFormData.username}
-                                      onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
-                                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Role</label>
-                                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.role || 'Homeowner'}</p>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                                      <input
+                                        type="email"
+                                        value={editFormData.email}
+                                        onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Username</label>
+                                      <input
+                                        type="text"
+                                        value={editFormData.username}
+                                        onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Role</label>
+                                      <p className="text-sm font-medium text-gray-900 mt-1">{selectedUser.role || 'Homeowner'}</p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
+                          </form>
+
+                          {/* Property Information Card - Read Only */}
+                          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                            <div className="p-4 border-b border-gray-100 bg-amber-50 rounded-t-lg">
+                              <h3 className="text-lg font-semibold text-amber-800 flex items-center">
+                                <FaHome className="mr-2 text-amber-600" />
+                                Property Information
+                                {selectedUser.assignedLots && selectedUser.assignedLots.length > 0 && (
+                                  <span className="ml-2 px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full">
+                                    {selectedUser.assignedLots.length} lot{selectedUser.assignedLots.length !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </h3>
+                              <p className="text-xs text-amber-600 mt-1">Read-only view - property assignments cannot be modified here</p>
+                            </div>
+                            <div className="p-4">
+                              {selectedUser.assignedLots && selectedUser.assignedLots.length > 0 ? (
+                                <div className="space-y-3">
+                                  {selectedUser.assignedLots.map((lot, index) => (
+                                    <div key={lot.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                      <div className="flex items-center space-x-3">
+                                        <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full">
+                                          <FaHome className="text-amber-600 text-sm" />
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center space-x-2">
+                                            <span className="font-semibold text-amber-800">#{lot.houseNumber}</span>
+                                            <span className="text-xs text-gray-600 bg-white px-2 py-0.5 rounded">
+                                              B{lot.blockNumber}-L{lot.lotNumber}
+                                            </span>
+                                          </div>
+                                          {lot.houseModel && (
+                                            <div className="text-xs text-gray-600 mt-1">
+                                              {lot.houseModel}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Lot {index + 1}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : selectedUser.house_no ? (
+                                <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full">
+                                      <FaHome className="text-amber-600 text-sm" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="font-semibold text-amber-800">#{selectedUser.house_no}</span>
+                                        <span className="text-xs text-gray-600 bg-white px-2 py-0.5 rounded">
+                                          B{selectedUser.block || Math.floor(selectedUser.house_no / 100)}-L{selectedUser.lot || selectedUser.house_no % 100}
+                                        </span>
+                                      </div>
+                                      {selectedUser.houseModel && (
+                                        <div className="text-xs text-gray-600 mt-1">
+                                          {selectedUser.houseModel}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-center py-8">
+                                  <FaHome className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                                  <p className="text-gray-500 text-sm">No property assigned</p>
+                                  <p className="text-gray-400 text-xs mt-1">This homeowner doesn't own any lots yet</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </form>
+                        </>
                       ) : (
                         <>
                           {/* Personal Information Card */}
@@ -1209,20 +1313,37 @@ function UserAccounts() {
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         {user.assignedLots && user.assignedLots.length > 0 ? (
                           <div className="flex flex-col space-y-1">
-                            {user.assignedLots.slice(0, 2).map((lot, index) => (
-                              <div key={lot.id} className="flex items-center mb-1">
-                                <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
-                                  #{lot.houseNumber}
-                                </span>
-                                <span className="ml-1 text-xs text-gray-500">
-                                  B{lot.blockNumber}-L{lot.lotNumber}
-                                </span>
-                              </div>
-                            ))}
-                            {user.assignedLots.length > 2 && (
-                              <span className="text-xs text-gray-500">
-                                +{user.assignedLots.length - 2} more lot{user.assignedLots.length - 2 !== 1 ? 's' : ''}
-                              </span>
+                            {user.assignedLots.length <= 3 ? (
+                              // Show all lots if 3 or fewer
+                              user.assignedLots.map((lot, index) => (
+                                <div key={lot.id} className="flex items-center mb-1">
+                                  <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
+                                    #{lot.houseNumber}
+                                  </span>
+                                  <span className="ml-1 text-xs text-gray-500">
+                                    B{lot.blockNumber}-L{lot.lotNumber}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              // Show first lot and summary for more
+                              <>
+                                {user.assignedLots.slice(0, 1).map((lot, index) => (
+                                  <div key={lot.id} className="flex items-center mb-1">
+                                    <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
+                                      #{lot.houseNumber}
+                                    </span>
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      B{lot.blockNumber}-L{lot.lotNumber}
+                                    </span>
+                                  </div>
+                                ))}
+                                <div className="flex items-center">
+                                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md">
+                                    +{user.assignedLots.length - 1} more lot{user.assignedLots.length - 1 !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </>
                             )}
                           </div>
                         ) : user.house_no ? (

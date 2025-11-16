@@ -205,18 +205,44 @@ const LotMonitoring = () => {
       const querySnapshot = await getDocs(usersQuery);
 
       const usersData = await Promise.all(querySnapshot.docs
-        .filter(doc => doc.data().role === 'Homeowner') // Only get homeowners
+        .filter(doc => {
+          const userData = doc.data();
+          // Include users with role 'Homeowner' or no role field (legacy users)
+          return userData.role === 'Homeowner' || !userData.role;
+        })
         .map(async (doc) => {
           const userData = doc.data();
 
           // Fetch assigned lots for this user
-          const assignedLotsQuery = query(collection(db, 'users', doc.id, 'assignedLots'));
-          const assignedLotsSnapshot = await getDocs(assignedLotsQuery);
+          let assignedLots = [];
+          let lotsSubcollection = [];
+          try {
+            const assignedLotsQuery = query(collection(db, 'users', doc.id, 'assignedLots'));
+            const assignedLotsSnapshot = await getDocs(assignedLotsQuery);
+            assignedLots = assignedLotsSnapshot.docs.map(lotDoc => ({
+              id: lotDoc.id,
+              ...lotDoc.data()
+            }));
+          } catch (error) {
+            // If subcollection doesn't exist or error occurs, assignedLots remains empty array
+            console.log(`No assigned lots found for user ${doc.id}:`, error.message);
+            assignedLots = [];
+          }
 
-          const assignedLots = assignedLotsSnapshot.docs.map(lotDoc => ({
-            id: lotDoc.id,
-            ...lotDoc.data()
-          }));
+          try {
+            const lotsQuery = query(collection(db, 'users', doc.id, 'lots'));
+            const lotsSnapshot = await getDocs(lotsQuery);
+            lotsSubcollection = lotsSnapshot.docs.map(lotDoc => ({
+              id: lotDoc.id,
+              ...lotDoc.data()
+            }));
+          } catch (error) {
+            // If subcollection doesn't exist or error occurs, lotsSubcollection remains empty array
+            console.log(`No lots found for user ${doc.id}:`, error.message);
+            lotsSubcollection = [];
+          }
+
+          const totalLots = assignedLots.length + lotsSubcollection.length;
 
           return {
             id: doc.id,
@@ -225,8 +251,10 @@ const LotMonitoring = () => {
             lastName: userData.lastName || '',
             house_no: userData.house_no || null, // Keep for backward compatibility
             email: userData.email || '',
+            role: userData.role || 'Homeowner', // Default to Homeowner if not set
             assignedLots: assignedLots,
-            totalLots: assignedLots.length
+            lots: lotsSubcollection,
+            totalLots: totalLots
           };
         }));
 
@@ -293,16 +321,23 @@ const LotMonitoring = () => {
       // Update the lot in subcollection
       const lotDocRef = doc(db, 'blocks', blockData.id, 'lots', selectedLot.id);
       await setDoc(lotDocRef, {
+        lotNumber: selectedLot.lot,
+        houseNumber: selectedLot.house_no,
         status: 'Vacant',
         ownerId: null,
         ownerName: null,
+        houseModel: selectedLot.houseModel || 'Standard',
+        createdAt: selectedLot.createdAt || serverTimestamp(),
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      }, { merge: false });
 
       // Remove assignment from user's subcollection
       if (selectedLot.owner_id) {
+        // Always use assignedLots subcollection for Occupied status
+        const subcollectionName = 'assignedLots';
+
         const assignmentQuery = query(
-          collection(db, 'users', selectedLot.owner_id, 'assignedLots'),
+          collection(db, 'users', selectedLot.owner_id, subcollectionName),
           where('lotId', '==', selectedLot.id)
         );
         const assignmentSnapshot = await getDocs(assignmentQuery);
@@ -353,7 +388,7 @@ const LotMonitoring = () => {
 
         toast.success(`Lot status updated to ${selectedLot.status}`);
       }
-      // CASE 2: Assigning a homeowner to a vacant lot
+      // CASE 2: Assigning a homeowner to a vacant or assigned lot
       else if (selectedUserId) {
         // Get the selected user data
         const userDocRef = doc(db, 'users', selectedUserId);
@@ -366,9 +401,12 @@ const LotMonitoring = () => {
 
         const userData = userSnap.data();
 
+        // Determine which subcollection to use based on status
+        const subcollectionName = 'assignedLots'; // Always use assignedLots for Occupied status
+
         // Check if this lot is already assigned to this user
         const existingAssignmentQuery = query(
-          collection(db, 'users', selectedUserId, 'assignedLots'),
+          collection(db, 'users', selectedUserId, subcollectionName),
           where('lotId', '==', selectedLot.id)
         );
         const existingAssignment = await getDocs(existingAssignmentQuery);
@@ -390,22 +428,21 @@ const LotMonitoring = () => {
           status: 'Active'
         };
 
-        await addDoc(collection(db, 'users', selectedUserId, 'assignedLots'), assignmentData);
+        await addDoc(collection(db, 'users', selectedUserId, subcollectionName), assignmentData);
 
         // Update the lot document
         await setDoc(lotDocRef, {
-          house_no: selectedLot.house_no,
-          block: selectedLot.block,
-          lot: selectedLot.lot,
-          status: 'Occupied',
-          owner_id: selectedUserId,
-          house_owner: userSnap.data().username || `${userSnap.data().firstName || ''} ${userSnap.data().lastName || ''}`.trim() || 'Unknown',
+          lotNumber: selectedLot.lot,
+          houseNumber: selectedLot.house_no,
+          status: 'Occupied', // Always set to Occupied when assigning homeowner
+          ownerId: selectedUserId,
+          ownerName: `${userSnap.data().firstName || ''} ${userSnap.data().lastName || ''}`.trim() || userSnap.data().username || 'Unknown',
           houseModel: userData.houseModel || 'Standard',
-          last_updated: serverTimestamp(),
-          created_at: serverTimestamp()
-        }, { merge: true });
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: false }); // Use merge: false to replace the entire document
 
-        toast.success('Lot assigned to homeowner successfully');
+        toast.success(`Lot assigned to homeowner successfully using ${subcollectionName} subcollection`);
       }
 
       setShowAssignModal(false);
@@ -950,7 +987,7 @@ const LotMonitoring = () => {
                   {selectedLot.status === 'Occupied' 
                     ? 'Manage Occupied Lot'
                     : selectedLot.house_owner 
-                      ? 'Manage Assigned Lot' 
+                      ? 'Manage Lot' 
                       : 'Manage Lot Status'}
                 </h3>
                 <button
@@ -1004,8 +1041,8 @@ const LotMonitoring = () => {
                         value={selectedLot.status}
                         onChange={(e) => {
                           setSelectedLot({...selectedLot, status: e.target.value});
-                          // Clear selected user if status is not Vacant since we'll only assign users to vacant lots
-                          if (e.target.value !== 'Vacant') {
+                          // Clear selected user if status is not Vacant or Occupied since we'll only assign users to vacant or occupied lots
+                          if (e.target.value !== 'Vacant' && e.target.value !== 'Occupied') {
                             setSelectedUserId('status-change');
                           } else {
                             setSelectedUserId('');
@@ -1016,11 +1053,12 @@ const LotMonitoring = () => {
                         <option value="Vacant">Vacant</option>
                         <option value="For Sale">For Sale</option>
                         <option value="Reserved">Reserved</option>
+                        <option value="Occupied">Occupied</option>
                       </select>
                     </div>
 
-                    {/* Show homeowner assignment only for Vacant lots */}
-                    {selectedLot.status === 'Vacant' && (
+                    {/* Show homeowner assignment only for Vacant or Occupied lots */}
+                    {(selectedLot.status === 'Vacant' || selectedLot.status === 'Occupied') && (
                       <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Assign to Homeowner (Optional)
@@ -1032,7 +1070,7 @@ const LotMonitoring = () => {
                         >
                           <option value="">Leave unassigned</option>
                           {users
-                            .filter(user => user.role === 'Homeowner')
+                            .filter(user => user.role === 'Homeowner' || !user.role)
                             .sort((a, b) => (b.totalLots || 0) - (a.totalLots || 0)) // Sort by lot count descending
                             .map((user) => (
                               <option key={user.id} value={user.id}>

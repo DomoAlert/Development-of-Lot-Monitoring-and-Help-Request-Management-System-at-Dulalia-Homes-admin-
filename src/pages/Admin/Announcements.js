@@ -17,28 +17,45 @@ function Announcements() {
     content: '',
     type: 'Notice',
     status: 'Active',
-    isVisible: true,
-    visibleTo: 'both', // 'homeowner', 'guard', or 'both'
-    targetAudience: 'all' // Add this new field
+    audience: 'everyone', // 'everyone', 'homeowners', 'guards'
+    expiresAt: null // Will be auto-set based on type
   });
 
   useEffect(() => {
     document.title = "Announcements";
     fetchAnnouncements();
+    // Initialize form with default expiration date
+    setFormData(prev => ({
+      ...prev,
+      expiresAt: getExpirationDate('Notice')
+    }));
   }, []);
 
   const fetchAnnouncements = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'announcements'));
-      const announcementsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        type: doc.data().type || 'Notice', // Ensure type has a default value
-        status: doc.data().status || 'Active',
-        isVisible: doc.data().isVisible !== undefined ? doc.data().isVisible : true,
-        visibleTo: doc.data().visibleTo || 'both',
-        date: doc.data().timestamp?.toDate()?.toLocaleDateString() || new Date().toLocaleDateString()
-      }));
+      const announcementsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Map old fields to new audience structure for backward compatibility
+        let audience = 'everyone';
+        if (data.audience?.group) {
+          audience = data.audience.group;
+        } else if (data.visibleTo === 'homeowner' && data.targetAudience === 'homeowner') {
+          audience = 'homeowners';
+        } else if (data.visibleTo === 'guard' && data.targetAudience === 'guard') {
+          audience = 'guards';
+        }
+        
+        return {
+          id: doc.id,
+          ...data,
+          type: data.type || 'Notice',
+          status: data.status || 'Active',
+          audience: audience,
+          expiresAt: data.expiresAt,
+          date: data.timestamp?.toDate()?.toLocaleDateString() || new Date().toLocaleDateString()
+        };
+      });
       setAnnouncements(announcementsData.sort((a, b) => new Date(b.date) - new Date(a.date)));
     } catch (error) {
       toast.error('Error fetching announcements: ' + error.message);
@@ -50,8 +67,16 @@ function Announcements() {
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare audience data
+      let audienceData = { group: formData.audience };
+      
       await addDoc(collection(db, 'announcements'), {
-        ...formData,
+        title: formData.title,
+        content: formData.content,
+        type: formData.type,
+        status: formData.status,
+        audience: audienceData,
+        expiresAt: formData.expiresAt,
         timestamp: serverTimestamp(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -68,8 +93,16 @@ function Announcements() {
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare audience data
+      let audienceData = { group: formData.audience };
+      
       await updateDoc(doc(db, 'announcements', currentAnnouncementId), {
-        ...formData,
+        title: formData.title,
+        content: formData.content,
+        type: formData.type,
+        status: formData.status,
+        audience: audienceData,
+        expiresAt: formData.expiresAt,
         updatedAt: serverTimestamp()
       });
       toast.success('Announcement updated successfully');
@@ -88,9 +121,8 @@ function Announcements() {
       content: announcement.content || '',
       type: announcement.type || 'Notice',
       status: announcement.status || 'Active',
-      isVisible: announcement.isVisible !== undefined ? announcement.isVisible : true,
-      visibleTo: announcement.visibleTo || 'both',
-      targetAudience: announcement.targetAudience || 'all' // Add this
+      audience: announcement.audience || 'everyone',
+      expiresAt: announcement.expiresAt ? new Date(announcement.expiresAt.seconds * 1000) : getExpirationDate(announcement.type || 'Notice')
     });
     setCurrentAnnouncementId(announcement.id);
     setIsEditing(true);
@@ -115,9 +147,8 @@ function Announcements() {
       content: '',
       type: 'Notice',
       status: 'Active',
-      isVisible: true,
-      visibleTo: 'both',
-      targetAudience: 'all' // Add this
+      audience: 'everyone',
+      expiresAt: getExpirationDate('Notice')
     });
     setCurrentAnnouncementId(null);
   };
@@ -126,6 +157,52 @@ function Announcements() {
     setShowForm(false);
     setIsEditing(false);
     resetForm();
+  };
+
+  const getExpirationDate = (type) => {
+    const now = new Date();
+    switch (type.toLowerCase()) {
+      case 'urgent':
+        return new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+      case 'update':
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      case 'notice':
+      default:
+        return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    }
+  };
+
+  const handleTypeChange = (newType) => {
+    const expirationDate = getExpirationDate(newType);
+    setFormData({
+      ...formData,
+      type: newType,
+      expiresAt: expirationDate
+    });
+  };
+
+  const getAudienceText = (audience, selectedBlocks = []) => {
+    switch (audience) {
+      case 'everyone':
+        return '📢 Everyone (All Users)';
+      case 'homeowners':
+        return '🏠 All Homeowners';
+      case 'guards':
+        return '🛡️ All Guards';
+      default:
+        return '📢 Everyone (All Users)';
+    }
+  };
+
+  const getAudienceIcon = (audience) => {
+    switch (audience) {
+      case 'homeowners':
+        return '🏠';
+      case 'guards':
+        return '🛡️';
+      default:
+        return '📢';
+    }
   };
 
   const getTypeColor = (type) => {
@@ -140,18 +217,6 @@ function Announcements() {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getVisibilityText = (visibleTo) => {
-    switch (visibleTo) {
-      case 'homeowner':
-        return 'Visible to Homeowners';
-      case 'guard':
-        return 'Visible to Guards';
-      case 'both':
-      default:
-        return 'Visible to All';
     }
   };
 
@@ -240,7 +305,7 @@ function Announcements() {
                     <select 
                       required
                       value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                      onChange={(e) => handleTypeChange(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Notice">Notice</option>
@@ -259,7 +324,7 @@ function Announcements() {
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
+                      <option value="Draft">Draft</option>
                     </select>
                   </div>
                 </div>
@@ -276,52 +341,64 @@ function Announcements() {
                     placeholder="Enter announcement content"
                   ></textarea>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                      Visible To
-                    </label>
-                    <select 
-                      required
-                      value={formData.visibleTo}
-                      onChange={(e) => setFormData({...formData, visibleTo: e.target.value})}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="both">Everyone</option>
-                      <option value="homeowner">Homeowners Only</option>
-                      <option value="guard">Guards Only</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
-                      Target Audience
-                    </label>
-                    <select 
-                      required
-                      value={formData.targetAudience}
-                      onChange={(e) => setFormData({...formData, targetAudience: e.target.value})}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="all">All</option>
-                      <option value="guard">For Guards</option>
-                      <option value="homeowner">For Homeowners</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                    Audience & Visibility
+                  </label>
+                  <select 
+                    required
+                    value={formData.audience}
+                    onChange={(e) => setFormData({...formData, audience: e.target.value})}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 border-gray-300 bg-white bg-white text-gray-900 text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="everyone">📢 Everyone (All Users)</option>
+                    <option value="homeowners">🏠 All Homeowners</option>
+                    <option value="guards">🛡️ All Guards</option>
+                  </select>
                 </div>
                 
-                <div className="bg-blue-50 bg-blue-50 rounded-lg p-4 border border-blue-100 border-blue-200">
-                  <label className="flex items-center text-sm font-medium text-gray-700 text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={formData.isVisible}
-                      onChange={(e) => setFormData({...formData, isVisible: e.target.checked})}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 border-gray-300 rounded mr-2"
-                    />
-                    Visible in App
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-1">
+                    Expiration
                   </label>
-                  <p className="text-xs text-gray-500 text-gray-600 mt-1 ml-6">
-                    When unchecked, the announcement will be hidden from all users.
-                  </p>
+                  <div className={`p-3 rounded-lg border ${
+                    formData.type === 'Urgent' 
+                      ? 'bg-red-50 border-red-200' 
+                      : 'bg-blue-50 border-blue-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {formData.type === 'Urgent' ? (
+                          <div className="text-red-600 mr-2">⏰</div>
+                        ) : (
+                          <div className="text-blue-600 mr-2">📅</div>
+                        )}
+                        <span className={`text-sm font-medium ${
+                          formData.type === 'Urgent' ? 'text-red-800' : 'text-blue-800'
+                        }`}>
+                          Expires: {formData.expiresAt ? formData.expiresAt.toLocaleDateString() + ' ' + formData.expiresAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not set'}
+                        </span>
+                      </div>
+                      {formData.type !== 'Urgent' && (
+                        <input
+                          type="datetime-local"
+                          value={formData.expiresAt ? formData.expiresAt.toISOString().slice(0, 16) : ''}
+                          onChange={(e) => setFormData({...formData, expiresAt: new Date(e.target.value)})}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      )}
+                    </div>
+                    <p className={`text-xs mt-1 ${
+                      formData.type === 'Urgent' ? 'text-red-600' : 'text-blue-600'
+                    }`}>
+                      {formData.type === 'Urgent' 
+                        ? 'Urgent announcements expire after 24 hours (cannot be changed)' 
+                        : formData.type === 'Update'
+                        ? 'Update announcements expire after 7 days by default'
+                        : 'Notice announcements expire after 30 days by default'
+                      }
+                    </p>
+                  </div>
                 </div>
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
@@ -406,9 +483,9 @@ function Announcements() {
                             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTypeColor(announcement.type)}`}>
                               {announcement.type || 'Notice'}
                             </span>
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${announcement.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {announcement.status}
-                            </span>
+                          <span className={`px-2 py-0.5 rounded-full ${announcement.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {announcement.status}
+                          </span>
                           </div>
                         </div>
                         <p className="text-gray-600 text-sm break-words whitespace-pre-line mb-3 line-clamp-3">
@@ -419,21 +496,19 @@ function Announcements() {
                             <CalendarIcon className="h-3.5 w-3.5 mr-1" />
                             {announcement.date}
                           </div>
-                          <span className={`px-2 py-0.5 rounded-full ${announcement.isVisible ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
-                            {announcement.isVisible ? getVisibilityText(announcement.visibleTo) : 'Hidden'}
+                          {announcement.expiresAt && (
+                            <div className="flex items-center text-orange-600">
+                              <svg className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Expires: {new Date(announcement.expiresAt.seconds * 1000).toLocaleDateString()}
+                            </div>
+                          )}
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                            {getAudienceText(announcement.audience)}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full ${
-                            announcement.targetAudience === 'guard' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : announcement.targetAudience === 'homeowner'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {announcement.targetAudience === 'guard' 
-                              ? '👮 For Guards' 
-                              : announcement.targetAudience === 'homeowner'
-                              ? '🏠 For Homeowners'
-                              : '📢 For All'}
+                          <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            {getAudienceIcon(announcement.audience)} {announcement.audience}
                           </span>
                         </div>
                       </div>

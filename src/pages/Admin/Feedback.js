@@ -16,12 +16,6 @@ const Feedback = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [loadingError, setLoadingError] = useState(null);
     
-    // Add filter states
-    const [ratingFilter, setRatingFilter] = useState('');
-    const [serviceFilter, setServiceFilter] = useState('');
-    const [uniqueServices, setUniqueServices] = useState([]);
-    const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-
     // Add sort states
     const [sortField, setSortField] = useState('date');
     const [sortDirection, setSortDirection] = useState('desc');
@@ -43,12 +37,10 @@ const Feedback = () => {
                 
                 if (feedbackSnapshot.empty) {
                     setFeedbacks([]);
-                    setUniqueServices([]);
                     return;
                 }
                 
                 const feedbackList = [];
-                const servicesSet = new Set();
                 
                 // Extract feedback data from service_feedback collection
                 feedbackSnapshot.docs.forEach(doc => {
@@ -57,17 +49,20 @@ const Feedback = () => {
                     // Include all feedback entries from service_feedback collection
                     if (data.feedback) {
                         const serviceName = data.service_name || 'Unknown Service';
-                        servicesSet.add(serviceName);
                         
                         // Format the date safely - use timestamp field
                         let formattedDate = 'Unknown date';
                         try {
                             const timestamp = data.timestamp;
-                            if (timestamp) {
+                            if (timestamp && timestamp.toDate) {
                                 formattedDate = format(timestamp.toDate(), 'MMM d, yyyy - h:mm a');
+                            } else if (timestamp && timestamp.seconds) {
+                                const date = new Date(timestamp.seconds * 1000);
+                                formattedDate = format(date, 'MMM d, yyyy - h:mm a');
                             }
                         } catch (dateError) {
                             console.error("Error formatting date:", dateError);
+                            formattedDate = 'Invalid date';
                         }
                         
                         feedbackList.push({
@@ -76,9 +71,10 @@ const Feedback = () => {
                             feedback: data.feedback || 'No feedback provided',
                             rating: data.rating || 0,
                             serviceName,
+                            serviceId: data.service_id || '',
                             timestamp: data.timestamp,
                             date: formattedDate,
-                            userName: 'Anonymous', // Will need to fetch user data separately if needed
+                            userName: data.user_name || 'Anonymous',
                             houseNo: '',
                             issue: '',
                             type_of_request: data.service_name || ''
@@ -93,7 +89,6 @@ const Feedback = () => {
                 });
 
                 setFeedbacks(sortedFeedbacks);
-                setUniqueServices(Array.from(servicesSet).sort());
                 
                 // Show success message if data was refreshed by user action
                 if (refreshTrigger > 0) {
@@ -145,27 +140,8 @@ const Feedback = () => {
         });
     };
 
-    // Filter feedbacks
-    const filteredFeedbacks = getSortedFeedbacks(
-        feedbacks.filter(feedback => {
-            const matchesRating = ratingFilter === '' || feedback.rating === parseInt(ratingFilter);
-            const matchesService = serviceFilter === '' || 
-                feedback.serviceName === serviceFilter || 
-                feedback.type_of_request === serviceFilter;
-            return matchesRating && matchesService;
-        })
-    );
-
-    // Reset filters
-    const resetFilters = () => {
-        setRatingFilter('');
-        setServiceFilter('');
-    };
-
-    // Toggle filter visibility
-    const toggleFilterSection = () => {
-        setIsFilterExpanded(!isFilterExpanded);
-    };
+    // Get sorted feedbacks
+    const sortedFeedbacks = getSortedFeedbacks(feedbacks);
 
     // Click outside modal to close
     const handleOutsideClick = (e) => {
@@ -184,84 +160,25 @@ const Feedback = () => {
                     </h1>
                     <p className="text-gray-600 text-gray-700 mt-2">View and manage feedback from community members</p>
                 </div>
-                <div className="flex justify-between items-center mb-6">
-                    <button 
-                        onClick={toggleFilterSection}
-                        className="flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg transition-all shadow-sm"
-                    >
-                        <FaFilter className="mr-2" />
-                        <span>{isFilterExpanded ? 'Hide Filters' : 'Show Filters'}</span>
-                    </button>
-                    <div className="text-sm text-gray-600">
-                        Total Feedbacks: <span className="font-semibold">{feedbacks.length}</span>
-                    </div>
-                </div>
-
-                {/* Filter section */}
-                {isFilterExpanded && (
-                    <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-100 transition-all">
-                        <h3 className="font-semibold text-gray-700 text-black mb-4 border-b pb-2">Filter Options</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-black-700 text-gray-700 mb-2">
-                                    Filter by Rating
-                                </label>
-                                <CustomSelect
-                                    options={[
-                                        { value: '', label: 'All Ratings' },
-                                        { value: '1', label: '1 Star' },
-                                        { value: '2', label: '2 Stars' },
-                                        { value: '3', label: '3 Stars' },
-                                        { value: '4', label: '4 Stars' },
-                                        { value: '5', label: '5 Stars' },
-                                    ]}
-                                    value={ratingFilter}
-                                    onChange={setRatingFilter}
-                                    placeholder="All Ratings"
-                                    icon={FaStar}
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 text-gray-700 mb-2">
-                                    Filter by Service
-                                </label>
-                                <CustomSelect
-                                    options={[
-                                        { value: '', label: 'All Services' },
-                                        ...uniqueServices.map(service => ({ value: service, label: service }))
-                                    ]}
-                                    value={serviceFilter}
-                                    onChange={setServiceFilter}
-                                    placeholder="All Services"
-                                />
-                            </div>
-                            
-                            <div className="flex items-end">
-                                <button
-                                    onClick={resetFilters}
-                                    className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center shadow-sm"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Reset Filters
-                                </button>
-                            </div>
-                        </div>
-                        <div className="mt-6 pt-4 border-t border-gray-100">
-                            <p className="text-sm text-gray-600 text-gray-700 flex items-center justify-end">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Showing <span className="font-medium mx-1">{filteredFeedbacks.length}</span> of <span className="font-medium mx-1">{feedbacks.length}</span> feedbacks
-                            </p>
-                        </div>
-                    </div>
-                )}
 
                 <div className="bg-white rounded-xl shadow-lg p-6 overflow-hidden border border-gray-100">
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-end items-center mb-4 space-x-3">
+                        <div className="flex items-center space-x-2">
+                            <label className="text-sm font-medium text-gray-700">Sort by:</label>
+                            <CustomSelect
+                                options={[
+                                    { value: 'date-desc', label: 'Newest First' },
+                                    { value: 'date-asc', label: 'Oldest First' },
+                                ]}
+                                value={`${sortField}-${sortDirection}`}
+                                onChange={(value) => {
+                                    const [field, direction] = value.split('-');
+                                    setSortField(field);
+                                    setSortDirection(direction);
+                                }}
+                                placeholder="Sort by"
+                            />
+                        </div>
                         <button
                             onClick={refreshData}
                             disabled={isLoading}
@@ -294,27 +211,14 @@ const Feedback = () => {
                                 Try Again
                             </button>
                         </div>
-                    ) : filteredFeedbacks.length === 0 ? (
+                    ) : sortedFeedbacks.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                             <p className="text-lg font-medium">
-                                {feedbacks.length === 0 
-                                    ? "No feedback has been submitted yet." 
-                                    : "No feedback matches your current filters."}
+                                No feedback has been submitted yet.
                             </p>
-                            {feedbacks.length > 0 && (
-                                <button 
-                                    onClick={resetFilters}
-                                    className="mt-3 text-blue-500 hover:text-blue-700 flex items-center"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Reset Filters
-                                </button>
-                            )}
                         </div>
                     ) : (
                         <div className="overflow-x-auto rounded-lg">
@@ -322,29 +226,16 @@ const Feedback = () => {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User ID</th>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Feedback</th>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rating</th>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Service Name</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" 
-                                            onClick={() => setSortDirection(prev => prev === 'desc' ? 'asc' : 'desc')}>
-                                            <div className="flex items-center">
-                                                Date
-                                                <span className="ml-2 bg-gray-200 rounded-full p-1">
-                                                    {sortDirection === 'desc' 
-                                                        ? <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                          </svg>
-                                                        : <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                                          </svg>
-                                                    }
-                                                </span>
-                                            </div>
-                                        </th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Service ID</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredFeedbacks.map((feedback) => (
+                                    {sortedFeedbacks.map((feedback) => (
                                         <tr key={feedback.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
@@ -353,11 +244,16 @@ const Feedback = () => {
                                                     </div>
                                                     <div className="ml-3">
                                                         <div className="text-sm font-medium text-gray-900">{feedback.userName}</div>
-                                                        {feedback.houseNo && (
-                                                            <div className="text-xs text-gray-500">House #{feedback.houseNo}</div>
+                                                        {feedback.userId && (
+                                                            <div className="text-xs text-gray-500">ID: {feedback.userId.substring(0, 8)}...</div>
                                                         )}
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                                    {feedback.userId ? feedback.userId.substring(0, 8) + '...' : 'N/A'}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <button 
@@ -379,6 +275,11 @@ const Feedback = () => {
                                                 {feedback.type_of_request && feedback.type_of_request !== feedback.serviceName && (
                                                     <div className="mt-1 text-xs text-gray-500">{feedback.type_of_request}</div>
                                                 )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                                    {feedback.serviceId ? feedback.serviceId.substring(0, 8) + '...' : 'N/A'}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 <div className="flex items-center">
@@ -443,9 +344,7 @@ const Feedback = () => {
                                         </div>
                                         <div className="ml-3">
                                             <p className="font-medium text-gray-800 text-gray-800">{selectedFeedback.userName}</p>
-                                            {selectedFeedback.houseNo && (
-                                                <p className="text-xs text-gray-500">House #{selectedFeedback.houseNo}</p>
-                                            )}
+                                            <p className="text-xs text-gray-500">User ID: {selectedFeedback.userId || 'N/A'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -456,8 +355,11 @@ const Feedback = () => {
                                         <span className="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full bg-blue-100 bg-blue-100 text-blue-800 text-blue-800">
                                             {selectedFeedback.serviceName}
                                         </span>
+                                        {selectedFeedback.serviceId && (
+                                            <p className="text-xs text-gray-500 mt-1">Service ID: {selectedFeedback.serviceId}</p>
+                                        )}
                                         {selectedFeedback.type_of_request && selectedFeedback.type_of_request !== selectedFeedback.serviceName && (
-                                            <p className="text-xs text-gray-500 mt-2">{selectedFeedback.type_of_request}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{selectedFeedback.type_of_request}</p>
                                         )}
                                     </div>
                                 </div>

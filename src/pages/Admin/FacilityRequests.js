@@ -876,9 +876,9 @@ function FacilityRequests() {
                               request.status === 'Pending' ? 'warning' : 
                               /* In-Progress status removed */
                               request.status === 'Confirmation' ? 'secondary' :
-                              request.status === '✅' || request.status === 'Approved' ? 'success' :
+                              request.status === 'Approved' || request.status === 'Approved' ? 'success' :
                               request.status === 'Complete' ? 'success' :
-                              request.status === '❌' || request.status === 'Rejected' ? 'danger' : 
+                              request.status === 'Rejected' || request.status === 'Rejected' ? 'danger' : 
                               'default'
                             }
                           >
@@ -890,7 +890,7 @@ function FacilityRequests() {
                             {request.status === 'Pending' && (
                               <>
                                 <button
-                                  onClick={() => handleUpdateStatus(request.id, '✅', request.user_id)}
+                                  onClick={() => handleUpdateStatus(request.id, 'Approved', request.user_id)}
                                   className="text-green-600 hover:text-green-900"
                                   title="Approve"
                                 >

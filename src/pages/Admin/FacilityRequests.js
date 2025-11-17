@@ -57,6 +57,8 @@ function FacilityRequests() {
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionUserId, setRejectionUserId] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isPurposeModalOpen, setIsPurposeModalOpen] = useState(false);
+  const [selectedPurpose, setSelectedPurpose] = useState('');
   // Feedback functionality removed
 
   // Function to manually refresh data
@@ -610,11 +612,8 @@ function FacilityRequests() {
   };
 
   const showPurposeModal = (purpose) => {
-    toast.info(purpose, {
-      autoClose: false,
-      closeOnClick: true,
-      draggable: true,
-    });
+    setSelectedPurpose(purpose);
+    setIsPurposeModalOpen(true);
   };
 
   const showCommentModal = async (requestId) => {
@@ -1433,6 +1432,31 @@ function FacilityRequests() {
               {currentFacility ? "Update Facility" : "Add Facility"}
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Purpose Modal */}
+      <Modal
+        isOpen={isPurposeModalOpen}
+        onClose={() => setIsPurposeModalOpen(false)}
+        title="Request Purpose"
+        size="md"
+      >
+        <div className="p-4">
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <div className="flex items-start">
+              <InformationCircleIcon className="h-5 w-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
+              <p className="text-gray-700 whitespace-pre-line">{selectedPurpose || 'No purpose specified'}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end mt-4 px-4 pb-4">
+          <Button
+            variant="primary"
+            onClick={() => setIsPurposeModalOpen(false)}
+          >
+            Close
+          </Button>
         </div>
       </Modal>
     </ResponsiveLayout>

@@ -67,27 +67,33 @@ function Dashboard() {
   useEffect(() => {
     document.title = "Admin Dashboard";
     
-    // Use onSnapshot for real-time updates - Services
+    // Use onSnapshot for real-time updates - Services (using staff_status)
     const unsubscribeServices = onSnapshot(
-      query(collection(db, 'services'), where('headStaff_status', '==', 'Pending')),
+      query(collection(db, 'services'), where('staff_status', '==', 'Pending')),
       (snapshot) => {
         const servicePendingRequests = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
         setStats(prev => ({ ...prev, servicePendingRequests: servicePendingRequests.length }));
+      },
+      (error) => {
+        console.error('Error in services listener:', error);
       }
     );
 
     // Use onSnapshot for real-time updates - Facility Requests
     const unsubscribeFacilities = onSnapshot(
-      query(collection(db, 'facility_request'), where('status', '==', 'Pending')),
+      query(collection(db, 'facility_requests'), where('status', '==', 'Pending')),
       (snapshot) => {
         const facilityPendingRequests = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
         setStats(prev => ({ ...prev, facilityPendingRequests: facilityPendingRequests.length }));
+      },
+      (error) => {
+        console.error('Error in facility requests listener:', error);
       }
     );
     
@@ -165,35 +171,37 @@ function Dashboard() {
 
   const fetchVisitorStatistics = async () => {
     try {
-      // Get current year
-      const selectedYearStart = new Date(selectedYear, 0, 1); // January 1st of selected year
-      const selectedYearEnd = new Date(selectedYear, 11, 31, 23, 59, 59, 999); // December 31st of selected year
-      
-      const startTimestamp = Timestamp.fromDate(selectedYearStart);
-      const endTimestamp = Timestamp.fromDate(selectedYearEnd);
-      
-      // Query all visitors from the selected year
-      const visitorLogsQuery = query(
-        collection(db, 'visitor_qr_codes'),
-        where('created_at', '>=', startTimestamp),
-        where('created_at', '<=', endTimestamp)
-      );
-      
+      // Query all visitors - we'll filter by visit_date in JavaScript
+      const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'));
       const visitorLogsSnap = await getDocs(visitorLogsQuery);
       
       // Initialize monthly counts
       const monthlyVisits = Array(12).fill(0);
       let totalScannedByGuards = 0;
+      let totalYearlyVisitors = 0;
       
       // Process each visitor log
       visitorLogsSnap.forEach(doc => {
         const visitorData = doc.data();
         
-        // Count visitors by month
-        if (visitorData.created_at && visitorData.created_at.seconds) {
-          const visitDate = new Date(visitorData.created_at.seconds * 1000);
-          const visitMonth = visitDate.getMonth(); // 0-based index (0 = January)
-          monthlyVisits[visitMonth]++;
+        // Count visitors by their visit_date
+        if (visitorData.visit_date) {
+          try {
+            // Parse visit_date (format: "M/D/YYYY" or "MM/DD/YYYY")
+            const dateParts = visitorData.visit_date.split('/');
+            if (dateParts.length === 3) {
+              const month = parseInt(dateParts[0]) - 1; // 0-based index (0 = January)
+              const year = parseInt(dateParts[2]);
+              
+              // Only count if it matches the selected year
+              if (year === selectedYear && month >= 0 && month < 12) {
+                monthlyVisits[month]++;
+                totalYearlyVisitors++;
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing visit_date:', visitorData.visit_date, error);
+          }
         }
         
         // Count guards scanned
@@ -201,9 +209,6 @@ function Dashboard() {
           totalScannedByGuards++;
         }
       });
-      
-      // Calculate total visitors for the year
-      const totalYearlyVisitors = monthlyVisits.reduce((sum, count) => sum + count, 0);
       
       // Update state with the visitor statistics
       setVisitorStatistics({
@@ -235,22 +240,35 @@ function Dashboard() {
                           'July', 'August', 'September', 'October', 'November', 'December'];
       const currentMonthName = monthNames[currentMonth];
       
-      // Create date range for current month
-      const monthStart = new Date(currentYear, currentMonth, 1);
-      const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999); // Last day of current month
-      
-      const startTimestamp = Timestamp.fromDate(monthStart);
-      const endTimestamp = Timestamp.fromDate(monthEnd);
-      
-      // Query visitors for current month
-      const visitorLogsQuery = query(
-        collection(db, 'visitor_qr_codes'),
-        where('created_at', '>=', startTimestamp),
-        where('created_at', '<=', endTimestamp)
-      );
-      
+      // Query all visitors - we'll filter by visit_date in JavaScript
+      const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'));
       const visitorLogsSnap = await getDocs(visitorLogsQuery);
-      const currentMonthCount = visitorLogsSnap.size;
+      
+      let currentMonthCount = 0;
+      
+      // Process each visitor log
+      visitorLogsSnap.forEach(doc => {
+        const visitorData = doc.data();
+        
+        // Count visitors by their visit_date
+        if (visitorData.visit_date) {
+          try {
+            // Parse visit_date (format: "M/D/YYYY" or "MM/DD/YYYY")
+            const dateParts = visitorData.visit_date.split('/');
+            if (dateParts.length === 3) {
+              const month = parseInt(dateParts[0]) - 1; // 0-based index (0 = January)
+              const year = parseInt(dateParts[2]);
+              
+              // Count if it matches current month and year
+              if (year === currentYear && month === currentMonth) {
+                currentMonthCount++;
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing visit_date:', visitorData.visit_date, error);
+          }
+        }
+      });
       
       // Update state with current month's visitor count
       setStats(prev => ({ 
@@ -271,63 +289,62 @@ function Dashboard() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Fetch homeowners from users collection
-      const homeownersQuery = query(
-        collection(db, 'users'),
-        orderBy('created_at', 'desc'), // Order by creation date, newest first
-        limit(5) // Get only the 5 most recent
-      );
-      const homeownersSnap = await getDocs(homeownersQuery);
-      const homeownersData = homeownersSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().created_at ? 
-          new Date(doc.data().created_at.seconds * 1000) : 
-          new Date()
-      }));
+      // Parallel fetch for better performance
+      const [
+        homeownersSnap,
+        activeStaffSnap,
+        inventorySnap,
+        feedbackSnap,
+        serviceRequestsSnap,
+        facilityRequestsSnap
+      ] = await Promise.all([
+        // Fetch all homeowners to get total count
+        getDocs(query(collection(db, 'users'))),
+        // Fetch active staff
+        getDocs(query(
+          collection(db, 'staff'),
+          where('status', '==', 'Active')
+        )),
+        // Fetch inventory
+        getDocs(query(collection(db, 'inventory'))),
+        // Fetch feedback data with ratings
+        getDocs(query(
+          collection(db, 'service_feedback'),
+          orderBy('timestamp', 'desc'),
+          limit(50)
+        )),
+        // Fetch service requests
+        getDocs(query(
+          collection(db, 'services'),
+          orderBy('created_at', 'desc'),
+          limit(10)
+        )),
+        // Fetch facility requests
+        getDocs(query(
+          collection(db, 'facility_requests'),
+          orderBy('created_at', 'desc'),
+          limit(10)
+        ))
+      ]);
 
-      // Fetch pending requests
-      const pendingRequestsQuery = query(
-        collection(db, 'services'),
-        where('status', '==', 'Pending'),
-        limit(5)
-      );
-      const pendingRequestsSnap = await getDocs(pendingRequestsQuery);
+      // Process homeowners data - get most recent 5 for display
+      const homeownersData = homeownersSnap.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().created_at ? 
+            new Date(doc.data().created_at.seconds * 1000) : 
+            new Date()
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 5);
 
-      // Fetch active staff
-      const activeStaffQuery = query(
-        collection(db, 'staff'),
-        where('status', '==', 'Active')
-      );
-      const activeStaffSnap = await getDocs(activeStaffQuery);
-
-      // Fetch low stock items
-      const inventoryQuery = query(collection(db, 'inventory'));
-      const inventorySnap = await getDocs(inventoryQuery);
+      // Process low stock items
       const lowStockItems = inventorySnap.docs
         .map(doc => doc.data())
         .filter(item => item.quantity <= item.reorderPoint).length;
 
-      // Calculate total revenue (from completed appointments)
-      const completedAppointmentsQuery = query(
-        collection(db, 'serviceRequests'),
-        where('status', '==', 'Completed')
-      );
-      const completedAppointmentsSnap = await getDocs(completedAppointmentsQuery);
-      const totalRevenue = completedAppointmentsSnap.docs
-        .reduce((sum, doc) => sum + (doc.data().fee || 0), 0);
-
-      // Count unique patients
-      const patientsQuery = query(collection(db, 'users'));
-      const patientsSnap = await getDocs(patientsQuery);
-
-      // Fetch feedback data with ratings
-      const feedbackQuery = query(
-        collection(db, 'service_feedback'), 
-        orderBy('timestamp', 'desc'),
-        limit(50)
-      );
-      const feedbackSnap = await getDocs(feedbackQuery);
+      // Process feedback data
       const feedbackData = feedbackSnap.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -378,41 +395,24 @@ function Dashboard() {
       
       setServiceRatings(serviceRatingMap);
 
+      // Update stats
       setStats(prev => ({
         ...prev,
         totalHomeowners: homeownersSnap.size,
-        servicePendingRequests: pendingRequestsSnap.size,
         activeStaff: activeStaffSnap.size,
         lowStockItems,
         averageRating
       }));
 
       setHomeowners(homeownersData);
-      setRecentRequests(pendingRequestsSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })));
 
-      // Fetch service requests - fetch more to have enough after combining
-      const serviceRequestsQuery = query(
-        collection(db, 'services'),
-        orderBy('created_at', 'desc'),
-        limit(10)
-      );
-      const serviceRequestsSnap = await getDocs(serviceRequestsQuery);
+      // Process service and facility requests
       const serviceRequests = serviceRequestsSnap.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         type: 'service'
       }));
 
-      // Fetch facility requests - fetch more to have enough after combining
-      const facilityRequestsQuery = query(
-        collection(db, 'facility_request'),
-        orderBy('created_at', 'desc'),
-        limit(10)
-      );
-      const facilityRequestsSnap = await getDocs(facilityRequestsQuery);
       const facilityRequests = facilityRequestsSnap.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),

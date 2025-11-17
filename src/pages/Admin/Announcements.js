@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAnnouncementId, setCurrentAnnouncementId] = useState(null);
@@ -66,6 +67,7 @@ function Announcements() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       // Prepare audience data
       let audienceData = { group: formData.audience };
@@ -87,11 +89,14 @@ function Announcements() {
       fetchAnnouncements();
     } catch (error) {
       toast.error('Error posting announcement: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       // Prepare audience data
       let audienceData = { group: formData.audience };
@@ -112,6 +117,8 @@ function Announcements() {
       fetchAnnouncements();
     } catch (error) {
       toast.error('Error updating announcement: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -404,15 +411,29 @@ function Announcements() {
                   <button
                     type="button"
                     onClick={closeForm}
-                    className="px-5 py-2.5 rounded-lg border border-gray-300 border-gray-300 text-gray-700 text-gray-700 hover:bg-gray-50 hover:bg-gray-50 font-medium transition-colors"
+                    disabled={isSubmitting}
+                    className={`px-5 py-2.5 rounded-lg border border-gray-300 border-gray-300 text-gray-700 text-gray-700 font-medium transition-colors ${
+                      isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 hover:bg-gray-50'
+                    }`}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm hover:shadow transition-all flex items-center"
+                    disabled={isSubmitting}
+                    className={`px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium shadow-sm transition-all flex items-center ${
+                      isSubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700 hover:shadow'
+                    }`}
                   >
-                    {isEditing ? (
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {isEditing ? 'Updating...' : 'Posting...'}
+                      </>
+                    ) : isEditing ? (
                       <>
                         <PencilIcon className="h-4 w-4 mr-1.5" />
                         Update Announcement

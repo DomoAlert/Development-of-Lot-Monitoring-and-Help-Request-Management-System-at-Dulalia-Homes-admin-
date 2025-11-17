@@ -5,8 +5,7 @@ import {
   CurrencyDollarIcon,
   ClockIcon,
   ExclamationCircleIcon,
-  UserGroupIcon,
-  IdentificationIcon
+  UserGroupIcon
 } from '@heroicons/react/outline';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot, startOfWeek, endOfDay, Timestamp, getDoc, doc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -24,9 +23,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalHomeowners: 0,
-    pendingRequests: 0,
-    activeStaff: 0,
-    idsLeft: 0,
+    servicePendingRequests: 0,
+    facilityPendingRequests: 0,
     currentMonthVisitors: 0, // Changed from totalVisitors2025
     lowStockItems: 0,
     averageRating: 0,
@@ -69,24 +67,42 @@ function Dashboard() {
   useEffect(() => {
     document.title = "Admin Dashboard";
     
-    // Use onSnapshot for real-time updates
-    const unsubscribe = onSnapshot(
-      query(collection(db, 'services'), where('status', '==', 'Pending')),
+    // Use onSnapshot for real-time updates - Services
+    const unsubscribeServices = onSnapshot(
+      query(collection(db, 'services'), where('headStaff_status', '==', 'Pending')),
       (snapshot) => {
-        const pendingRequests = snapshot.docs.map(doc => ({
+        const servicePendingRequests = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
-        setRecentRequests(pendingRequests);
-        setStats(prev => ({ ...prev, pendingRequests: pendingRequests.length }));
+        setStats(prev => ({ ...prev, servicePendingRequests: servicePendingRequests.length }));
+      }
+    );
+
+    // Use onSnapshot for real-time updates - Facility Requests
+    const unsubscribeFacilities = onSnapshot(
+      query(collection(db, 'facility_request'), where('status', '==', 'Pending')),
+      (snapshot) => {
+        const facilityPendingRequests = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setStats(prev => ({ ...prev, facilityPendingRequests: facilityPendingRequests.length }));
       }
     );
     
     fetchDashboardData();
-    fetchVisitorStatistics();
     fetchCurrentMonthVisitors(); // Add this new function call
     
-    return () => unsubscribe();
+    return () => {
+      unsubscribeServices();
+      unsubscribeFacilities();
+    };
+  }, []);
+
+  // Separate useEffect for visitor statistics that depends on selectedYear
+  useEffect(() => {
+    fetchVisitorStatistics();
   }, [selectedYear]);
 
   // New function to fetch visitor traffic data
@@ -362,18 +378,11 @@ function Dashboard() {
       
       setServiceRatings(serviceRatingMap);
 
-      // Fetch IDs left instead of patients
-      const idsLeftQuery = query(collection(db, 'left_ids'));
-      const idsLeftSnap = await getDocs(idsLeftQuery);
-      const totalIdsLeft = idsLeftSnap.size; // Count of documents in left_ids collection
-
       setStats(prev => ({
         ...prev,
         totalHomeowners: homeownersSnap.size,
-        pendingRequests: pendingRequestsSnap.size,
+        servicePendingRequests: pendingRequestsSnap.size,
         activeStaff: activeStaffSnap.size,
-        idsLeft: totalIdsLeft, // Update with the count of IDs left
-        totalVisitors2025: visitorStatistics.totalMonthlyVisitors,
         lowStockItems,
         averageRating
       }));
@@ -431,16 +440,21 @@ function Dashboard() {
         if (request.type === 'service') {
           return {
             ...request,
-            userName: request.resident_name || 'Unknown',
-            serviceName: request.type_of_request || request.service_provider || 'Service Request',
-            facilityName: null
+            userName: request.fullName || `${request.firstName || ''} ${request.lastName || ''}`.trim() || request.resident_name || 'Unknown',
+            serviceName: request.category || request.service_provider || 'Service Request',
+            facilityName: null,
+            status: request.staff_status || request.headStaff_status || request.status || 'Pending',
+            houseNo: request.house_no,
+            issue: request.issue,
+            comment: request.comment
           };
         } else { // facility request
           return {
             ...request,
             userName: request.homeowner_name || 'Unknown',
             serviceName: null,
-            facilityName: request.facility || 'Facility Request'
+            facilityName: request.facility || 'Facility Request',
+            status: request.status || 'Pending'
           };
         }
       });
@@ -604,12 +618,12 @@ function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {[
+          {[ 
             { icon: UserCircleIcon, title: 'Total Homeowners', value: stats.totalHomeowners, color: 'blue' },
-            { icon: ClockIcon, title: 'Pending Requests', value: stats.pendingRequests, color: 'yellow' },
+            { icon: ClockIcon, title: 'Service Pending Requests', value: stats.servicePendingRequests, color: 'yellow' },
+            { icon: FaBuilding, title: 'Facility Pending Requests', value: stats.facilityPendingRequests, color: 'orange' },
             { icon: FaUsers, title: `${stats.currentMonth} Visitors`, value: stats.currentMonthVisitors, color: 'green' },
             { icon: UserGroupIcon, title: 'Active Staff', value: stats.activeStaff, color: 'purple' },
-            { icon: IdentificationIcon, title: 'IDs Left', value: stats.idsLeft, color: 'indigo' },
             { icon: FaStar, title: 'Average Rating', value: stats.averageRating, color: 'yellow', render: renderStars },
           ].map(({ icon: Icon, title, value, color, render }, index) => (
             <motion.div
@@ -634,128 +648,128 @@ function Dashboard() {
           ))}
         </div>
 
-        {/* Service Ratings Chart */}
-        <div className="mb-8 bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Service Ratings Overview</h2>
-          <div className="h-80">
-            <Bar
-              data={{
-                labels: Object.keys(serviceRatings),
-                datasets: [
-                  {
-                    label: 'Average Rating',
-                    data: Object.keys(serviceRatings).map(service => serviceRatings[service].average),
-                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
-                    borderColor: 'rgb(99, 102, 241)',
+        {/* Visitor Statistics */}
+        <div className="mb-8 bg-white rounded-xl shadow-lg">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-800">Visitor Statistics</h2>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={previousYear}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Previous year"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="font-medium text-gray-800">{selectedYear}</span>
+              <button
+                onClick={nextYear}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Next year"
+                disabled={selectedYear >= new Date().getFullYear()}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: visitorMonthlyData.labels,
+                  datasets: [{
+                    label: 'Visitors',
+                    data: visitorMonthlyData.visitors,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgb(59, 130, 246)',
                     borderWidth: 1,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
                   },
-                  {
-                    label: 'Number of Reviews',
-                    data: Object.keys(serviceRatings).map(service => serviceRatings[service].count),
-                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
-                    borderColor: 'rgb(16, 185, 129)',
-                    borderWidth: 1,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Value', font: { size: 12, weight: 'bold' } },
-                  },
-                  x: {
-                    title: { display: true, text: 'Services', font: { size: 12, weight: 'bold' } },
-                  },
-                },
-                plugins: {
-                  legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => {
-                        const value = context.raw;
-                        return `${context.dataset.label}: ${typeof value === 'number' ? (context.dataset.label === 'Average Rating' ? value.toFixed(1) : value) : value || 'N/A'}`;
+                  plugins: {
+                    legend: { display: true, position: 'top' },
+                    title: { display: true, text: `Monthly Visitors for ${selectedYear}`, font: { size: 16 } },
+                    tooltip: {
+                      callbacks: {
+                        title: (items) => items.length ? `${items[0].label} ${selectedYear}` : '',
+                        label: (item) => `Visitors: ${item.formattedValue}`,
                       },
                     },
                   },
-                  title: { display: true, text: 'Service Ratings Overview', font: { size: 16, weight: 'bold' }, padding: { bottom: 10 } },
-                },
-              }}
-            />
+                }}
+              />
+            </div>
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => navigate('/admin/visitor-logs')}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                View all visitor logs
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Visitor Statistics */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-800">Visitor Statistics</h2>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={previousYear}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  aria-label="Previous year"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <span className="font-medium text-gray-800">{selectedYear}</span>
-                <button
-                  onClick={nextYear}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  aria-label="Next year"
-                  disabled={selectedYear >= new Date().getFullYear()}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="h-80">
-                <Bar
-                  data={{
-                    labels: visitorMonthlyData.labels,
-                    datasets: [{
-                      label: 'Visitors',
-                      data: visitorMonthlyData.visitors,
-                      backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                      borderColor: 'rgb(59, 130, 246)',
+          {/* Service Ratings Chart */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Service Ratings Overview</h2>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: Object.keys(serviceRatings),
+                  datasets: [
+                    {
+                      label: 'Average Rating',
+                      data: Object.keys(serviceRatings).map(service => serviceRatings[service].average),
+                      backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                      borderColor: 'rgb(99, 102, 241)',
                       borderWidth: 1,
-                    }],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: { beginAtZero: true, ticks: { precision: 0 } },
                     },
-                    plugins: {
-                      legend: { display: true, position: 'top' },
-                      title: { display: true, text: `Monthly Visitors for ${selectedYear}`, font: { size: 16 } },
-                      tooltip: {
-                        callbacks: {
-                          title: (items) => items.length ? `${items[0].label} ${selectedYear}` : '',
-                          label: (item) => `Visitors: ${item.formattedValue}`,
+                    {
+                      label: 'Number of Reviews',
+                      data: Object.keys(serviceRatings).map(service => serviceRatings[service].count),
+                      backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                      borderColor: 'rgb(16, 185, 129)',
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: { display: true, text: 'Value', font: { size: 12, weight: 'bold' } },
+                    },
+                    x: {
+                      title: { display: true, text: 'Services', font: { size: 12, weight: 'bold' } },
+                    },
+                  },
+                  plugins: {
+                    legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: {
+                      callbacks: {
+                        label: (context) => {
+                          const value = context.raw;
+                          return `${context.dataset.label}: ${typeof value === 'number' ? (context.dataset.label === 'Average Rating' ? value.toFixed(1) : value) : value || 'N/A'}`;
                         },
                       },
                     },
-                  }}
-                />
-              </div>
-              <div className="mt-4 text-center">
-                <button
-                  onClick={() => navigate('/admin/visitor-logs')}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                >
-                  View all visitor logs
-                </button>
-              </div>
+                    title: { display: true, text: 'Service Ratings Overview', font: { size: 16, weight: 'bold' }, padding: { bottom: 10 } },
+                  },
+                }}
+              />
             </div>
           </div>
 
@@ -872,7 +886,18 @@ function Dashboard() {
                         </div>
                         <p className="text-xs text-gray-500">
                           From: {request.userName || 'Unknown User'}
+                          {request.houseNo && ` (House ${request.houseNo})`}
                         </p>
+                        {request.issue && (
+                          <p className="text-xs text-gray-500">
+                            Issue: {request.issue}
+                          </p>
+                        )}
+                        {request.comment && (
+                          <p className="text-xs text-gray-500">
+                            Comment: {request.comment}
+                          </p>
+                        )}
                         <p className="text-xs text-gray-400">
                           {formatTimestamp(request.timestamp || request.created_at)}
                         </p>

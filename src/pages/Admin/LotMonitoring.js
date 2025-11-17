@@ -85,6 +85,18 @@ const LotMonitoring = () => {
 
   // Get house model images from remote URLs (Dulalia Homes Viente Reales Executive Series)
   const getHouseModelImages = (modelName) => {
+    // Create a placeholder SVG for when images are not available
+    const createPlaceholderImage = (modelName) => {
+      return `data:image/svg+xml,${encodeURIComponent(`
+        <svg width="400" height="320" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="320" fill="#f3f4f6"/>
+          <text x="200" y="140" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="18" fill="#6b7280" font-weight="bold">${modelName}</text>
+          <text x="200" y="170" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af">Model Image</text>
+          <text x="200" y="190" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db">Coming Soon</text>
+        </svg>
+      `)}`;
+    };
+
     const images = {
       'Kate': {
         unit: 'https://dulaliahomes.com/wp-content/uploads/2024/11/KATE-UNIT.jpg',
@@ -128,7 +140,20 @@ const LotMonitoring = () => {
         ]
       }
     };
-    return images[modelName] || { unit: null, floorPlans: [] };
+
+    const modelImages = images[modelName];
+    if (modelImages) {
+      return {
+        unit: modelImages.unit,
+        floorPlans: modelImages.floorPlans
+      };
+    } else {
+      // Return placeholder for unknown models
+      return {
+        unit: createPlaceholderImage(modelName || 'Unknown Model'),
+        floorPlans: []
+      };
+    }
   };
 
   // Set page title and fetch data from Firebase
@@ -1964,22 +1989,27 @@ const LotMonitoring = () => {
                   {/* Left Column - Unit Image and Description */}
                   <div className="space-y-6">
                     {/* Unit Image */}
-                    {getHouseModelImages(selectedHouseModelForDetails.name).unit && (
-                      <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100">
-                        <img 
-                          src={getHouseModelImages(selectedHouseModelForDetails.name).unit}
-                          alt={`${selectedHouseModelForDetails.name} Model`}
-                          className="w-full h-64 md:h-80 object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="320"%3E%3Crect fill="%23f3f4f6" width="400" height="320"/%3E%3Ctext fill="%236b7280" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3E' + encodeURIComponent(selectedHouseModelForDetails.name) + ' Model%3C/text%3E%3C/svg%3E';
-                          }}
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
-                          <p className="text-white font-semibold text-lg">{selectedHouseModelForDetails.name} Model</p>
-                        </div>
+                    <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100">
+                      <img 
+                        src={getHouseModelImages(selectedHouseModelForDetails.name).unit}
+                        alt={`${selectedHouseModelForDetails.name} Model`}
+                        className="w-full h-64 md:h-80 object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `data:image/svg+xml,${encodeURIComponent(`
+                            <svg width="400" height="320" xmlns="http://www.w3.org/2000/svg">
+                              <rect width="400" height="320" fill="#f3f4f6"/>
+                              <text x="200" y="140" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="18" fill="#6b7280" font-weight="bold">${selectedHouseModelForDetails.name}</text>
+                              <text x="200" y="170" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af">Model Image</text>
+                              <text x="200" y="190" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db">Coming Soon</text>
+                            </svg>
+                          `)}`;
+                        }}
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                        <p className="text-white font-semibold text-lg">{selectedHouseModelForDetails.name} Model</p>
                       </div>
-                    )}
+                    </div>
 
                     {/* Description */}
                     <div className="bg-gray-50 rounded-lg p-4">
@@ -2099,7 +2129,14 @@ const LotMonitoring = () => {
                                   className="w-full h-auto rounded"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%236b7280" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
+                                    e.target.src = `data:image/svg+xml,${encodeURIComponent(`
+                                      <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="400" height="300" fill="#f3f4f6"/>
+                                        <text x="200" y="130" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="16" fill="#6b7280" font-weight="bold">${selectedHouseModelForDetails.name}</text>
+                                        <text x="200" y="155" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af">Floor Plan ${index + 1}</text>
+                                        <text x="200" y="175" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="10" fill="#d1d5db">Coming Soon</text>
+                                      </svg>
+                                    `)}`;
                                   }}
                                 />
                               </div>

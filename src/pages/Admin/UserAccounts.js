@@ -1312,38 +1312,23 @@ function UserAccounts() {
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         {user.assignedLots && user.assignedLots.length > 0 ? (
-                          <div className="flex flex-col space-y-1">
-                            {user.assignedLots.length <= 3 ? (
-                              // Show all lots if 3 or fewer
-                              user.assignedLots.map((lot, index) => (
-                                <div key={lot.id} className="flex items-center mb-1">
-                                  <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
-                                    #{lot.houseNumber}
-                                  </span>
-                                  <span className="ml-1 text-xs text-gray-500">
-                                    B{lot.blockNumber}-L{lot.lotNumber}
-                                  </span>
-                                </div>
-                              ))
-                            ) : (
-                              // Show first lot and summary for more
-                              <>
-                                {user.assignedLots.slice(0, 1).map((lot, index) => (
-                                  <div key={lot.id} className="flex items-center mb-1">
-                                    <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
-                                      #{lot.houseNumber}
-                                    </span>
-                                    <span className="ml-1 text-xs text-gray-500">
-                                      B{lot.blockNumber}-L{lot.lotNumber}
-                                    </span>
-                                  </div>
-                                ))}
-                                <div className="flex items-center">
-                                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md">
-                                    +{user.assignedLots.length - 1} more lot{user.assignedLots.length - 1 !== 1 ? 's' : ''}
-                                  </span>
-                                </div>
-                              </>
+                          <div className="flex flex-col">
+                            {/* Show only the first lot */}
+                            <div className="flex items-center mb-1">
+                              <span className="font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs sm:text-sm">
+                                #{user.assignedLots[0].houseNumber}
+                              </span>
+                              <span className="ml-1 text-xs text-gray-500">
+                                B{user.assignedLots[0].blockNumber}-L{user.assignedLots[0].lotNumber}
+                              </span>
+                            </div>
+                            {/* Show count badge if more than 1 lot */}
+                            {user.assignedLots.length > 1 && (
+                              <div className="flex items-center mt-1">
+                                <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                                  +{user.assignedLots.length - 1} more lot{user.assignedLots.length - 1 !== 1 ? 's' : ''}
+                                </span>
+                              </div>
                             )}
                           </div>
                         ) : user.house_no ? (
@@ -1361,11 +1346,6 @@ function UserAccounts() {
                                 L{user.lot || user.house_no % 100}
                               </div>
                             </div>
-                            {user.houseModel && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {user.houseModel}
-                              </div>
-                            )}
                           </div>
                         ) : (
                           <span className="text-xs sm:text-sm text-gray-500 italic">No property</span>

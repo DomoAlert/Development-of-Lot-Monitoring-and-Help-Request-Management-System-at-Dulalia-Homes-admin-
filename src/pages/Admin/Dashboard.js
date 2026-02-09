@@ -7,7 +7,7 @@ import {
   ExclamationCircleIcon,
   UserGroupIcon
 } from '@heroicons/react/outline';
-import { collection, query, where, getDocs, orderBy, limit, onSnapshot, startOfWeek, endOfDay, Timestamp, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, onSnapshot, startOfWeek, endOfDay, Timestamp, getDoc, doc, getCountFromServer } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { toast } from 'react-toastify';
 import { Line, Bar, Pie, Radar, Doughnut } from 'react-chartjs-2';
@@ -26,7 +26,6 @@ function Dashboard() {
     servicePendingRequests: 0,
     facilityPendingRequests: 0,
     currentMonthVisitors: 0, // Changed from totalVisitors2025
-    lowStockItems: 0,
     averageRating: 0,
     currentMonth: '', // Add this to store current month name
   });
@@ -56,11 +55,13 @@ function Dashboard() {
     visitors: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   });
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isLightRefresh, setIsLightRefresh] = useState(false);
   const navigate = useNavigate();
   
   // Function to manually refresh data
   const refreshData = () => {
     setLoading(true);
+    setIsLightRefresh(true);
     setRefreshTrigger(prev => prev + 1);
   };
 
@@ -105,6 +106,20 @@ function Dashboard() {
       unsubscribeFacilities();
     };
   }, []);
+
+  // Separate useEffect for refresh trigger
+  useEffect(() => {
+    if (refreshTrigger > 0) { // Only run on actual refreshes, not initial load
+      if (isLightRefresh) {
+        // Light refresh: only refresh dynamic data
+        fetchDynamicData();
+      } else {
+        // Full refresh: refresh all data
+        fetchDashboardData();
+      }
+      setIsLightRefresh(false);
+    }
+  }, [refreshTrigger]);
 
   // Separate useEffect for visitor statistics that depends on selectedYear
   useEffect(() => {
@@ -171,44 +186,69 @@ function Dashboard() {
 
   const fetchVisitorStatistics = async () => {
     try {
-      // Query all visitors - we'll filter by visit_date in JavaScript
-      const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'));
-      const visitorLogsSnap = await getDocs(visitorLogsQuery);
-      
       // Initialize monthly counts
       const monthlyVisits = Array(12).fill(0);
       let totalScannedByGuards = 0;
       let totalYearlyVisitors = 0;
       
-      // Process each visitor log
-      visitorLogsSnap.forEach(doc => {
-        const visitorData = doc.data();
+      try {
+        // Try querying with year field (scalable)
+        const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'), where('year', '==', selectedYear));
+        const visitorLogsSnap = await getDocs(visitorLogsQuery);
         
-        // Count visitors by their visit_date
-        if (visitorData.visit_date) {
-          try {
-            // Parse visit_date (format: "M/D/YYYY" or "MM/DD/YYYY")
-            const dateParts = visitorData.visit_date.split('/');
-            if (dateParts.length === 3) {
-              const month = parseInt(dateParts[0]) - 1; // 0-based index (0 = January)
-              const year = parseInt(dateParts[2]);
-              
-              // Only count if it matches the selected year
-              if (year === selectedYear && month >= 0 && month < 12) {
-                monthlyVisits[month]++;
-                totalYearlyVisitors++;
-              }
+        // Process each visitor log
+        visitorLogsSnap.forEach(doc => {
+          const visitorData = doc.data();
+          
+          // Count visitors by their month
+          if (visitorData.month !== undefined) {
+            const month = visitorData.month; // 0-based
+            if (month >= 0 && month < 12) {
+              monthlyVisits[month]++;
+              totalYearlyVisitors++;
             }
-          } catch (error) {
-            console.error('Error parsing visit_date:', visitorData.visit_date, error);
           }
-        }
+          
+          // Count guards scanned
+          if (visitorData.scanned_by && visitorData.scanned_at) {
+            totalScannedByGuards++;
+          }
+        });
+      } catch (error) {
+        // Fallback: fetch all and filter (for backward compatibility)
+        console.warn('Year field not found, falling back to full fetch');
+        const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'));
+        const visitorLogsSnap = await getDocs(visitorLogsQuery);
         
-        // Count guards scanned
-        if (visitorData.scanned_by && visitorData.scanned_at) {
-          totalScannedByGuards++;
-        }
-      });
+        visitorLogsSnap.forEach(doc => {
+          const visitorData = doc.data();
+          
+          // Count visitors by their visit_date
+          if (visitorData.visit_date) {
+            try {
+              // Parse visit_date (format: "M/D/YYYY" or "MM/DD/YYYY")
+              const dateParts = visitorData.visit_date.split('/');
+              if (dateParts.length === 3) {
+                const month = parseInt(dateParts[0]) - 1; // 0-based index (0 = January)
+                const year = parseInt(dateParts[2]);
+                
+                // Only count if it matches the selected year
+                if (year === selectedYear && month >= 0 && month < 12) {
+                  monthlyVisits[month]++;
+                  totalYearlyVisitors++;
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing visit_date:', visitorData.visit_date, error);
+            }
+          }
+          
+          // Count guards scanned
+          if (visitorData.scanned_by && visitorData.scanned_at) {
+            totalScannedByGuards++;
+          }
+        });
+      }
       
       // Update state with the visitor statistics
       setVisitorStatistics({
@@ -240,35 +280,46 @@ function Dashboard() {
                           'July', 'August', 'September', 'October', 'November', 'December'];
       const currentMonthName = monthNames[currentMonth];
       
-      // Query all visitors - we'll filter by visit_date in JavaScript
-      const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'));
-      const visitorLogsSnap = await getDocs(visitorLogsQuery);
-      
       let currentMonthCount = 0;
       
-      // Process each visitor log
-      visitorLogsSnap.forEach(doc => {
-        const visitorData = doc.data();
+      try {
+        // Try querying with year and month fields (scalable)
+        const visitorQuery = query(
+          collection(db, 'visitor_qr_codes'),
+          where('year', '==', currentYear),
+          where('month', '==', currentMonth)
+        );
+        const visitorLogsSnap = await getDocs(visitorQuery);
+        currentMonthCount = visitorLogsSnap.size;
+      } catch (error) {
+        // Fallback: fetch all and filter (for backward compatibility)
+        console.warn('Year/month fields not found, falling back to full fetch');
+        const visitorLogsQuery = query(collection(db, 'visitor_qr_codes'));
+        const visitorLogsSnap = await getDocs(visitorLogsQuery);
         
-        // Count visitors by their visit_date
-        if (visitorData.visit_date) {
-          try {
-            // Parse visit_date (format: "M/D/YYYY" or "MM/DD/YYYY")
-            const dateParts = visitorData.visit_date.split('/');
-            if (dateParts.length === 3) {
-              const month = parseInt(dateParts[0]) - 1; // 0-based index (0 = January)
-              const year = parseInt(dateParts[2]);
-              
-              // Count if it matches current month and year
-              if (year === currentYear && month === currentMonth) {
-                currentMonthCount++;
+        visitorLogsSnap.forEach(doc => {
+          const visitorData = doc.data();
+          
+          // Count visitors by their visit_date
+          if (visitorData.visit_date) {
+            try {
+              // Parse visit_date (format: "M/D/YYYY" or "MM/DD/YYYY")
+              const dateParts = visitorData.visit_date.split('/');
+              if (dateParts.length === 3) {
+                const month = parseInt(dateParts[0]) - 1; // 0-based index (0 = January)
+                const year = parseInt(dateParts[2]);
+                
+                // Count if it matches current month and year
+                if (year === currentYear && month === currentMonth) {
+                  currentMonthCount++;
+                }
               }
+            } catch (error) {
+              console.error('Error parsing visit_date:', visitorData.visit_date, error);
             }
-          } catch (error) {
-            console.error('Error parsing visit_date:', visitorData.visit_date, error);
           }
-        }
-      });
+        });
+      }
       
       // Update state with current month's visitor count
       setStats(prev => ({ 
@@ -283,35 +334,21 @@ function Dashboard() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDynamicData = async () => {
     try {
       setLoading(true);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Parallel fetch for better performance
+      
+      // Only fetch the data that changes frequently
       const [
-        homeownersSnap,
-        activeStaffSnap,
-        inventorySnap,
         feedbackSnap,
         serviceRequestsSnap,
         facilityRequestsSnap
       ] = await Promise.all([
-        // Fetch all homeowners to get total count
-        getDocs(query(collection(db, 'users'))),
-        // Fetch active staff
-        getDocs(query(
-          collection(db, 'staff'),
-          where('status', '==', 'Active')
-        )),
-        // Fetch inventory
-        getDocs(query(collection(db, 'inventory'))),
         // Fetch feedback data with ratings
         getDocs(query(
           collection(db, 'service_feedback'),
           orderBy('timestamp', 'desc'),
-          limit(50)
+          limit(10)
         )),
         // Fetch service requests
         getDocs(query(
@@ -327,7 +364,171 @@ function Dashboard() {
         ))
       ]);
 
-      // Process homeowners data - get most recent 5 for display
+      // Process feedback data
+      const feedbackData = feedbackSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Get most recent feedback
+      const recentFeedbackItems = feedbackData.slice(0, 5);
+      setRecentFeedback(recentFeedbackItems);
+      
+      // Calculate rating distribution
+      const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      feedbackData.forEach(item => {
+        const rating = parseInt(item.rating) || 0;
+        if (rating >= 1 && rating <= 5) {
+          ratingCounts[rating] += 1;
+        }
+      });
+      
+      setRatingDistribution(ratingCounts);
+      
+      // Calculate average rating
+      const totalRating = feedbackData.reduce((sum, item) => sum + (parseInt(item.rating) || 0), 0);
+      const averageRating = feedbackData.length > 0 ? 
+        (totalRating / feedbackData.length).toFixed(1) : 0;
+      
+      // Calculate service-specific ratings
+      const serviceRatingMap = {};
+      
+      feedbackData.forEach(item => {
+        const serviceName = item.service_name;
+        const rating = parseInt(item.rating) || 0;
+        
+        if (!serviceName || rating === 0) return;
+        
+        if (!serviceRatingMap[serviceName]) {
+          serviceRatingMap[serviceName] = { total: 0, count: 0, average: 0 };
+        }
+        
+        serviceRatingMap[serviceName].total += rating;
+        serviceRatingMap[serviceName].count += 1;
+      });
+      
+      // Calculate averages for each service
+      Object.keys(serviceRatingMap).forEach(service => {
+        const { total, count } = serviceRatingMap[service];
+        serviceRatingMap[service].average = count > 0 ? (total / count).toFixed(1) : 0;
+      });
+      
+      setServiceRatings(serviceRatingMap);
+
+      // Update only the average rating (keep other stats)
+      setStats(prev => ({
+        ...prev,
+        averageRating
+      }));
+
+      // Process service and facility requests
+      const serviceRequests = serviceRequestsSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        type: 'service'
+      }));
+
+      const facilityRequests = facilityRequestsSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        type: 'facility'
+      }));
+
+      // Combine and sort both types of requests by timestamp
+      const allRequests = [...serviceRequests, ...facilityRequests]
+        .sort((a, b) => {
+          const timeA = a.created_at || a.updatedAt;
+          const timeB = b.created_at || b.updatedAt;
+          
+          if (!timeA) return 1;
+          if (!timeB) return -1;
+          
+          const dateA = timeA.seconds ? timeA.seconds : new Date(timeA).getTime() / 1000;
+          const dateB = timeB.seconds ? timeB.seconds : new Date(timeB).getTime() / 1000;
+          
+          return dateB - dateA; // Sort descending (newest first)
+        })
+        .slice(0, 5); // Only take 5 most recent requests
+
+      // Process each request to ensure it has all needed display fields
+      const processedRequests = allRequests.map(request => {
+        if (request.type === 'service') {
+          return {
+            ...request,
+            userName: request.fullName || `${request.firstName || ''} ${request.lastName || ''}`.trim() || request.resident_name || 'Unknown',
+            serviceName: request.category || request.service_provider || 'Service Request',
+            facilityName: null,
+            status: request.staff_status || request.headStaff_status || request.status || 'Pending',
+            houseNo: request.house_no,
+            issue: request.issue,
+            comment: request.comment
+          };
+        } else { // facility request
+          return {
+            ...request,
+            userName: request.homeowner_name || 'Unknown',
+            serviceName: null,
+            facilityName: request.facility || 'Facility Request',
+            status: request.status || 'Pending'
+          };
+        }
+      });
+
+      // Update recentRequests state
+      setRecentRequests(processedRequests);
+
+    } catch (error) {
+      toast.error('Error refreshing data: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Parallel fetch for better performance
+      const [
+        totalHomeownersCount,
+        homeownersSnap,
+        activeStaffSnap,
+        feedbackSnap,
+        serviceRequestsSnap,
+        facilityRequestsSnap
+      ] = await Promise.all([
+        // Get total homeowners count efficiently
+        getCountFromServer(query(collection(db, 'users'))).then(snap => snap.data().count),
+        // Fetch most recent 5 homeowners
+        getDocs(query(collection(db, 'users'), orderBy('created_at', 'desc'), limit(5))),
+        // Fetch active staff
+        getDocs(query(
+          collection(db, 'staff'),
+          where('status', '==', 'Active')
+        )),
+        // Fetch feedback data with ratings
+        getDocs(query(
+          collection(db, 'service_feedback'),
+          orderBy('timestamp', 'desc'),
+          limit(10)
+        )),
+        // Fetch service requests
+        getDocs(query(
+          collection(db, 'services'),
+          orderBy('created_at', 'desc'),
+          limit(10)
+        )),
+        // Fetch facility requests
+        getDocs(query(
+          collection(db, 'facility_requests'),
+          orderBy('created_at', 'desc'),
+          limit(10)
+        ))
+      ]);
+
+      // Process homeowners data - already sorted and limited
       const homeownersData = homeownersSnap.docs
         .map(doc => ({
           id: doc.id,
@@ -335,14 +536,7 @@ function Dashboard() {
           createdAt: doc.data().created_at ? 
             new Date(doc.data().created_at.seconds * 1000) : 
             new Date()
-        }))
-        .sort((a, b) => b.createdAt - a.createdAt)
-        .slice(0, 5);
-
-      // Process low stock items
-      const lowStockItems = inventorySnap.docs
-        .map(doc => doc.data())
-        .filter(item => item.quantity <= item.reorderPoint).length;
+        }));
 
       // Process feedback data
       const feedbackData = feedbackSnap.docs.map(doc => ({
@@ -398,9 +592,8 @@ function Dashboard() {
       // Update stats
       setStats(prev => ({
         ...prev,
-        totalHomeowners: homeownersSnap.size,
+        totalHomeowners: totalHomeownersCount,
         activeStaff: activeStaffSnap.size,
-        lowStockItems,
         averageRating
       }));
 

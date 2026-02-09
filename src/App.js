@@ -8,7 +8,6 @@ import { PageTitleProvider } from './context/PageTitleContext';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Admin/Dashboard';
-import Inventory from './pages/Admin/Inventory';
 import Staff from './pages/Admin/Staff';
 import HeadStaffAccounts from './pages/Admin/HeadStaffAccounts';
 import UserAccounts from './pages/Admin/UserAccounts';
@@ -128,7 +127,6 @@ function App() {
                   <Route path="/" element={<RootRedirect />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/admin/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
                   <Route path="/admin/head-staff-accounts" element={<ProtectedRoute><HeadStaffAccounts /></ProtectedRoute>} />
                   <Route path="/admin/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
                   <Route path="/admin/user-accounts" element={<ProtectedRoute><UserAccounts /></ProtectedRoute>} />

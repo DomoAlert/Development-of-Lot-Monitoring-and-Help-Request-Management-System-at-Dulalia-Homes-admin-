@@ -35,9 +35,9 @@ const LotMonitoring = () => {
   // Valid statuses for lots
   const validStatuses = [
     'All',
-    'Vacant',
+    'Vacant (Lot Only)',
     'Occupied',
-    'For Sale',
+    'Vacant (House & Lot)',
     'Reserved',
   ];
 
@@ -504,7 +504,7 @@ const LotMonitoring = () => {
             block: block.blockNumber,
             lot: lotData.lotNumber,
             house_no: lotData.houseNumber,
-            status: lotData.status || 'Vacant',
+            status: lotData.status || 'Vacant (Lot Only)',
             owner_id: lotData.ownerId || null,
             house_owner: lotData.ownerName || null,
             houseModel: lotData.houseModel || 'Standard'
@@ -543,7 +543,7 @@ const LotMonitoring = () => {
       await setDoc(lotDocRef, {
         lotNumber: selectedLot.lot,
         houseNumber: selectedLot.house_no,
-        status: 'Vacant',
+        status: 'Vacant (Lot Only)',
         ownerId: null,
         ownerName: null,
         houseModel: selectedLot.houseModel || 'Standard',
@@ -863,7 +863,7 @@ const LotMonitoring = () => {
           await addDoc(collection(db, 'blocks', blockData.id, 'lots'), {
             lotNumber: lotNumber,
             houseNumber: houseNo,
-            status: 'Vacant',
+            status: 'Vacant (Lot Only)',
             ownerId: null,
             ownerName: null,
             houseModel: selectedHouseModel,
@@ -965,9 +965,9 @@ const LotMonitoring = () => {
   // Calculate statistics
   const stats = {
     total: lots.length,
-    vacant: lots.filter(lot => lot.status === 'Vacant').length,
+    vacantLotOnly: lots.filter(lot => lot.status === 'Vacant (Lot Only)').length,
     occupied: lots.filter(lot => lot.status === 'Occupied').length,
-    forSale: lots.filter(lot => lot.status === 'For Sale').length,
+    vacantHouseLot: lots.filter(lot => lot.status === 'Vacant (House & Lot)').length,
     reserved: lots.filter(lot => lot.status === 'Reserved').length
   };
 
@@ -1015,31 +1015,31 @@ const LotMonitoring = () => {
           </div>
 
           <div 
-            onClick={() => setSelectedFilter('Vacant')}
-            className={`bg-white rounded-lg shadow-md p-4 border-l-4 border-gray-400 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${selectedFilter === 'Vacant' ? 'ring-2 ring-gray-500' : ''}`}
+            onClick={() => setSelectedFilter('Vacant (Lot Only)')}
+            className={`bg-white rounded-lg shadow-md p-4 border-l-4 border-gray-400 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${selectedFilter === 'Vacant (Lot Only)' ? 'ring-2 ring-gray-500' : ''}`}
           >
             <div className="flex items-center">
               <div className="p-3 bg-gray-100 rounded-full">
                 <FaHome className="h-5 w-5 text-gray-600" />
               </div>
               <div className="ml-3">
-                <h2 className="text-xs font-medium text-gray-600">Vacant</h2>
-                <p className="text-xl font-semibold text-gray-900">{stats.vacant}</p>
+                <h2 className="text-xs font-medium text-gray-600">Vacant (Lot Only)</h2>
+                <p className="text-xl font-semibold text-gray-900">{stats.vacantLotOnly}</p>
               </div>
             </div>
           </div>
 
           <div 
-            onClick={() => setSelectedFilter('For Sale')}
-            className={`bg-white rounded-lg shadow-md p-4 border-l-4 border-yellow-500 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${selectedFilter === 'For Sale' ? 'ring-2 ring-yellow-500' : ''}`}
+            onClick={() => setSelectedFilter('Vacant (House & Lot)')}
+            className={`bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${selectedFilter === 'Vacant (House & Lot)' ? 'ring-2 ring-red-500' : ''}`}
           >
             <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <FaHome className="h-5 w-5 text-yellow-600" />
+              <div className="p-3 bg-red-100 rounded-full">
+                <FaHome className="h-5 w-5 text-red-600" />
               </div>
               <div className="ml-3">
-                <h2 className="text-xs font-medium text-gray-600">For Sale</h2>
-                <p className="text-xl font-semibold text-gray-900">{stats.forSale}</p>
+                <h2 className="text-xs font-medium text-gray-600">Vacant (House & Lot)</h2>
+                <p className="text-xl font-semibold text-gray-900">{stats.vacantHouseLot}</p>
               </div>
             </div>
           </div>
@@ -1137,12 +1137,12 @@ const LotMonitoring = () => {
                   <span className="text-sm">Occupied</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 rounded mr-2 bg-gray-300"></div>
-                  <span className="text-sm">Vacant</span>
+                  <div className="w-4 h-4 rounded mr-2 bg-gray-400"></div>
+                  <span className="text-sm">Vacant (Lot Only)</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 rounded mr-2 bg-yellow-500"></div>
-                  <span className="text-sm">For Sale</span>
+                  <div className="w-4 h-4 rounded mr-2 bg-red-500"></div>
+                  <span className="text-sm">Vacant (House & Lot)</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-4 h-4 rounded mr-2 bg-purple-500"></div>
@@ -1176,14 +1176,14 @@ const LotMonitoring = () => {
                           case 'Occupied':
                             statusColor = 'bg-green-500';
                             break;
-                          case 'For Sale':
-                            statusColor = 'bg-yellow-500';
+                          case 'Vacant (House & Lot)':
+                            statusColor = 'bg-red-500';
                             break;
                           case 'Reserved':
                             statusColor = 'bg-purple-500';
                             break;
                           default:
-                            statusColor = 'bg-gray-300'; // Vacant
+                            statusColor = 'bg-gray-400'; // Vacant (Lot Only)
                         }
                         
                         return (
@@ -1209,20 +1209,24 @@ const LotMonitoring = () => {
                               </div>
                               <div className="ml-2 flex-1">
                                 <p className="text-sm font-medium">#{lot.house_no}</p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const model = houseModels.find(m => m.name === (lot.houseModel || 'Standard'));
-                                    if (model) {
-                                      setSelectedHouseModelForDetails(model);
-                                      setShowHouseModelDetails(true);
-                                    }
-                                  }}
-                                  className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer text-left"
-                                  title="View house model details"
-                                >
-                                  {lot.houseModel || 'Standard'}
-                                </button>
+                                {lot.status === 'Vacant (Lot Only)' ? (
+                                  <span className="text-xs text-gray-600">Lot Only</span>
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const model = houseModels.find(m => m.name === (lot.houseModel || 'Standard'));
+                                      if (model) {
+                                        setSelectedHouseModelForDetails(model);
+                                        setShowHouseModelDetails(true);
+                                      }
+                                    }}
+                                    className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer text-left"
+                                    title="View house model details"
+                                  >
+                                    {lot.houseModel || 'Standard'}
+                                  </button>
+                                )}
                               </div>
                             </div>
                             
@@ -1230,7 +1234,7 @@ const LotMonitoring = () => {
                             <div className="border-t pt-2">
                               <p className="text-xs text-gray-500">Owner</p>
                               <p className="text-sm font-medium truncate">
-                                {lot.house_owner || 'None (Vacant)'}
+                                {lot.house_owner || lot.status}
                               </p>
                             </div>
                             
@@ -1292,7 +1296,7 @@ const LotMonitoring = () => {
                     <p className="text-sm text-gray-600">
                       Status: <span className={
                         selectedLot.status === 'Occupied' ? 'text-green-600' :
-                        selectedLot.status === 'For Sale' ? 'text-yellow-600' :
+                        selectedLot.status === 'Vacant (House & Lot)' ? 'text-red-600' :
                         selectedLot.status === 'Reserved' ? 'text-purple-600' :
                         'text-gray-600'
                       }>{selectedLot.status}</span>
@@ -1324,8 +1328,8 @@ const LotMonitoring = () => {
                         value={selectedLot.status}
                         onChange={(e) => {
                           setSelectedLot({...selectedLot, status: e.target.value});
-                          // Clear selected user if status is not Vacant or Occupied since we'll only assign users to vacant or occupied lots
-                          if (e.target.value !== 'Vacant' && e.target.value !== 'Occupied') {
+                          // Clear selected user if status is not Vacant (Lot Only) or Occupied since we'll only assign users to vacant or occupied lots
+                          if (e.target.value !== 'Vacant (Lot Only)' && e.target.value !== 'Occupied') {
                             setSelectedUserId('');
                           } else {
                             setSelectedUserId('');
@@ -1333,15 +1337,15 @@ const LotMonitoring = () => {
                         }}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       >
-                        <option value="Vacant">Vacant</option>
-                        <option value="For Sale">For Sale</option>
+                        <option value="Vacant (Lot Only)">Vacant (Lot Only)</option>
+                        <option value="Vacant (House & Lot)">Vacant (House & Lot)</option>
                         <option value="Reserved">Reserved</option>
                         <option value="Occupied">Occupied</option>
                       </select>
                     </div>
 
-                    {/* Show homeowner assignment only for Vacant or Occupied lots */}
-                    {(selectedLot.status === 'Vacant' || selectedLot.status === 'Occupied') && (
+                    {/* Show homeowner assignment only for Vacant (Lot Only) or Occupied lots */}
+                    {(selectedLot.status === 'Vacant (Lot Only)' || selectedLot.status === 'Occupied') && (
                       <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Assign to Homeowner (Optional)
@@ -1368,26 +1372,28 @@ const LotMonitoring = () => {
                       </div>
                     )}
 
-                    {/* House Model Selection */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        House Model
-                      </label>
-                      <select
-                        value={selectedHouseModelForAssignment}
-                        onChange={(e) => setSelectedHouseModelForAssignment(e.target.value)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      >
-                        {houseModels.map(model => (
-                          <option key={model.name} value={model.name}>
-                            {model.name} - {model.bedrooms} bed, {model.bathrooms} bath ({model.floorArea} FA)
-                          </option>
-                        ))}
-                      </select>
-                      <p className="mt-2 text-xs text-gray-500">
-                        Select the house model for this lot. This will be updated in the database.
-                      </p>
-                    </div>
+                    {/* House Model Selection - Only show for Vacant (House & Lot) */}
+                    {selectedLot.status === 'Vacant (House & Lot)' && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          House Model
+                        </label>
+                        <select
+                          value={selectedHouseModelForAssignment}
+                          onChange={(e) => setSelectedHouseModelForAssignment(e.target.value)}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                          {houseModels.map(model => (
+                            <option key={model.name} value={model.name}>
+                              {model.name} - {model.bedrooms} bed, {model.bathrooms} bath ({model.floorArea} FA)
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-2 text-xs text-gray-500">
+                          Select the house model for this lot. This will be updated in the database.
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
                 
